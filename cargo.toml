@@ -1,0 +1,6 @@
+[workspace]
+
+members = [
+  "sdml_parser",
+  "graphql_server_gen",
+]

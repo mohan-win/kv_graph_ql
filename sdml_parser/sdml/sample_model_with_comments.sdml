@@ -1,0 +1,95 @@
+/// Configuration
+/// Key value pair configurations.
+///
+/// # format
+/// key_name = "value"
+///
+/// # keys:
+/// provider - database provider. For now "foundationDB", eventually "rocksDB".
+///
+/// #values:
+/// "any string" delimited by double-quotes.
+config db {
+    provider = "foundationDB"
+}
+
+/// Model
+/// Model object which set of fields. And each field has explicitly definied type
+/// with zero or more attributes. If field is optional it is explicitly marked with `?` after the type name.
+/// Instance of a Model object is typically stored in it's own subspace.
+///
+/// # fields
+/// fields are of the format,
+/// field_name          FieldType   @attribute_with_zero_arg @attribute
+/// optional_field_name FieldType?  // no_attributes
+/// Each field name should be a valid identifier (i.e) starts with a alphabhet, and can have upto 255 characters.
+/// It should only contain ASCII characters.
+///
+/// # reserved fields
+/// All fields starting with '$' are reserved fields. So user can not specify them explicitly in the model.
+/// For example, each model will have '$id' field to uniquely identify its instances. And this enables the engine to
+/// 1. Automatically implement relations between model objects
+/// 2. Give back unique id for each of the objects outputed to GraphQL response.
+///
+/// # field types
+/// Supported field types
+/// ShortStr - Short string, with max size of 10 kb.
+/// LongStr  - Long string, with max size of 100 kb
+/// DateTime - Date time.
+/// Int32      - 32 bit integer
+/// Int64      - 64 bit integer
+/// Float     - Double precision floating point
+/// Enum       - User defined enum (see below).
+///
+/// # attributes
+/// Each field can have zero or more attributes. And attributes are in the following format
+/// @attribute_name, @attribute_name(enum_value orx function_name())
+/// - Attributes are prefixed with '@' symbol
+///
+/// Relations:
+/// The relations (one-to-one, one-to_many) between models are represented with
+/// a particular model field specifiying the other model's name as its type.
+/// If this model has one-to-one relationship with other model. The other model name is mentioned as
+/// a type. For example, profile: Profile?
+/// If this model has one-to-many relationship with other model, then other model name is mentioned in the
+/// array format. For example, posts: Post[]
+model User {
+    email       ShortStr      @unique
+    name        ShortStr?     // name is optional, so it has ? next to the type
+    nick_names  ShortStr[]
+    role        Role          @default(USER)
+    profile     Profile?
+    posts       Post[]
+}
+
+model Profile {
+    bio        LongString?
+    user       User
+}
+
+model Post {
+    createdAt   DateTime       @default(now())
+    updatedAt   DateTime
+    title       ShortStr
+    published   Bool
+    author      User
+    category    Category[]
+}
+
+model Category{
+    id          ShortStr       @unique_id @default(auto_generate())
+    name        ShortStr
+    posts       Post[]
+}
+
+/// User defined enum.
+/// An enum can have one or more elements, with each elements delimited with an white-space.
+/// # Notes:
+/// 1. At present enum with Zero elements are not supported.
+/// 2. Each enum element name should be unique
+/// 3. Enum element name can have max 255 charactors.
+/// When the enum values are sent as a JSON, they are converted into strings.
+enum Role {
+    USER
+    ADMIN
+}

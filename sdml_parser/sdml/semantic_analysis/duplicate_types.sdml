@@ -1,0 +1,48 @@
+config db {
+    provider = "foundationDB"
+}
+
+config db {
+    provider = "foundationDB"
+}
+
+model User {
+    email       ShortStr      @unique
+    name        ShortStr?     
+    nick_names  ShortStr[]
+    role        Role          @default(USER)
+    profile     Profile?
+    posts       Post[]
+}
+
+model User {
+
+}
+
+model Profile {
+    bio        LongString?
+    user       User
+}
+
+model Post {
+    createdAt   DateTime       @default(now())
+    updatedAt   DateTime
+    title       ShortStr
+    published   Bool
+    author      User
+    category    Category[]
+}
+
+model Category {
+    name        ShortStr
+    posts       Post[]
+}
+
+enum Role {
+    USER
+    ADMIN
+}
+
+enum Role {
+    U
+}
