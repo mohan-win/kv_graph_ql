@@ -3,7 +3,8 @@ use sdml_parser::parser;
 
 fn main() {
     let usage = "Run `sdml_parser <data_model_file.sdml>`";
-    let src = std::fs::read_to_string(std::env::args().nth(1).expect(usage)).expect(usage);
+    let path = std::env::args().nth(1).expect(usage);
+    let src = std::fs::read_to_string(&path).expect(&format!("File not found at path {path}"));
 
     let ast = parser::new_parser().parse(&src).into_result();
     match ast {

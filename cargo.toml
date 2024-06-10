@@ -1,6 +1,6 @@
 [workspace]
-
+resolver = "2"
 members = [
   "sdml_parser",
-  "graphql_server_gen",
+  "graph_ql_server_gen",
 ]
