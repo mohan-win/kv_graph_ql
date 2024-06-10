@@ -1,3 +1,5 @@
+use chumsky::container::Seq;
+
 use crate::ast::{Attribute, DataModel, Declaration, EnumDecl, FieldDecl, ModelDecl, Token, Type};
 use core::fmt;
 use std::collections::{HashMap, HashSet};
@@ -10,6 +12,12 @@ pub enum SemanticError<'src> {
     /// This error is returned if type of a field is undefined.
     UndefinedType {
         type_name: &'src str,
+        field_name: &'src str,
+        model_name: &'src str,
+    },
+    /// This error is returned enum type used is undefined.
+    UndefinedEnum {
+        r#enum: &'src str,
         field_name: &'src str,
         model_name: &'src str,
     },
@@ -120,7 +128,7 @@ pub(crate) fn semantic_update<'src>(
                 },
             );
             field.attributes.iter().for_each(|attribute| {
-                let _ = validate_attribute(attribute, &field.name, &model.name, &input_ast.enums)
+                let _ = validate_attribute(attribute, field, &model.name, &input_ast.enums)
                     .map_err(|attrib_err| {
                         errs.push(attrib_err);
                     });
@@ -128,7 +136,7 @@ pub(crate) fn semantic_update<'src>(
         });
     });
 
-    if errs.len() > 1 {
+    if errs.len() > 0 {
         Err(errs)
     } else {
         Ok(())
@@ -168,7 +176,7 @@ fn get_actual_type<'src>(
 /// c. it finds a unknown Enum value.
 fn validate_attribute<'src>(
     attribute: &Attribute<'src>,
-    parent_field_ident: &Token<'src>,
+    parent_field: &FieldDecl<'src>,
     parent_model_ident: &Token<'src>,
     enums: &HashMap<&'src str, EnumDecl<'src>>,
 ) -> Result<(), SemanticError<'src>> {
@@ -185,7 +193,7 @@ fn validate_attribute<'src>(
     if !all_attributes.contains(&attribute_name) {
         Err(SemanticError::UnknownAttribute {
             attrib_name: attribute_name,
-            field_name: parent_field_ident.ident_name().unwrap(),
+            field_name: parent_field.name.ident_name().unwrap(),
             model_name: parent_model_ident.ident_name().unwrap(),
         })
     } else {
@@ -195,29 +203,53 @@ fn validate_attribute<'src>(
         {
             Err(SemanticError::InvalidAttribute {
                 attrib_name: attribute.name.ident_name().unwrap(),
-                field_name: parent_field_ident.ident_name().unwrap(),
+                field_name: parent_field.name.ident_name().unwrap(),
                 model_name: parent_model_ident.ident_name().unwrap(),
             })
         } else if valid_attributes_with_args.contains(&attribute_name) && attribute.arg.is_some() {
-            // See if it has valid args
-            let attribute_arg_name = attribute.arg.as_ref().unwrap().name.ident_name().unwrap();
-            if !attribute.arg.as_ref().unwrap().is_function
-                && !enums.contains_key(attribute_arg_name)
-            {
-                Err(SemanticError::UndefinedEnumValue {
-                    enum_value: attribute_arg_name,
-                    field_name: parent_field_ident.ident_name().unwrap(),
-                    model_name: parent_model_ident.ident_name().unwrap(),
-                })
-            } else if attribute.arg.as_ref().unwrap().is_function
+            // See if the arg is a valid function.
+            let attribute_arg = &attribute.arg.as_ref().unwrap().name;
+            let attribute_arg_name = attribute_arg.ident_name().unwrap();
+            if attribute.arg.as_ref().unwrap().is_function
                 && !valid_attribute_arg_fns.contains(&attribute_arg_name)
             {
                 Err(SemanticError::UnknownFunction {
                     fn_name: attribute_arg_name,
                     attrib_name: attribute_name,
-                    field_name: parent_field_ident.ident_name().unwrap(),
+                    field_name: parent_field.name.ident_name().unwrap(),
                     model_name: parent_model_ident.ident_name().unwrap(),
                 })
+            } else if !attribute.arg.as_ref().unwrap().is_function {
+                // See if the arg is a valid enum value of the given type.
+                if let Type::Enum(enum_name) = &*parent_field.field_type.r#type() {
+                    if let Some((_, enum_decl)) = enums.get_key_value(
+                        enum_name
+                            .ident_name()
+                            .expect("Enum should have an identifier"),
+                    ) {
+                        if enum_decl.elements.contains(attribute_arg) {
+                            Ok(())
+                        } else {
+                            Err(SemanticError::UndefinedEnumValue {
+                                enum_value: attribute_arg_name,
+                                field_name: parent_field.name.ident_name().unwrap(),
+                                model_name: parent_model_ident.ident_name().unwrap(),
+                            })
+                        }
+                    } else {
+                        Err(SemanticError::UndefinedEnum {
+                            r#enum: enum_name.ident_name().unwrap(),
+                            field_name: parent_field.name.ident_name().unwrap(),
+                            model_name: parent_model_ident.ident_name().unwrap(),
+                        })
+                    }
+                } else {
+                    Err(SemanticError::InvalidAttribute {
+                        attrib_name: attribute_name,
+                        field_name: parent_field.name.ident_name().unwrap(),
+                        model_name: parent_model_ident.ident_name().unwrap(),
+                    })
+                }
             } else {
                 Ok(())
             }
@@ -292,7 +324,7 @@ mod tests {
                         model_name: "User",
                     },
                     SemanticError::UndefinedEnumValue {
-                        enum_value: "UNDEFINED_ENUM",
+                        enum_value: "Role",
                         field_name: "role",
                         model_name: "User",
                     },
