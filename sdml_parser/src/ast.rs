@@ -190,7 +190,6 @@ pub enum PrimitiveType {
     ShortStr,
     LongStr,
     DateTime,
-    Boolean,
     Int32,
     Int64,
     Float64,

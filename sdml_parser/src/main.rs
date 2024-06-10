@@ -6,9 +6,15 @@ fn main() {
     let path = std::env::args().nth(1).expect(usage);
     let src = std::fs::read_to_string(&path).expect(&format!("File not found at path {path}"));
 
-    let ast = parser::new().parse(&src).into_result();
-    match ast {
-        Ok(ast) => println!("AST {:#?}", ast),
-        Err(e) => eprintln!("Parser error {:#?}", e),
+    let parse_result = parser::new().parse(&src);
+    let parse_errors = parse_result.errors();
+    if parse_errors.len() > 0 {
+        eprintln!("Parser Errros:");
+        for err in parse_errors {
+            eprintln!("{err:#?}",)
+        }
+    } else {
+        let output = parse_result.output().unwrap();
+        println!("AST {output:#?}")
     }
 }

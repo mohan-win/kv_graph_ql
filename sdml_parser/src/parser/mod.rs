@@ -134,7 +134,6 @@ fn field_type<'src>() -> impl Parser<'src, &'src str, FieldType<'src>, Err<Rich<
     let primitive_type = text::keyword("ShortStr")
         .or(text::keyword("LongStr"))
         .or(text::keyword("DateTime"))
-        .or(text::keyword("Boolean"))
         .or(text::keyword("Int32"))
         .or(text::keyword("Int64"))
         .or(text::keyword("Float"));
@@ -147,7 +146,6 @@ fn field_type<'src>() -> impl Parser<'src, &'src str, FieldType<'src>, Err<Rich<
                 "ShortStr" => Some(PrimitiveType::ShortStr),
                 "LongStr" => Some(PrimitiveType::LongStr),
                 "DateTime" => Some(PrimitiveType::DateTime),
-                "Boolean" => Some(PrimitiveType::Boolean),
                 "Int32" => Some(PrimitiveType::Int32),
                 "Int64" => Some(PrimitiveType::Int64),
                 "Float64" => Some(PrimitiveType::Float64),
