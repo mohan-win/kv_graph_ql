@@ -44,5 +44,5 @@ enum Role {
 }
 
 enum Role {
-    U
+    Some
 }

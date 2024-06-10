@@ -4,13 +4,16 @@ use crate::ast::{
     Attribute, DataModel, Declaration, EnumDecl, FieldDecl, ModelDecl, Span, Token, Type,
 };
 use core::fmt;
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    ops::ControlFlow,
+};
 
 /// Type of the semantic error
 #[derive(Debug, Clone, PartialEq)]
 pub enum SemanticError<'src> {
     /// This error is returned when name of a user defined type clashes with already existing type.
-    DuplicateTypeDefinition { type_name: &'src str },
+    DuplicateTypeDefinition { span: Span, type_name: &'src str },
     /// This error is returned if type of a field is undefined.
     UndefinedType {
         span: Span,
@@ -73,7 +76,7 @@ pub(crate) fn to_data_model<'src>(
     check_duplicate_types: bool,
 ) -> Result<DataModel<'src>, Vec<SemanticError<'src>>> {
     let mut errs: Vec<SemanticError<'src>> = Vec::new();
-    let mut type_set: HashSet<&'src str> = HashSet::new();
+    let mut type_set: HashSet<(&'src str, Span)> = HashSet::new();
 
     let mut data_model = DataModel {
         configs: HashMap::new(),
@@ -82,30 +85,41 @@ pub(crate) fn to_data_model<'src>(
     };
 
     for decl in delcarations.into_iter() {
-        let type_name = match decl {
+        let (type_name, span) = match decl {
             Declaration::Config(c) => {
                 let type_name = c.name.ident_name().unwrap();
+                let span = c.name.span();
                 data_model.configs.insert(type_name, c);
-                type_name
+                (type_name, span)
             }
             Declaration::Enum(e) => {
                 let type_name = e.name.ident_name().unwrap();
+                let span = e.name.span();
                 data_model.enums.insert(e.name.ident_name().unwrap(), e);
-                type_name
+                (type_name, span)
             }
             Declaration::Model(m) => {
                 let type_name = m.name.ident_name().unwrap();
+                let span = m.name.span();
                 data_model.models.insert(m.name.ident_name().unwrap(), m);
-                type_name
+                (type_name, span)
             }
         };
 
         // error for duplicate types.
         if check_duplicate_types {
-            if type_set.contains(type_name) {
-                errs.push(SemanticError::DuplicateTypeDefinition { type_name });
+            let type_exists = type_set.iter().try_for_each(|(name, _span)| {
+                if name.eq(&type_name) {
+                    ControlFlow::Break(true)
+                } else {
+                    ControlFlow::Continue(())
+                }
+            });
+
+            if let ControlFlow::Break(true) = type_exists {
+                errs.push(SemanticError::DuplicateTypeDefinition { span, type_name });
             } else {
-                type_set.insert(type_name);
+                type_set.insert((type_name, span));
             }
         }
     }
@@ -299,9 +313,18 @@ mod tests {
                 assert_eq!(
                     errs,
                     vec![
-                        SemanticError::DuplicateTypeDefinition { type_name: "db" },
-                        SemanticError::DuplicateTypeDefinition { type_name: "User" },
-                        SemanticError::DuplicateTypeDefinition { type_name: "Role" }
+                        SemanticError::DuplicateTypeDefinition {
+                            span: Span::new(52, 54),
+                            type_name: "db"
+                        },
+                        SemanticError::DuplicateTypeDefinition {
+                            span: Span::new(295, 312),
+                            type_name: "User"
+                        },
+                        SemanticError::DuplicateTypeDefinition {
+                            span: Span::new(667, 671),
+                            type_name: "Role"
+                        }
                     ]
                 )
             }
