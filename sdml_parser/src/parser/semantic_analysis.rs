@@ -326,44 +326,45 @@ mod tests {
             Err(errs) => {
                 let expected_errs = vec![
                     SemanticError::InvalidAttribute {
-                        span: Span::new(0, 0),
+                        span: Span::new(88, 101),
                         attrib_name: "unique",
                         field_name: "email",
                         model_name: "User",
                     },
                     SemanticError::UnknownAttribute {
-                        span: Span::new(0, 0),
+                        span: Span::new(102, 117),
                         attrib_name: "unknown_attrib",
                         field_name: "email",
                         model_name: "User",
                     },
                     SemanticError::InvalidAttribute {
-                        span: Span::new(0, 0),
+                        span: Span::new(148, 156),
                         attrib_name: "default",
                         field_name: "name",
                         model_name: "User",
                     },
                     SemanticError::UndefinedEnumValue {
-                        span: Span::new(0, 0),
+                        span: Span::new(214, 228),
                         enum_value: "Role",
                         field_name: "role",
                         model_name: "User",
                     },
                     SemanticError::UnknownFunction {
-                        span: Span::new(0, 0),
+                        span: Span::new(387, 415),
                         fn_name: "unknown_function",
                         field_name: "createdAt",
                         attrib_name: "default",
                         model_name: "Post",
                     },
                     SemanticError::UndefinedType {
-                        span: Span::new(0, 0),
+                        span: Span::new(482, 486),
                         type_name: "Bool",
                         field_name: "published",
                         model_name: "Post",
                     },
                 ];
                 assert_eq!(errs.len(), expected_errs.len());
+                errs.iter().for_each(|e| assert!(expected_errs.contains(e)));
             }
         }
     }
