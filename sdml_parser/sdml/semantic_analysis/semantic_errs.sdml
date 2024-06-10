@@ -6,7 +6,7 @@ model User {
     email       ShortStr      @unique(USER) @unknown_attrib
     name        ShortStr?     @default
     nick_names  ShortStr[]
-    role        Role          @default(UNDEFINED_ENUM)
+    role        Role          @default(Role)
     profile     Profile?
     posts       Post[]
 }

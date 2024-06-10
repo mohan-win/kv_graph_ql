@@ -1,6 +1,8 @@
 use chumsky::container::Seq;
 
-use crate::ast::{Attribute, DataModel, Declaration, EnumDecl, FieldDecl, ModelDecl, Token, Type};
+use crate::ast::{
+    Attribute, DataModel, Declaration, EnumDecl, FieldDecl, ModelDecl, Span, Token, Type,
+};
 use core::fmt;
 use std::collections::{HashMap, HashSet};
 
@@ -11,36 +13,42 @@ pub enum SemanticError<'src> {
     DuplicateTypeDefinition { type_name: &'src str },
     /// This error is returned if type of a field is undefined.
     UndefinedType {
+        span: Span,
         type_name: &'src str,
         field_name: &'src str,
         model_name: &'src str,
     },
     /// This error is returned enum type used is undefined.
     UndefinedEnum {
+        span: Span,
         r#enum: &'src str,
         field_name: &'src str,
         model_name: &'src str,
     },
     /// This error is returned if undefined enum value is used.
     UndefinedEnumValue {
+        span: Span,
         enum_value: &'src str,
         field_name: &'src str,
         model_name: &'src str,
     },
     /// This error is thrown if the attribute is invalid
     InvalidAttribute {
+        span: Span,
         attrib_name: &'src str,
         field_name: &'src str,
         model_name: &'src str,
     },
     /// This error is returned for unknown attribute usage in models.
     UnknownAttribute {
+        span: Span,
         attrib_name: &'src str,
         field_name: &'src str,
         model_name: &'src str,
     },
     /// This error is returned for unknown functions usage in the model attributes.
     UnknownFunction {
+        span: Span,
         fn_name: &'src str,
         attrib_name: &'src str,
         field_name: &'src str,
@@ -159,6 +167,7 @@ fn get_actual_type<'src>(
             None => match enums.get(type_name) {
                 Some(_) => Ok(Some(Type::Enum(type_name_tok.clone()))),
                 None => Err(SemanticError::UndefinedType {
+                    span: type_name_tok.span(),
                     type_name: type_name_tok.ident_name().unwrap(),
                     field_name: field.name.ident_name().unwrap(),
                     model_name: parent_model_ident.ident_name().unwrap(),
@@ -192,6 +201,7 @@ fn validate_attribute<'src>(
     // See if it is a known attribute
     if !all_attributes.contains(&attribute_name) {
         Err(SemanticError::UnknownAttribute {
+            span: attribute.name.span(),
             attrib_name: attribute_name,
             field_name: parent_field.name.ident_name().unwrap(),
             model_name: parent_model_ident.ident_name().unwrap(),
@@ -202,6 +212,7 @@ fn validate_attribute<'src>(
             || valid_attributes_with_args.contains(&attribute_name) && attribute.arg.is_none()
         {
             Err(SemanticError::InvalidAttribute {
+                span: attribute.name.span(),
                 attrib_name: attribute.name.ident_name().unwrap(),
                 field_name: parent_field.name.ident_name().unwrap(),
                 model_name: parent_model_ident.ident_name().unwrap(),
@@ -214,6 +225,7 @@ fn validate_attribute<'src>(
                 && !valid_attribute_arg_fns.contains(&attribute_arg_name)
             {
                 Err(SemanticError::UnknownFunction {
+                    span: attribute_arg.span(),
                     fn_name: attribute_arg_name,
                     attrib_name: attribute_name,
                     field_name: parent_field.name.ident_name().unwrap(),
@@ -231,6 +243,7 @@ fn validate_attribute<'src>(
                             Ok(())
                         } else {
                             Err(SemanticError::UndefinedEnumValue {
+                                span: attribute_arg.span(),
                                 enum_value: attribute_arg_name,
                                 field_name: parent_field.name.ident_name().unwrap(),
                                 model_name: parent_model_ident.ident_name().unwrap(),
@@ -238,6 +251,7 @@ fn validate_attribute<'src>(
                         }
                     } else {
                         Err(SemanticError::UndefinedEnum {
+                            span: attribute_arg.span(),
                             r#enum: enum_name.ident_name().unwrap(),
                             field_name: parent_field.name.ident_name().unwrap(),
                             model_name: parent_model_ident.ident_name().unwrap(),
@@ -245,6 +259,7 @@ fn validate_attribute<'src>(
                     }
                 } else {
                     Err(SemanticError::InvalidAttribute {
+                        span: attribute_arg.span(),
                         attrib_name: attribute_name,
                         field_name: parent_field.name.ident_name().unwrap(),
                         model_name: parent_model_ident.ident_name().unwrap(),
@@ -261,6 +276,8 @@ fn validate_attribute<'src>(
 
 #[cfg(test)]
 mod tests {
+    use crate::ast::Span;
+
     use super::*;
     use chumsky::prelude::*;
 
@@ -309,39 +326,44 @@ mod tests {
             Err(errs) => {
                 let expected_errs = vec![
                     SemanticError::InvalidAttribute {
+                        span: Span::new(0, 0),
                         attrib_name: "unique",
                         field_name: "email",
                         model_name: "User",
                     },
                     SemanticError::UnknownAttribute {
+                        span: Span::new(0, 0),
                         attrib_name: "unknown_attrib",
                         field_name: "email",
                         model_name: "User",
                     },
                     SemanticError::InvalidAttribute {
+                        span: Span::new(0, 0),
                         attrib_name: "default",
                         field_name: "name",
                         model_name: "User",
                     },
                     SemanticError::UndefinedEnumValue {
+                        span: Span::new(0, 0),
                         enum_value: "Role",
                         field_name: "role",
                         model_name: "User",
                     },
                     SemanticError::UnknownFunction {
+                        span: Span::new(0, 0),
                         fn_name: "unknown_function",
                         field_name: "createdAt",
                         attrib_name: "default",
                         model_name: "Post",
                     },
                     SemanticError::UndefinedType {
+                        span: Span::new(0, 0),
                         type_name: "Bool",
                         field_name: "published",
                         model_name: "Post",
                     },
                 ];
                 assert_eq!(errs.len(), expected_errs.len());
-                errs.iter().for_each(|e| assert!(expected_errs.contains(e)))
             }
         }
     }

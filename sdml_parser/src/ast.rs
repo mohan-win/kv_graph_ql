@@ -2,24 +2,55 @@
 
 use std::{cell::RefCell, collections::HashMap};
 
-#[derive(Debug, Clone, PartialEq)]
+use chumsky::span::SimpleSpan;
+
+pub type Span = SimpleSpan<usize>;
+
+#[derive(Debug, Clone)]
 pub enum Token<'src> {
     // Litrals
-    Ident(&'src str),
-    Str(&'src str),
-    Int(i64),
-    Float(f64),
-    Bool(bool),
+    Ident(&'src str, Span),
+    Str(&'src str, Span),
+    Int(i64, Span),
+    Float(f64, Span),
+    Bool(bool, Span),
+}
+impl<'src> PartialEq for Token<'src> {
+    // Important Note: Implementing Partial equal for Token, which only compares the
+    // actual token and doesn't compare the location (span) in which it is found.
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Token::Ident(self_ident, _), Token::Ident(other_ident, _)) => {
+                self_ident == other_ident
+            }
+            (Token::Str(self_str, _), Token::Str(other_str, _)) => self_str == other_str,
+            (Token::Int(self_int, _), Token::Int(other_int, _)) => self_int == other_int,
+            (Token::Float(self_float, _), Token::Float(other_float, _)) => {
+                self_float == other_float
+            }
+            (Token::Bool(self_bool, _), Token::Bool(other_bool, _)) => self_bool == other_bool,
+            (_, _) => false,
+        }
+    }
 }
 
 impl<'src> Token<'src> {
     /// If the token is an identifier, returns its name
     /// if not, it returns None
     pub fn ident_name(&self) -> Option<&'src str> {
-        if let Token::Ident(name) = self {
+        if let Token::Ident(name, _) = self {
             Some(name)
         } else {
             None
+        }
+    }
+    pub fn span(&self) -> Span {
+        match self {
+            Token::Ident(_, sp) => *sp,
+            Token::Str(_, sp) => *sp,
+            Token::Int(_, sp) => *sp,
+            Token::Float(_, sp) => *sp,
+            Token::Bool(_, sp) => *sp,
         }
     }
 }
@@ -60,22 +91,42 @@ pub struct ConfigPair<'src> {
     pub value: ConfigValue<'src>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub enum ConfigValue<'src> {
-    Str(&'src str),
-    Int(i64),
-    Float(f64),
-    Bool(bool),
+    Str(&'src str, Span),
+    Int(i64, Span),
+    Float(f64, Span),
+    Bool(bool, Span),
+}
+
+impl<'src> PartialEq for ConfigValue<'src> {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (ConfigValue::Str(self_str, _), ConfigValue::Str(other_str, _)) => {
+                self_str == other_str
+            }
+            (ConfigValue::Int(self_int, _), ConfigValue::Int(other_int, _)) => {
+                self_int == other_int
+            }
+            (ConfigValue::Float(self_float, _), ConfigValue::Float(other_float, _)) => {
+                self_float == other_float
+            }
+            (ConfigValue::Bool(self_bool, _), ConfigValue::Bool(other_bool, _)) => {
+                self_bool == other_bool
+            }
+            (_, _) => false,
+        }
+    }
 }
 
 impl<'src> TryFrom<Token<'src>> for ConfigValue<'src> {
     type Error = String;
     fn try_from(value: Token<'src>) -> Result<Self, Self::Error> {
         match value {
-            Token::Bool(b) => Ok(ConfigValue::Bool(b)),
-            Token::Float(f) => Ok(ConfigValue::Float(f)),
-            Token::Int(i) => Ok(ConfigValue::Int(i)),
-            Token::Str(s) => Ok(ConfigValue::Str(s)),
+            Token::Bool(b, s) => Ok(ConfigValue::Bool(b, s)),
+            Token::Float(f, s) => Ok(ConfigValue::Float(f, s)),
+            Token::Int(i, s) => Ok(ConfigValue::Int(i, s)),
+            Token::Str(str, s) => Ok(ConfigValue::Str(str, s)),
             t => Err(format!("Token {:?} can't turned into string", t)),
         }
     }
