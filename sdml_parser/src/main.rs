@@ -6,15 +6,16 @@ fn main() {
     let path = std::env::args().nth(1).expect(usage);
     let src = std::fs::read_to_string(&path).expect(&format!("File not found at path {path}"));
 
-    let parse_result = parser::new().parse(&src);
-    let parse_errors = parse_result.errors();
-    if parse_errors.len() > 0 {
-        eprintln!("Parser Errros:");
-        for err in parse_errors {
-            eprintln!("{err:#?}",)
-        }
+    // Parse the source file.
+    let parse_result = parser::delcarations().parse(&src);
+    if parse_result.has_errors() {
+        eprintln!("Parser errors : {:#?}", parse_result.into_result());
     } else {
-        let output = parse_result.output().unwrap();
-        println!("AST {output:#?}")
+        let declarations = parse_result.into_result().unwrap();
+        let ast_result = parser::semantic_analysis(declarations);
+        match ast_result {
+            Err(semantic_errs) => println!("Semantic errors: {:#?}", semantic_errs),
+            Ok(ast) => println!("AST: {:#?}", ast),
+        }
     }
 }

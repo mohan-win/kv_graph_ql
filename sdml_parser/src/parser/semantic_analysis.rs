@@ -32,12 +32,21 @@ pub enum SemanticError<'src> {
     UndefinedEnumValue {
         span: Span,
         enum_value: &'src str,
+        attrib_name: &'src str,
         field_name: &'src str,
         model_name: &'src str,
     },
     /// This error is thrown if the attribute is invalid
     InvalidAttribute {
         span: Span,
+        attrib_name: &'src str,
+        field_name: &'src str,
+        model_name: &'src str,
+    },
+    /// This error is thrown if the argment passed to attribute is invalid
+    InvalidAttributeArg {
+        span: Span,
+        attrib_arg_name: &'src str,
         attrib_name: &'src str,
         field_name: &'src str,
         model_name: &'src str,
@@ -61,7 +70,7 @@ pub enum SemanticError<'src> {
 
 impl<'src> fmt::Display for SemanticError<'src> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Semantic Error: {self:?}")
+        write!(f, "Semantic Error: {self:#?}")
     }
 }
 
@@ -259,6 +268,7 @@ fn validate_attribute<'src>(
                             Err(SemanticError::UndefinedEnumValue {
                                 span: attribute_arg.span(),
                                 enum_value: attribute_arg_name,
+                                attrib_name: attribute_name,
                                 field_name: parent_field.name.ident_name().unwrap(),
                                 model_name: parent_model_ident.ident_name().unwrap(),
                             })
@@ -272,8 +282,9 @@ fn validate_attribute<'src>(
                         })
                     }
                 } else {
-                    Err(SemanticError::InvalidAttribute {
+                    Err(SemanticError::InvalidAttributeArg {
                         span: attribute_arg.span(),
+                        attrib_arg_name: attribute_arg_name,
                         attrib_name: attribute_name,
                         field_name: parent_field.name.ident_name().unwrap(),
                         model_name: parent_model_ident.ident_name().unwrap(),
@@ -366,27 +377,35 @@ mod tests {
                         field_name: "name",
                         model_name: "User",
                     },
+                    SemanticError::InvalidAttributeArg {
+                        span: Span::new(187, 201),
+                        attrib_arg_name: "USER",
+                        attrib_name: "default",
+                        field_name: "nick_names",
+                        model_name: "User",
+                    },
                     SemanticError::UndefinedEnumValue {
-                        span: Span::new(214, 228),
+                        span: Span::new(232, 246),
                         enum_value: "Role",
+                        attrib_name: "default",
                         field_name: "role",
                         model_name: "User",
                     },
                     SemanticError::UnknownFunction {
-                        span: Span::new(387, 415),
+                        span: Span::new(405, 433),
                         fn_name: "unknown_function",
                         field_name: "createdAt",
                         attrib_name: "default",
                         model_name: "Post",
                     },
                     SemanticError::UndefinedType {
-                        span: Span::new(482, 486),
+                        span: Span::new(500, 504),
                         type_name: "Bool",
                         field_name: "published",
                         model_name: "Post",
                     },
                 ];
-                assert_eq!(errs.len(), expected_errs.len());
+                assert_eq!(expected_errs.len(), errs.len());
                 errs.iter().for_each(|e| assert!(expected_errs.contains(e)));
             }
         }

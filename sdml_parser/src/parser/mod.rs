@@ -10,23 +10,20 @@ use chumsky::{extra::Err, prelude::*};
 pub mod semantic_analysis;
 pub use semantic_analysis::SemanticError;
 
-pub fn new<'src>() -> impl Parser<'src, &'src str, DataModel<'src>, Err<Rich<'src, char>>> {
-    delcarations().try_map(|decls, span| {
-        semantic_analysis::to_data_model(decls, true).map_or_else(
-            |errs| Err(Rich::custom(span, format!("{errs:#?}"))),
-            |ast| match semantic_analysis::semantic_update(&ast) {
-                Err(errs) => {
-                    println!("todo:: remove errs = {errs:#?}");
-                    Err(Rich::custom(span, format!("{errs:#?}")))
-                }
-                Ok(()) => Ok(ast),
-            },
-        )
-    })
+pub fn semantic_analysis<'src>(
+    decls: Vec<Declaration<'src>>,
+) -> Result<DataModel<'src>, Vec<SemanticError>> {
+    semantic_analysis::to_data_model(decls, true).map_or_else(
+        |errs| Err(errs),
+        |ast| match semantic_analysis::semantic_update(&ast) {
+            Err(errs) => Err(errs),
+            Ok(()) => Ok(ast),
+        },
+    )
 }
 
 #[inline(always)]
-pub(crate) fn delcarations<'src>(
+pub fn delcarations<'src>(
 ) -> impl Parser<'src, &'src str, Vec<Declaration<'src>>, Err<Rich<'src, char>>> {
     config_decl()
         .or(enum_decl())
@@ -793,56 +790,8 @@ mod tests {
                 ast.models.insert(m.name.ident_name().unwrap(), m);
             }
         });
-        assert_eq!(new().parse(sdml_str).into_result(), Ok(ast));
-    }
-
-    #[test]
-    fn test_parse_1() {
-        let sdml_str = r#"
-            config db {
-                provider = "foundationDB"
-            }
-
-            model User {
-                email       ShortStr      @unique
-                name        ShortStr?     
-                nick_names  ShortStr[]
-                role        Role          @default(USER)
-                profile     Profile?
-                posts       Post[]
-            }
-
-            model Profile {
-                bio        LongStr?
-                user       User
-            }
-
-            model Post {
-                createdAt   DateTime    @default(now())
-                updatedAt   DateTime
-                title       ShortStr
-                published   Boolean
-                author      User
-                category    Category[]
-            }
-
-            model Category {
-                name        ShortStr
-                posts       Post[]
-            }
-
-            enum Role {
-                USER
-                ADMIN
-            }
-        "#;
-
-        match new().parse(sdml_str).into_result() {
-            Ok(ast) => println!("{ast:#?}"),
-            Err(errs) => {
-                println!("{errs:#?}");
-                assert!(false);
-            }
-        }
+        let decls = delcarations().parse(sdml_str).into_result().unwrap();
+        let ast_result = semantic_analysis(decls);
+        assert_eq!(ast_result, Ok(ast));
     }
 }
