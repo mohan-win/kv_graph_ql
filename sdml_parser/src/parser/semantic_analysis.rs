@@ -310,7 +310,7 @@ mod tests {
     fn test_duplicate_types() {
         let duplicate_types_sdml = std::fs::read_to_string(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/sdml/semantic_analysis/duplicate_types.sdml"
+            "/test_data/semantic_analysis/duplicate_types.sdml"
         ))
         .unwrap();
 
@@ -346,7 +346,7 @@ mod tests {
     fn test_semantic_update() {
         let semantic_errs_sdml = std::fs::read_to_string(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/sdml/semantic_analysis/semantic_errs.sdml"
+            "/test_data/semantic_analysis/semantic_errs.sdml"
         ))
         .unwrap();
 
