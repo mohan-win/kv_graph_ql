@@ -329,11 +329,11 @@ mod tests {
                             type_name: "db"
                         },
                         SemanticError::DuplicateTypeDefinition {
-                            span: Span::new(295, 312),
+                            span: Span::new(294, 311),
                             type_name: "User"
                         },
                         SemanticError::DuplicateTypeDefinition {
-                            span: Span::new(667, 671),
+                            span: Span::new(666, 670),
                             type_name: "Role"
                         }
                     ]
@@ -378,35 +378,34 @@ mod tests {
                         model_name: "User",
                     },
                     SemanticError::InvalidAttributeArg {
-                        span: Span::new(187, 201),
+                        span: Span::new(186, 200),
                         attrib_arg_name: "USER",
                         attrib_name: "default",
-                        field_name: "nick_names",
+                        field_name: "nickNames",
                         model_name: "User",
                     },
                     SemanticError::UndefinedEnumValue {
-                        span: Span::new(232, 246),
+                        span: Span::new(231, 245),
                         enum_value: "Role",
                         attrib_name: "default",
                         field_name: "role",
                         model_name: "User",
                     },
                     SemanticError::UnknownFunction {
-                        span: Span::new(405, 433),
+                        span: Span::new(404, 432),
                         fn_name: "unknown_function",
                         field_name: "createdAt",
                         attrib_name: "default",
                         model_name: "Post",
                     },
                     SemanticError::UndefinedType {
-                        span: Span::new(500, 504),
+                        span: Span::new(499, 503),
                         type_name: "Bool",
                         field_name: "published",
                         model_name: "Post",
                     },
                 ];
-                assert_eq!(expected_errs.len(), errs.len());
-                errs.iter().for_each(|e| assert!(expected_errs.contains(e)));
+                assert_eq!(expected_errs, errs);
             }
         }
     }

@@ -540,7 +540,7 @@ mod tests {
         model User {
             email       ShortStr      @unique
             name        ShortStr?
-            nick_names  ShortStr[]
+            nickNames  ShortStr[]
             role        Role          @default(USER)
         }
         "#;
@@ -571,7 +571,7 @@ mod tests {
                         attributes: vec![]
                     },
                     FieldDecl {
-                        name: Token::Ident("nick_names", Span::new(0, 0)),
+                        name: Token::Ident("nickNames", Span::new(0, 0)),
                         field_type: FieldType::new(
                             Type::Primitive(PrimitiveType::ShortStr),
                             false,
@@ -614,7 +614,7 @@ mod tests {
         let err_model_str = r#" 
         model User {
             email       ShortStr      @unique
-            name        ShortStrnick_names  ShortStr[]
+            name        ShortStrnickNames  ShortStr[]
             role        Role          @default(USER)
         }
         "#;
@@ -628,7 +628,7 @@ mod tests {
         model User {
             email       ShortStr      @unique
             name        ShortStr?
-            nick_names  ShortStr[]
+            nickNames  ShortStr[]
             role        Role          @default(USER)
             mentor      User
         }
@@ -684,7 +684,7 @@ mod tests {
                         attributes: vec![],
                     },
                     FieldDecl {
-                        name: Token::Ident("nick_names", Span::new(0, 0)),
+                        name: Token::Ident("nickNames", Span::new(0, 0)),
                         field_type: FieldType::new(
                             Type::Primitive(PrimitiveType::ShortStr),
                             false,

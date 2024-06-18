@@ -56,7 +56,7 @@ config db {
 model User {
     email       ShortStr      @unique
     name        ShortStr?     // name is optional, so it has ? next to the type
-    nick_names  ShortStr[]
+    nickNames  ShortStr[]
     role        Role          @default(USER)
     profile     Profile?
     posts       Post[]

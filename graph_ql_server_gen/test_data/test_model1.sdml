@@ -5,7 +5,7 @@ config db {
 model User {
     email       ShortStr      @unique
     name        ShortStr?     
-    nickNames  ShortStr[]
+    nickNames   ShortStr[]
     role        Role          @default(USER)
     profile     Profile?
     posts       Post[]
