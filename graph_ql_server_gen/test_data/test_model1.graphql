@@ -1,0 +1,12 @@
+type Node {
+  id: ID!
+}
+type User implements Node {
+  id: ID!
+  email: String!
+  name: String
+  nickNames: [String!]! # Let (non-connection / non-relation) array fields generated be always non-null for both array and elements.
+  role: Role!
+  profile: ProfileConnection
+  posts: PostConnection
+}
