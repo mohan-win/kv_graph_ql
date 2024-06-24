@@ -1,12 +1,173 @@
+type Query {
+  node(id: ID!): Node
+  # User related top-level queries
+  user(where: UserWhereUniqueInput!): User
+  users(
+    where: UserWhereInput
+    orderBy: UserOrderByInput
+    skip: Int
+    after: String
+    before: String
+    first: Int
+    last: Int
+  ): [User!]!
+  usersConnection(
+    where: UserWhereInput
+    orderBy:UserOrderByInput
+    skip: Int
+    after: String
+    before: String
+    first: Int
+    last: Int): UserConnection!
+  # Profile related top-level queries
+  profile(where: ProfileWhereUniqueInput!): Profile
+  profiles(
+    where: ProfileWhereInput
+    orderBy: ProfileWhereInput
+    skip: Int
+    after: String
+    before: String
+    first: Int
+    last: Int
+  ): [Profile!]!
+  profilesConnection(
+    where: ProfileWhereInput
+    orderBy: ProfileWhereInput
+    skip: Int
+    after: String
+    before: String
+    first: Int
+    last: Int
+  ): ProfileConnection!
+  # Post related top-level queries
+  post(where: PostWhereUniqueInput!): Post
+  posts(
+    where: PostWhereInput,
+    orderBy: PostOrderByInput,
+    skip: Int
+    after: String
+    before: String
+    first: Int
+    last: Int
+  ): [Post!]!
+  postsConnection(
+    where: PostWhereInput,
+    orderBy: PostOrderByInput,
+    skip: Int
+    after: String
+    before: String
+    first: Int
+    last: Int
+  ): [Post!]!
+  # Category related top-level queries
+  category(where: CategoryWhereUniqueInput!): Category
+  categories(
+    where: CategoryWhereInput
+    orderBy: CategoryOrderByInput
+    skip: Int
+    after: String
+    before: String
+    first: Int
+    last: Int
+  ): [Category!]!
+  categoriesConnection(
+    where: CategoryWhereInput
+    orderBy: CategoryOrderByInput
+    skip: Int
+    after: String
+    before: String
+    first: Int
+    last: Int
+  ): CategoryConnection!
+}
+
 type Node {
   id: ID!
 }
 type User implements Node {
-  id: ID!
+  id: ID! @unique
   email: String!
   name: String
   nickNames: [String!]! # Let (non-connection / non-relation) array fields generated be always non-null for both array and elements.
   role: Role!
-  profile: ProfileConnection
-  posts: PostConnection
+  profile: Profile
+  posts(
+    where: PostWhereInput
+    orderBy: PostOrderByInput
+    skip: Int
+    after: String
+    before: String
+    first: Int
+    last: Int
+  ):[Post!]!
+  postsConnection(
+    where: PostWhereInput
+    orderBy: PostOrderByInput
+    skip: Int
+    after: String
+    before: String
+    first: Int
+    last: Int
+  ): PostConnection!
+}
+
+type Profile implements Node {
+  id: ID! @unique
+  bio: String
+  user: User!
+}
+
+type Post implements Node {
+  id: ID! @unique
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  title: String!
+  published: Boolean
+  author: User!
+  categories(
+    where: CategoryWhereInput
+    orderBy: CategoryOrderByInput
+    skip: Int
+    after: String
+    before: String
+    first: Int
+    last: Int
+  ): [Category!]!
+  categoriesConnection(
+    where: CategoryWhereInput
+    orderBy: CategoryOrderByInput
+    skip: Int
+    after: String
+    before: String
+    first: Int
+    last: Int
+  ): CategoryConnection!
+}
+
+type Category implements Node{
+  id: ID! @unique
+  name: String! 
+  posts(
+    where: PostWhereInput
+    orderBy: PostOrderByInput
+    skip: Int
+    after: String
+    before: String
+    first: Int
+    last: Int
+  ):[Post!]!
+  postsConnection(
+    where: PostWhereInput
+    orderBy: PostOrderByInput
+    skip: Int
+    after: String
+    before: String
+    first: Int
+    last: Int
+  ): PostConnection!
+}
+
+enum Role {
+  USER
+  ADMIN
 }
