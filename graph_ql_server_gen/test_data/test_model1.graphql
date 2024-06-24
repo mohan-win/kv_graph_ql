@@ -90,7 +90,7 @@ type Mutation {
   ): User
   deleteUser(where: UserWhereUniqueInput!): User
   updateManyUsersConnection(
-    where: UserManyWhereInput! 
+    where: UserWhereInput! 
     data: UserUpdateManyInput!
     skip: Int
     after: ID
@@ -99,7 +99,7 @@ type Mutation {
     last: Int
   ): UserConnection!
   deleteManyUsersConnection(
-    where: UserManyWhereInput!
+    where: UserWhereInput!
     skip: Int
     after: ID
     before: ID
@@ -114,7 +114,7 @@ type Mutation {
     ): Profile
   deleteProfile(where: ProfileWhereUniqueInput!): Profile
   updateManyProfilesConnection(
-    where: ProfileManyWhereInput!
+    where: ProfileWhereInput!
     data: ProfileUpdateManyInput!
     skip: Int
     after: ID
@@ -123,7 +123,7 @@ type Mutation {
     last: Int
   ): ProfileConnection!
   deleteManyProfilesConnection(
-    where: ProfileManyWhereInput!
+    where: ProfileWhereInput!
     skip: Int
     after: ID
     before: ID
@@ -138,7 +138,7 @@ type Mutation {
     ): Post
   deletePost(where: PostWhereUniqueInput!): Post
   updateManyPostsConnection(
-    where: PostManyWhereInput!
+    where: PostWhereInput!
     data: PostUpdateManyInput!
     skip: Int
     after: ID
@@ -147,7 +147,7 @@ type Mutation {
     last: Int
   ): PostConnection!
   deleteManyPostsConnection(
-    where: PostManyWhereInput!
+    where: PostWhereInput!
     skip: Int
     after: ID
     before: ID
@@ -162,7 +162,7 @@ type Mutation {
     ): Category
   deleteCategory(where: CategoryWhereUniqueInput!): Category
   updateManyCategoriesConnection(
-    where: CategoryManyWhereInput!
+    where: CategoryWhereInput!
     data: CategoryUpdateManyInput!
     skip: Int
     after: ID
@@ -171,7 +171,7 @@ type Mutation {
     last: Int
   ): CategoryConnection!
   deleteManyCategoriesConnection(
-    where: CategoryManyWhereInput!
+    where: CategoryWhereInput!
     skip: Int
     after: ID
     before: ID
@@ -341,18 +341,15 @@ input UserWhereInput {
   posts_is_null: PostWhereInput # is the relation field null or empty ?
 }
 
-type UserWhereUniqueInput {
+input UserWhereUniqueInput {
+  id: ID
+  email: String
+}
+
+input UserOrderByInput {
 
 }
 
-type UserManyWhereInput {
-
-}
-
-type UserOrderByInput {
-
-}
-
-type UserConnection {
+input UserConnection {
 
 }
