@@ -270,3 +270,89 @@ enum Role {
   USER
   ADMIN
 }
+
+input UserWhereInput {
+  # Logical AND on all given filters
+  AND: [UserWhereInput!]
+  # Logical OR on all given filters
+  OR: [UserWhereInput!]
+  # Logical NOT on all given filters combined by AND.
+  NOT: [UserWhereInput!]
+
+  id: String # equals
+  id_not: String # not equals
+  id_contains: String # contains substring
+  id_not_contains: String # doesn't contain substring
+  id_starts_with: String
+  id_not_starts_with: String
+  id_ends_with: String
+  id_not_ends_with: String
+  id_lt: String # less than
+  id_lte: String # less than or equal
+  id_gt: String # greater than
+  id_gte: String # greater than or equal
+  id_in: [String] # in list
+  id_not_in: [String] # not in list
+
+  email: String # equals
+  email_not: String # not equals
+  email_contains: String # contains substring
+  email_not_contains: String # doesn't contain substring
+  email_starts_with: String
+  email_not_starts_with: String
+  email_ends_with: String
+  email_not_ends_with: String
+  email_lt: String # less than
+  email_lte: String # less than or equal
+  email_gt: String # greater than
+  email_gte: String # greater than or equal
+  email_in: [String] # in list
+  email_not_in: [String] # not in list
+
+  name: String # equals
+  name_not: String # not equals
+  name_contains: String # contains substring
+  name_not_contains: String # doesn't contain substring
+  name_starts_with: String
+  name_not_starts_with: String
+  name_ends_with: String
+  name_not_ends_with: String
+  name_lt: String # less than
+  name_lte: String # less than or equal
+  name_gt: String # greater than
+  name_gte: String # greater than or equal
+  name_in: [String] # in list
+  name_not_in: [String] # not in list
+
+  nickNames_contains: String # contains single scalar T
+  nickNames_contains_every: [String] # contains all scalar T
+  nickNames_contains_some: [String] # contains atleast one scalar T
+
+  role: Role # equals
+  role_not: Role # not equals
+  role_in: [Role] # in list
+  role_not_in: [Role] # not in list
+
+  profile: ProfileWhereInput # condition must be true for related node.
+
+  posts_every: PostWhereInput # condition must be true for all nodes.
+  posts_some: PostWhereInput # condition must be true for atleast 1 node
+  posts_none: PostWhereInput # condition must be false for all nodes
+  posts_is_null: PostWhereInput # is the relation field null or empty ?
+}
+
+type UserWhereUniqueInput {
+
+}
+
+type UserManyWhereInput {
+
+}
+
+type UserOrderByInput {
+
+}
+
+type UserConnection {
+
+}
