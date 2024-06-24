@@ -1,0 +1,950 @@
+type Query {
+  """Retrieve multiple hotels"""
+  hotels(
+    where: HotelWhereInput
+    orderBy: HotelOrderByInput
+    skip: Int
+    after: String
+    before: String
+    first: Int
+    last: Int
+    stage: Stage! = DRAFT
+
+    """
+    Defines which locales should be returned.
+    
+    Note that `Hotel` is a model without localized fields and will not be affected directly by this argument, however the locales will be passed on to any relational fields in the query's subtree for filtering.
+    For related models with localized fields in the query's subtree, the first locale matching the provided list of locales will be returned, entries with non matching locales will be filtered out.
+    
+    This argument may be overwritten by another locales definition in a relational child field, this will effectively use the overwritten argument for the affected query's subtree.
+    """
+    locales: [Locale!]! = [en]
+  ): [Hotel!]!
+
+  """Retrieve a single hotel"""
+  hotel(
+    where: HotelWhereUniqueInput!
+    stage: Stage! = DRAFT
+
+    """
+    Defines which locales should be returned.
+    
+    Note that `Hotel` is a model without localized fields and will not be affected directly by this argument, however the locales will be passed on to any relational fields in the query's subtree for filtering.
+    For related models with localized fields in the query's subtree, the first locale matching the provided list of locales will be returned, entries with non matching locales will be filtered out.
+    
+    This argument may be overwritten by another locales definition in a relational child field, this will effectively use the overwritten argument for the affected query's subtree.
+    """
+    locales: [Locale!]! = [en]
+  ): Hotel
+
+  """Retrieve multiple hotels using the Relay connection interface"""
+  hotelsConnection(
+    where: HotelWhereInput
+    orderBy: HotelOrderByInput
+    skip: Int
+    after: String
+    before: String
+    first: Int
+    last: Int
+    stage: Stage! = DRAFT
+
+    """
+    Defines which locales should be returned.
+    
+    Note that `Hotel` is a model without localized fields and will not be affected directly by this argument, however the locales will be passed on to any relational fields in the query's subtree for filtering.
+    For related models with localized fields in the query's subtree, the first locale matching the provided list of locales will be returned, entries with non matching locales will be filtered out.
+    
+    This argument may be overwritten by another locales definition in a relational child field, this will effectively use the overwritten argument for the affected query's subtree.
+    """
+    locales: [Locale!]! = [en]
+  ): HotelConnection!
+}
+
+type Mutation {
+
+  """Create one hotel"""
+  createHotel(data: HotelCreateInput!): Hotel
+
+  """Update one hotel"""
+  updateHotel(where: HotelWhereUniqueInput!, data: HotelUpdateInput!): Hotel
+
+  """Delete one hotel from _all_ existing stages. Returns deleted document."""
+  deleteHotel(
+    """Document to delete"""
+    where: HotelWhereUniqueInput!
+  ): Hotel
+
+  """Upsert one hotel"""
+  upsertHotel(where: HotelWhereUniqueInput!, upsert: HotelUpsertInput!): Hotel
+
+  """Update many Hotel documents"""
+  updateManyHotelsConnection(
+    """Documents to apply update on"""
+    where: HotelManyWhereInput
+
+    """Updates to document content"""
+    data: HotelUpdateManyInput!
+    skip: Int
+    first: Int
+    last: Int
+    before: ID
+    after: ID
+  ): HotelConnection!
+
+  """Delete many Hotel documents, return deleted documents"""
+  deleteManyHotelsConnection(
+    """Documents to delete"""
+    where: HotelManyWhereInput
+    skip: Int
+    first: Int
+    last: Int
+    before: ID
+    after: ID
+  ): HotelConnection!
+}
+
+type Hotel implements Node & Entity {
+  """The unique identifier"""
+  id: ID!
+
+  """The time the document was created"""
+  createdAt: DateTime!
+
+  """The time the document was updated"""
+  updatedAt: DateTime!
+
+  """The time the document was published. Null on documents in draft stage."""
+  publishedAt: DateTime
+  name: String!
+  description: String
+  rooms: Int
+  amenities: [String!]!
+  phone: String
+  website: String
+
+  destinations(
+    where: DestinationWhereInput
+    orderBy: DestinationOrderByInput
+    skip: Int
+    after: String
+    before: String
+    first: Int
+    last: Int
+
+    """
+    Allows to optionally override locale filtering behaviour in the query's subtree.
+    
+    Note that `destinations` is a model without localized fields and will not be affected directly by this argument, however the locales will be passed on to any relational fields in the query's subtree for filtering.
+    For related models with localized fields in the query's subtree, the first locale matching the provided list of locales will be returned, entries with non matching locales will be filtered out.
+    
+    This argument will overwrite any existing locale filtering defined in the query's tree for the subtree.
+    """
+    locales: [Locale!]
+
+    """
+    Sets the locale of the resolved parent document as the only locale in the query's subtree.
+    
+    Note that `destinations` is a model without localized fields and will not be affected directly by this argument, however the locale will be passed on to any relational fields in the query's subtree for filtering.
+    For related models with localized fields in the query's subtree, the first locale matching the provided list of locales will be returned, entries with non matching locales will be filtered out.
+    
+    This argument will affect any existing locale filtering defined in the query's tree for the subtree.
+    """
+    forceParentLocale: Boolean
+  ): [Destination!]!
+
+  reviews(
+    where: ReviewWhereInput
+    orderBy: ReviewOrderByInput
+    skip: Int
+    after: String
+    before: String
+    first: Int
+    last: Int
+
+    """
+    Allows to optionally override locale filtering behaviour in the query's subtree.
+    
+    Note that `reviews` is a model without localized fields and will not be affected directly by this argument, however the locales will be passed on to any relational fields in the query's subtree for filtering.
+    For related models with localized fields in the query's subtree, the first locale matching the provided list of locales will be returned, entries with non matching locales will be filtered out.
+    
+    This argument will overwrite any existing locale filtering defined in the query's tree for the subtree.
+    """
+    locales: [Locale!]
+
+    """
+    Sets the locale of the resolved parent document as the only locale in the query's subtree.
+    
+    Note that `reviews` is a model without localized fields and will not be affected directly by this argument, however the locale will be passed on to any relational fields in the query's subtree for filtering.
+    For related models with localized fields in the query's subtree, the first locale matching the provided list of locales will be returned, entries with non matching locales will be filtered out.
+    
+    This argument will affect any existing locale filtering defined in the query's tree for the subtree.
+    """
+    forceParentLocale: Boolean
+  ): [Review!]!
+}
+
+input HotelConnectInput {
+  """Document to connect"""
+  where: HotelWhereUniqueInput!
+
+  """
+  Allow to specify document position in list of connected documents, will default to appending at end of list
+  """
+  position: ConnectPositionInput
+}
+
+
+"""A connection to a list of items."""
+type HotelConnection {
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """A list of edges."""
+  edges: [HotelEdge!]!
+  aggregate: Aggregate!
+}
+
+input HotelCreateInput {
+  createdAt: DateTime
+  updatedAt: DateTime
+  name: String!
+  description: String
+  rooms: Int
+  amenities: [String!]
+  phone: String
+  website: String
+  destinations: DestinationCreateManyInlineInput
+  photos: AssetCreateManyInlineInput
+  reviews: ReviewCreateManyInlineInput
+}
+
+input HotelCreateManyInlineInput {
+  """Create and connect multiple existing Hotel documents"""
+  create: [HotelCreateInput!]
+
+  """Connect multiple existing Hotel documents"""
+  connect: [HotelWhereUniqueInput!]
+}
+
+input HotelCreateOneInlineInput {
+  """Create and connect one Hotel document"""
+  create: HotelCreateInput
+
+  """Connect one existing Hotel document"""
+  connect: HotelWhereUniqueInput
+}
+
+"""An edge in a connection."""
+type HotelEdge {
+  """The item at the end of the edge."""
+  node: Hotel!
+
+  """A cursor for use in pagination."""
+  cursor: String!
+}
+
+
+"""Identifies documents"""
+input HotelManyWhereInput {
+  """Contains search across all appropriate fields."""
+  _search: String
+
+  """Logical AND on all given filters."""
+  AND: [HotelWhereInput!]
+
+  """Logical OR on all given filters."""
+  OR: [HotelWhereInput!]
+
+  """Logical NOT on all given filters combined by AND."""
+  NOT: [HotelWhereInput!]
+  documentInStages_every: HotelWhereStageInput
+  documentInStages_some: HotelWhereStageInput
+  documentInStages_none: HotelWhereStageInput
+  id: ID
+
+  """Any other value that exists and is not equal to the given value."""
+  id_not: ID
+
+  """All values that are contained in given list."""
+  id_in: [ID]
+
+  """All values that are not contained in given list."""
+  id_not_in: [ID]
+
+  """All values containing the given string."""
+  id_contains: ID
+
+  """All values not containing the given string."""
+  id_not_contains: ID
+
+  """All values starting with the given string."""
+  id_starts_with: ID
+
+  """All values not starting with the given string."""
+  id_not_starts_with: ID
+
+  """All values ending with the given string."""
+  id_ends_with: ID
+
+  """All values not ending with the given string"""
+  id_not_ends_with: ID
+  createdAt: DateTime
+
+  """Any other value that exists and is not equal to the given value."""
+  createdAt_not: DateTime
+
+  """All values that are contained in given list."""
+  createdAt_in: [DateTime]
+
+  """All values that are not contained in given list."""
+  createdAt_not_in: [DateTime]
+
+  """All values less than the given value."""
+  createdAt_lt: DateTime
+
+  """All values less than or equal the given value."""
+  createdAt_lte: DateTime
+
+  """All values greater than the given value."""
+  createdAt_gt: DateTime
+
+  """All values greater than or equal the given value."""
+  createdAt_gte: DateTime
+  updatedAt: DateTime
+
+  """Any other value that exists and is not equal to the given value."""
+  updatedAt_not: DateTime
+
+  """All values that are contained in given list."""
+  updatedAt_in: [DateTime]
+
+  """All values that are not contained in given list."""
+  updatedAt_not_in: [DateTime]
+
+  """All values less than the given value."""
+  updatedAt_lt: DateTime
+
+  """All values less than or equal the given value."""
+  updatedAt_lte: DateTime
+
+  """All values greater than the given value."""
+  updatedAt_gt: DateTime
+
+  """All values greater than or equal the given value."""
+  updatedAt_gte: DateTime
+  publishedAt: DateTime
+
+  """Any other value that exists and is not equal to the given value."""
+  publishedAt_not: DateTime
+
+  """All values that are contained in given list."""
+  publishedAt_in: [DateTime]
+
+  """All values that are not contained in given list."""
+  publishedAt_not_in: [DateTime]
+
+  """All values less than the given value."""
+  publishedAt_lt: DateTime
+
+  """All values less than or equal the given value."""
+  publishedAt_lte: DateTime
+
+  """All values greater than the given value."""
+  publishedAt_gt: DateTime
+
+  """All values greater than or equal the given value."""
+  publishedAt_gte: DateTime
+  name: String
+
+  """Any other value that exists and is not equal to the given value."""
+  name_not: String
+
+  """All values that are contained in given list."""
+  name_in: [String]
+
+  """All values that are not contained in given list."""
+  name_not_in: [String]
+
+  """All values containing the given string."""
+  name_contains: String
+
+  """All values not containing the given string."""
+  name_not_contains: String
+
+  """All values starting with the given string."""
+  name_starts_with: String
+
+  """All values not starting with the given string."""
+  name_not_starts_with: String
+
+  """All values ending with the given string."""
+  name_ends_with: String
+
+  """All values not ending with the given string"""
+  name_not_ends_with: String
+  description: String
+
+  """Any other value that exists and is not equal to the given value."""
+  description_not: String
+
+  """All values that are contained in given list."""
+  description_in: [String]
+
+  """All values that are not contained in given list."""
+  description_not_in: [String]
+
+  """All values containing the given string."""
+  description_contains: String
+
+  """All values not containing the given string."""
+  description_not_contains: String
+
+  """All values starting with the given string."""
+  description_starts_with: String
+
+  """All values not starting with the given string."""
+  description_not_starts_with: String
+
+  """All values ending with the given string."""
+  description_ends_with: String
+
+  """All values not ending with the given string"""
+  description_not_ends_with: String
+  rooms: Int
+
+  """Any other value that exists and is not equal to the given value."""
+  rooms_not: Int
+
+  """All values that are contained in given list."""
+  rooms_in: [Int]
+
+  """All values that are not contained in given list."""
+  rooms_not_in: [Int]
+
+  """All values less than the given value."""
+  rooms_lt: Int
+
+  """All values less than or equal the given value."""
+  rooms_lte: Int
+
+  """All values greater than the given value."""
+  rooms_gt: Int
+
+  """All values greater than or equal the given value."""
+  rooms_gte: Int
+
+  """
+  Matches if the field array contains *all* items provided to the filter and order does match
+  """
+  amenities: [String!]
+
+  """
+  Matches if the field array does not contains *all* items provided to the filter or order does not match
+  """
+  amenities_not: [String!]
+
+  """Matches if the field array contains *all* items provided to the filter"""
+  amenities_contains_all: [String!]
+
+  """
+  Matches if the field array contains at least one item provided to the filter
+  """
+  amenities_contains_some: [String!]
+
+  """
+  Matches if the field array does not contain any of the items provided to the filter
+  """
+  amenities_contains_none: [String!]
+  phone: String
+
+  """Any other value that exists and is not equal to the given value."""
+  phone_not: String
+
+  """All values that are contained in given list."""
+  phone_in: [String]
+
+  """All values that are not contained in given list."""
+  phone_not_in: [String]
+
+  """All values containing the given string."""
+  phone_contains: String
+
+  """All values not containing the given string."""
+  phone_not_contains: String
+
+  """All values starting with the given string."""
+  phone_starts_with: String
+
+  """All values not starting with the given string."""
+  phone_not_starts_with: String
+
+  """All values ending with the given string."""
+  phone_ends_with: String
+
+  """All values not ending with the given string"""
+  phone_not_ends_with: String
+  website: String
+
+  """Any other value that exists and is not equal to the given value."""
+  website_not: String
+
+  """All values that are contained in given list."""
+  website_in: [String]
+
+  """All values that are not contained in given list."""
+  website_not_in: [String]
+
+  """All values containing the given string."""
+  website_contains: String
+
+  """All values not containing the given string."""
+  website_not_contains: String
+
+  """All values starting with the given string."""
+  website_starts_with: String
+
+  """All values not starting with the given string."""
+  website_not_starts_with: String
+
+  """All values ending with the given string."""
+  website_ends_with: String
+
+  """All values not ending with the given string"""
+  website_not_ends_with: String
+  createdBy: UserWhereInput
+  updatedBy: UserWhereInput
+  publishedBy: UserWhereInput
+  destinations_every: DestinationWhereInput
+  destinations_some: DestinationWhereInput
+  destinations_none: DestinationWhereInput
+  photos_every: AssetWhereInput
+  photos_some: AssetWhereInput
+  photos_none: AssetWhereInput
+  reviews_every: ReviewWhereInput
+  reviews_some: ReviewWhereInput
+  reviews_none: ReviewWhereInput
+  scheduledIn_every: ScheduledOperationWhereInput
+  scheduledIn_some: ScheduledOperationWhereInput
+  scheduledIn_none: ScheduledOperationWhereInput
+}
+
+enum HotelOrderByInput {
+  id_ASC
+  id_DESC
+  createdAt_ASC
+  createdAt_DESC
+  updatedAt_ASC
+  updatedAt_DESC
+  publishedAt_ASC
+  publishedAt_DESC
+  name_ASC
+  name_DESC
+  description_ASC
+  description_DESC
+  rooms_ASC
+  rooms_DESC
+  amenities_ASC
+  amenities_DESC
+  phone_ASC
+  phone_DESC
+  website_ASC
+  website_DESC
+}
+
+input HotelUpdateInput {
+  name: String
+  description: String
+  rooms: Int
+  amenities: [String!]
+  phone: String
+  website: String
+  destinations: DestinationUpdateManyInlineInput
+  photos: AssetUpdateManyInlineInput
+  reviews: ReviewUpdateManyInlineInput
+}
+
+
+input HotelUpdateManyInlineInput {
+  """Create and connect multiple Hotel documents"""
+  create: [HotelCreateInput!]
+
+  """Connect multiple existing Hotel documents"""
+  connect: [HotelConnectInput!]
+
+  """
+  Override currently-connected documents with multiple existing Hotel documents
+  """
+  set: [HotelWhereUniqueInput!]
+
+  """Update multiple Hotel documents"""
+  update: [HotelUpdateWithNestedWhereUniqueInput!]
+
+  """Upsert multiple Hotel documents"""
+  upsert: [HotelUpsertWithNestedWhereUniqueInput!]
+
+  """Disconnect multiple Hotel documents"""
+  disconnect: [HotelWhereUniqueInput!]
+
+  """Delete multiple Hotel documents"""
+  delete: [HotelWhereUniqueInput!]
+}
+
+input HotelUpdateManyInput {
+  description: String
+  rooms: Int
+  amenities: [String!]
+  phone: String
+  website: String
+}
+
+input HotelUpdateManyWithNestedWhereInput {
+  """Document search"""
+  where: HotelWhereInput!
+
+  """Update many input"""
+  data: HotelUpdateManyInput!
+}
+
+input HotelUpdateOneInlineInput {
+  """Create and connect one Hotel document"""
+  create: HotelCreateInput
+
+  """Update single Hotel document"""
+  update: HotelUpdateWithNestedWhereUniqueInput
+
+  """Upsert single Hotel document"""
+  upsert: HotelUpsertWithNestedWhereUniqueInput
+
+  """Connect existing Hotel document"""
+  connect: HotelWhereUniqueInput
+
+  """Disconnect currently connected Hotel document"""
+  disconnect: Boolean
+
+  """Delete currently connected Hotel document"""
+  delete: Boolean
+}
+
+input HotelUpdateWithNestedWhereUniqueInput {
+  """Unique document search"""
+  where: HotelWhereUniqueInput!
+
+  """Document to update"""
+  data: HotelUpdateInput!
+}
+
+input HotelUpsertInput {
+  """Create document if it didn't exist"""
+  create: HotelCreateInput!
+
+  """Update document if it exists"""
+  update: HotelUpdateInput!
+}
+
+input HotelUpsertWithNestedWhereUniqueInput {
+  """Unique document search"""
+  where: HotelWhereUniqueInput!
+
+  """Upsert data"""
+  data: HotelUpsertInput!
+}
+
+"""
+This contains a set of filters that can be used to compare values internally
+"""
+input HotelWhereComparatorInput {
+  """
+  This field can be used to request to check if the entry is outdated by internal comparison
+  """
+  outdated_to: Boolean
+}
+
+"""Identifies documents"""
+input HotelWhereInput {
+  """Contains search across all appropriate fields."""
+  _search: String
+
+  """Logical AND on all given filters."""
+  AND: [HotelWhereInput!]
+
+  """Logical OR on all given filters."""
+  OR: [HotelWhereInput!]
+
+  """Logical NOT on all given filters combined by AND."""
+  NOT: [HotelWhereInput!]
+  documentInStages_every: HotelWhereStageInput
+  documentInStages_some: HotelWhereStageInput
+  documentInStages_none: HotelWhereStageInput
+  id: ID
+
+  """Any other value that exists and is not equal to the given value."""
+  id_not: ID
+
+  """All values that are contained in given list."""
+  id_in: [ID]
+
+  """All values that are not contained in given list."""
+  id_not_in: [ID]
+
+  """All values containing the given string."""
+  id_contains: ID
+
+  """All values not containing the given string."""
+  id_not_contains: ID
+
+  """All values starting with the given string."""
+  id_starts_with: ID
+
+  """All values not starting with the given string."""
+  id_not_starts_with: ID
+
+  """All values ending with the given string."""
+  id_ends_with: ID
+
+  """All values not ending with the given string"""
+  id_not_ends_with: ID
+  createdAt: DateTime
+
+  """Any other value that exists and is not equal to the given value."""
+  createdAt_not: DateTime
+
+  """All values that are contained in given list."""
+  createdAt_in: [DateTime]
+
+  """All values that are not contained in given list."""
+  createdAt_not_in: [DateTime]
+
+  """All values less than the given value."""
+  createdAt_lt: DateTime
+
+  """All values less than or equal the given value."""
+  createdAt_lte: DateTime
+
+  """All values greater than the given value."""
+  createdAt_gt: DateTime
+
+  """All values greater than or equal the given value."""
+  createdAt_gte: DateTime
+  updatedAt: DateTime
+
+  """Any other value that exists and is not equal to the given value."""
+  updatedAt_not: DateTime
+
+  """All values that are contained in given list."""
+  updatedAt_in: [DateTime]
+
+  """All values that are not contained in given list."""
+  updatedAt_not_in: [DateTime]
+
+  """All values less than the given value."""
+  updatedAt_lt: DateTime
+
+  """All values less than or equal the given value."""
+  updatedAt_lte: DateTime
+
+  """All values greater than the given value."""
+  updatedAt_gt: DateTime
+
+  """All values greater than or equal the given value."""
+  updatedAt_gte: DateTime
+  publishedAt: DateTime
+
+  """Any other value that exists and is not equal to the given value."""
+  publishedAt_not: DateTime
+
+  """All values that are contained in given list."""
+  publishedAt_in: [DateTime]
+
+  """All values that are not contained in given list."""
+  publishedAt_not_in: [DateTime]
+
+  """All values less than the given value."""
+  publishedAt_lt: DateTime
+
+  """All values less than or equal the given value."""
+  publishedAt_lte: DateTime
+
+  """All values greater than the given value."""
+  publishedAt_gt: DateTime
+
+  """All values greater than or equal the given value."""
+  publishedAt_gte: DateTime
+  name: String
+
+  """Any other value that exists and is not equal to the given value."""
+  name_not: String
+
+  """All values that are contained in given list."""
+  name_in: [String]
+
+  """All values that are not contained in given list."""
+  name_not_in: [String]
+
+  """All values containing the given string."""
+  name_contains: String
+
+  """All values not containing the given string."""
+  name_not_contains: String
+
+  """All values starting with the given string."""
+  name_starts_with: String
+
+  """All values not starting with the given string."""
+  name_not_starts_with: String
+
+  """All values ending with the given string."""
+  name_ends_with: String
+
+  """All values not ending with the given string"""
+  name_not_ends_with: String
+  description: String
+
+  """Any other value that exists and is not equal to the given value."""
+  description_not: String
+
+  """All values that are contained in given list."""
+  description_in: [String]
+
+  """All values that are not contained in given list."""
+  description_not_in: [String]
+
+  """All values containing the given string."""
+  description_contains: String
+
+  """All values not containing the given string."""
+  description_not_contains: String
+
+  """All values starting with the given string."""
+  description_starts_with: String
+
+  """All values not starting with the given string."""
+  description_not_starts_with: String
+
+  """All values ending with the given string."""
+  description_ends_with: String
+
+  """All values not ending with the given string"""
+  description_not_ends_with: String
+  rooms: Int
+
+  """Any other value that exists and is not equal to the given value."""
+  rooms_not: Int
+
+  """All values that are contained in given list."""
+  rooms_in: [Int]
+
+  """All values that are not contained in given list."""
+  rooms_not_in: [Int]
+
+  """All values less than the given value."""
+  rooms_lt: Int
+
+  """All values less than or equal the given value."""
+  rooms_lte: Int
+
+  """All values greater than the given value."""
+  rooms_gt: Int
+
+  """All values greater than or equal the given value."""
+  rooms_gte: Int
+
+  """
+  Matches if the field array contains *all* items provided to the filter and order does match
+  """
+  amenities: [String!]
+
+  """
+  Matches if the field array does not contains *all* items provided to the filter or order does not match
+  """
+  amenities_not: [String!]
+
+  """Matches if the field array contains *all* items provided to the filter"""
+  amenities_contains_all: [String!]
+
+  """
+  Matches if the field array contains at least one item provided to the filter
+  """
+  amenities_contains_some: [String!]
+
+  """
+  Matches if the field array does not contain any of the items provided to the filter
+  """
+  amenities_contains_none: [String!]
+  phone: String
+
+  """Any other value that exists and is not equal to the given value."""
+  phone_not: String
+
+  """All values that are contained in given list."""
+  phone_in: [String]
+
+  """All values that are not contained in given list."""
+  phone_not_in: [String]
+
+  """All values containing the given string."""
+  phone_contains: String
+
+  """All values not containing the given string."""
+  phone_not_contains: String
+
+  """All values starting with the given string."""
+  phone_starts_with: String
+
+  """All values not starting with the given string."""
+  phone_not_starts_with: String
+
+  """All values ending with the given string."""
+  phone_ends_with: String
+
+  """All values not ending with the given string"""
+  phone_not_ends_with: String
+  website: String
+
+  """Any other value that exists and is not equal to the given value."""
+  website_not: String
+
+  """All values that are contained in given list."""
+  website_in: [String]
+
+  """All values that are not contained in given list."""
+  website_not_in: [String]
+
+  """All values containing the given string."""
+  website_contains: String
+
+  """All values not containing the given string."""
+  website_not_contains: String
+
+  """All values starting with the given string."""
+  website_starts_with: String
+
+  """All values not starting with the given string."""
+  website_not_starts_with: String
+
+  """All values ending with the given string."""
+  website_ends_with: String
+
+  """All values not ending with the given string"""
+  website_not_ends_with: String
+  createdBy: UserWhereInput
+  updatedBy: UserWhereInput
+  publishedBy: UserWhereInput
+  destinations_every: DestinationWhereInput
+  destinations_some: DestinationWhereInput
+  destinations_none: DestinationWhereInput
+  photos_every: AssetWhereInput
+  photos_some: AssetWhereInput
+  photos_none: AssetWhereInput
+  reviews_every: ReviewWhereInput
+  reviews_some: ReviewWhereInput
+  reviews_none: ReviewWhereInput
+  scheduledIn_every: ScheduledOperationWhereInput
+  scheduledIn_some: ScheduledOperationWhereInput
+  scheduledIn_none: ScheduledOperationWhereInput
+}
+
+"""References Hotel record uniquely"""
+input HotelWhereUniqueInput {
+  id: ID
+  name: String
+}
