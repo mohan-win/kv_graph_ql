@@ -6,8 +6,8 @@ type Query {
     where: UserWhereInput
     orderBy: UserOrderByInput
     skip: Int
-    after: String
-    before: String
+    after: ID
+    before: ID
     first: Int
     last: Int
   ): [User!]!
@@ -15,8 +15,8 @@ type Query {
     where: UserWhereInput
     orderBy:UserOrderByInput
     skip: Int
-    after: String
-    before: String
+    after: ID
+    before: ID
     first: Int
     last: Int): UserConnection!
   # Profile related top-level queries
@@ -25,8 +25,8 @@ type Query {
     where: ProfileWhereInput
     orderBy: ProfileWhereInput
     skip: Int
-    after: String
-    before: String
+    after: ID
+    before: ID
     first: Int
     last: Int
   ): [Profile!]!
@@ -34,8 +34,8 @@ type Query {
     where: ProfileWhereInput
     orderBy: ProfileWhereInput
     skip: Int
-    after: String
-    before: String
+    after: ID
+    before: ID
     first: Int
     last: Int
   ): ProfileConnection!
@@ -45,8 +45,8 @@ type Query {
     where: PostWhereInput,
     orderBy: PostOrderByInput,
     skip: Int
-    after: String
-    before: String
+    after: ID
+    before: ID
     first: Int
     last: Int
   ): [Post!]!
@@ -54,8 +54,8 @@ type Query {
     where: PostWhereInput,
     orderBy: PostOrderByInput,
     skip: Int
-    after: String
-    before: String
+    after: ID
+    before: ID
     first: Int
     last: Int
   ): [Post!]!
@@ -65,8 +65,8 @@ type Query {
     where: CategoryWhereInput
     orderBy: CategoryOrderByInput
     skip: Int
-    after: String
-    before: String
+    after: ID
+    before: ID
     first: Int
     last: Int
   ): [Category!]!
@@ -74,8 +74,107 @@ type Query {
     where: CategoryWhereInput
     orderBy: CategoryOrderByInput
     skip: Int
-    after: String
-    before: String
+    after: ID
+    before: ID
+    first: Int
+    last: Int
+  ): CategoryConnection!
+}
+
+type Mutation {
+  # User
+  createUser(data: UserCreateInput!): User
+  updateUser(
+    where: UserWhereUniqueInput!
+    data: UserUpdateInput!
+  ): User
+  deleteUser(where: UserWhereUniqueInput!): User
+  updateManyUsersConnection(
+    where: UserManyWhereInput! 
+    data: UserUpdateManyInput!
+    skip: Int
+    after: ID
+    before: ID
+    first: Int
+    last: Int
+  ): UserConnection!
+  deleteManyUsersConnection(
+    where: UserManyWhereInput!
+    skip: Int
+    after: ID
+    before: ID
+    first: Int
+    last: Int
+    ): UserConnection!
+  # Profile
+  createProfile(data: ProfileCreateInput!): Profile
+  updateProfile(
+    where: ProfileWhereUniqueInput! 
+    data: ProfileUpdateInput!
+    ): Profile
+  deleteProfile(where: ProfileWhereUniqueInput!): Profile
+  updateManyProfilesConnection(
+    where: ProfileManyWhereInput!
+    data: ProfileUpdateManyInput!
+    skip: Int
+    after: ID
+    before: ID
+    first: Int
+    last: Int
+  ): ProfileConnection!
+  deleteManyProfilesConnection(
+    where: ProfileManyWhereInput!
+    skip: Int
+    after: ID
+    before: ID
+    first: Int
+    last: Int
+  ): ProfileConnection!
+  # Post
+  createPost(data: PostCreateInput!): Post
+  updatePost(
+    where: PostWhereUniqueInput! 
+    data: PostUpdateInput!
+    ): Post
+  deletePost(where: PostWhereUniqueInput!): Post
+  updateManyPostsConnection(
+    where: PostManyWhereInput!
+    data: PostUpdateManyInput!
+    skip: Int
+    after: ID
+    before: ID
+    first: Int
+    last: Int
+  ): PostConnection!
+  deleteManyPostsConnection(
+    where: PostManyWhereInput!
+    skip: Int
+    after: ID
+    before: ID
+    first: Int
+    last: Int
+  ): PostConnection!
+  # Category
+  createCategory(data: CategoryCreateInput!): Category
+  updateCategory(
+    where: CategoryWhereUniqueInput! 
+    data: CategoryUpdateInput!
+    ): Category
+  deleteCategory(where: CategoryWhereUniqueInput!): Category
+  updateManyCategoriesConnection(
+    where: CategoryManyWhereInput!
+    data: CategoryUpdateManyInput!
+    skip: Int
+    after: ID
+    before: ID
+    first: Int
+    last: Int
+  ): CategoryConnection!
+  deleteManyCategoriesConnection(
+    where: CategoryManyWhereInput!
+    skip: Int
+    after: ID
+    before: ID
     first: Int
     last: Int
   ): CategoryConnection!
@@ -95,8 +194,8 @@ type User implements Node {
     where: PostWhereInput
     orderBy: PostOrderByInput
     skip: Int
-    after: String
-    before: String
+    after: ID
+    before: ID
     first: Int
     last: Int
   ):[Post!]!
@@ -104,8 +203,8 @@ type User implements Node {
     where: PostWhereInput
     orderBy: PostOrderByInput
     skip: Int
-    after: String
-    before: String
+    after: ID
+    before: ID
     first: Int
     last: Int
   ): PostConnection!
@@ -128,8 +227,8 @@ type Post implements Node {
     where: CategoryWhereInput
     orderBy: CategoryOrderByInput
     skip: Int
-    after: String
-    before: String
+    after: ID
+    before: ID
     first: Int
     last: Int
   ): [Category!]!
@@ -137,8 +236,8 @@ type Post implements Node {
     where: CategoryWhereInput
     orderBy: CategoryOrderByInput
     skip: Int
-    after: String
-    before: String
+    after: ID
+    before: ID
     first: Int
     last: Int
   ): CategoryConnection!
@@ -160,8 +259,8 @@ type Category implements Node{
     where: PostWhereInput
     orderBy: PostOrderByInput
     skip: Int
-    after: String
-    before: String
+    after: ID
+    before: ID
     first: Int
     last: Int
   ): PostConnection!
