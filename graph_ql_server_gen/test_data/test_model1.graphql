@@ -173,6 +173,13 @@ type Mutation {
     data: CategoryUpdateInput!
     ): Category
   deleteCategory(where: CategoryWhereUniqueInput!): Category
+  upsertCategory(
+    where: CategoryWhereUniqueInput!
+    data: CategoryUpsertInput!
+  ): Category
+  """
+  NOTE: The updateMany interface is not relevant for category,
+  becoz all the fields in Category are unique fields.
   updateManyCategoriesConnection(
     where: CategoryWhereInput!
     data: CategoryUpdateManyInput!
@@ -182,6 +189,7 @@ type Mutation {
     first: Int
     last: Int
   ): CategoryConnection!
+  """
   deleteManyCategoriesConnection(
     where: CategoryWhereInput!
     skip: Int
@@ -246,29 +254,6 @@ type User implements Node {
     skip: Int
     after: ID
     before: ID
-    first: Int
-    last: Int
-  ):[Post!]!
-  postsConnection(
-    where: PostWhereInput
-    orderBy: PostOrderByInput
-    skip: Int
-    after: ID
-    before: ID
-    first: Int
-    last: Int
-  ): PostConnection!
-}
-
-type Category implements Node{
-  id: ID! @unique
-  name: String! @unique
-  posts(
-    where: PostWhereInput
-    orderBy: PostOrderByInput
-    skip: Int
-    after: String
-    before: String
     first: Int
     last: Int
   ):[Post!]!
@@ -369,21 +354,6 @@ input UserConnectInput {
   where: UserWhereUniqueInput!
   # specify the position in the list of connected users, by-defult will add it to end of the list
   position: ConnectPositionInput
-}
-
-input CategoryCreateInput {
-  name: String!
-  posts: PostCreateManyInlineInput
-}
-
-input CategoryCreateManyInlineInput {
-  create: [CategoryCreateInput!]
-  connect: [CategoryWhereUniqueInput!]
-}
-
-input CategoryCreateOneInlineInput {
-  create: CategoryCreateInput
-  connect: CategoryWhereUniqueInput
 }
 
 input UserWhereInput {
@@ -836,4 +806,158 @@ type PostEdge {
 """ 
 Category
 """
+
+type Category implements Node{
+  id: ID! @unique
+  name: String! @unique
+  posts(
+    where: PostWhereInput
+    orderBy: PostOrderByInput
+    skip: Int
+    after: String
+    before: String
+    first: Int
+    last: Int
+  ):[Post!]!
+  postsConnection(
+    where: PostWhereInput
+    orderBy: PostOrderByInput
+    skip: Int
+    after: ID
+    before: ID
+    first: Int
+    last: Int
+  ): PostConnection!
+}
+
+input CategoryCreateInput {
+  name: String!
+  posts: PostCreateManyInlineInput
+}
+
+input CategoryCreateManyInlineInput {
+  create: [CategoryCreateInput!]
+  connect: [CategoryWhereUniqueInput!]
+}
+
+input CategoryCreateOneInlineInput {
+  create: CategoryCreateInput
+  connect: CategoryWhereUniqueInput
+}
+
+"""
+# Not relevant!! Because all fields in category are unique fields.
+input CategoryUpdateManyInput {
+  
+}
+"""
+input CategoryUpdateInput {
+  name: String
+  posts: PostUpdateManyInlineInput
+}
+
+input CategoryUpsertInput {
+  create: CategoryCreateInput
+  update: CategoryUpdateInput
+}
+
+input CategoryUpdateManyInlineInput {
+  create: [CategoryCreateInput!]
+  connect: [CategoryConnectInput!]
+  set: [CategoryWhereUniqueInput!]
+  update: [CategoryUpdateWithNestedWhereUniqueInput!]
+  upsert: [CategoryUpsertWithNestedWhereUniqueInput!]
+  disconnect: [CategoryWhereUniqueInput!]
+  delete: [CategoryWhereUniqueInput!]
+}
+
+input CategoryUpdateOneInlineInput {
+  create: CategoryCreateInput
+  connect: CategoryConnectInput
+  update: CategoryUpdateWithNestedWhereUniqueInput
+  upsert: CategoryUpsertWithNestedWhereUniqueInput
+  disconnect: Boolean
+  delete: Boolean
+}
+
+input CategoryUpdateWithNestedWhereUniqueInput {
+  where: CategoryWhereUniqueInput!
+  data: CategoryUpdateInput!
+}
+
+input CategoryUpsertWithNestedWhereUniqueInput {
+  where: CategoryWhereUniqueInput!
+  data: CategoryUpsertInput!
+}
+
+input CategoryConnectInput {
+  where: CategoryWhereUniqueInput!
+  position: ConnectPositionInput
+}
+
+input CategoryWhereInput {
+  AND: [CategoryWhereInput!]
+  OR: [CategoryWhereInput!]
+  NOT: [CategoryWhereInput!]
+
+  id: String # equals
+  id_not: String # not equals
+  id_contains: String # contains substring
+  id_not_contains: String # doesn't contain substring
+  id_starts_with: String
+  id_not_starts_with: String
+  id_ends_with: String
+  id_not_ends_with: String
+  id_lt: String # less than
+  id_lte: String # less than or equal
+  id_gt: String # greater than
+  id_gte: String # greater than or equal
+  id_in: [String] # in list
+  id_not_in: [String] # not in list
+
+  name: String # equals
+  name_not: String # not equals
+  name_contains: String # contains substring
+  name_not_contains: String # doesn't contain substring
+  name_starts_with: String
+  name_not_starts_with: String
+  name_ends_with: String
+  name_not_ends_with: String
+  name_lt: String # less than
+  name_lte: String # less than or equal
+  name_gt: String # greater than
+  name_gte: String # greater than or equal
+  name_in: [String] # in list
+  name_not_in: [String] # not in list
+
+  posts_every: PostWhereInput # condition must be true for all nodes.
+  posts_some: PostWhereInput # condition must be true for atleast 1 node
+  posts_none: PostWhereInput # condition must be false for all nodes
+  posts_is_null: PostWhereInput # is the relation field null or empty ?
+}
+
+input CategoryWhereUniqueInput {
+  id: ID
+  name: String
+}
+
+enum CategoryOrderByInput {
+  id_ASC,
+  id_DSC,
+  name_ASC,
+  name_DSC
+}
+
+type CategoryConnection {
+  pageInfo: PageInfo!
+
+  edges: [CategoryEdge!]!
+  aggregate: Aggregate!
+}
+
+type CategoryEdge {
+  node: Category!
+  cursor: String!
+}
+
 
