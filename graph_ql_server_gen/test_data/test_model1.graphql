@@ -1,3 +1,6 @@
+scalar DateTime
+directive @unique on FIELD_DEFINITION
+
 type Query {
   node(id: ID!): Node
   # User related top-level queries
