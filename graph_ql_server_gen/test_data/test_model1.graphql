@@ -195,7 +195,7 @@ type Mutation {
 """
 Common Types
 """
-type Node {
+interface Node {
   id: ID!
 }
 
