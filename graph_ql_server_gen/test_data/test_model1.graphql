@@ -92,7 +92,7 @@ type Mutation {
   upsertUser(
     where: UserWhereUniqueInput!
     data: UserUpsertInput!
-  )
+  ): User
   updateManyUsersConnection(
     where: UserWhereInput! 
     data: UserUpdateManyInput!
@@ -120,7 +120,7 @@ type Mutation {
   upsertProfile(
     where: ProfileWhereUniqueInput!
     data: ProfileUpsertInput!
-  )
+  ): User
   updateManyProfilesConnection(
     where: ProfileWhereInput!
     data: ProfileUpdateManyInput!
@@ -145,6 +145,10 @@ type Mutation {
     data: PostUpdateInput!
     ): Post
   deletePost(where: PostWhereUniqueInput!): Post
+  upsertPost(
+    where: PostWhereUniqueInput
+    data: PostUpsertInput
+  ): Post
   updateManyPostsConnection(
     where: PostWhereInput!
     data: PostUpdateManyInput!
@@ -256,33 +260,6 @@ type User implements Node {
   ): PostConnection!
 }
 
-type Post implements Node {
-  id: ID! @unique
-  createdAt: DateTime!
-  updatedAt: DateTime!
-  title: String!
-  published: Boolean
-  author: User!
-  categories(
-    where: CategoryWhereInput
-    orderBy: CategoryOrderByInput
-    skip: Int
-    after: ID
-    before: ID
-    first: Int
-    last: Int
-  ): [Category!]!
-  categoriesConnection(
-    where: CategoryWhereInput
-    orderBy: CategoryOrderByInput
-    skip: Int
-    after: ID
-    before: ID
-    first: Int
-    last: Int
-  ): CategoryConnection!
-}
-
 type Category implements Node{
   id: ID! @unique
   name: String! @unique
@@ -331,17 +308,17 @@ input UserCreateOneInlineInput {
 }
 
 input UserUpdateManyInput {
-  email: String!
+  email: String
   name: String
-  nickNames: [String!]!
-  role: Role!
+  nickNames: [String!]
+  role: Role
 }
 
 input UserUpdateInput {
-  email: String! 
+  email: String 
   name: String
-  nickNames: [String!]! # Let (non-connection / non-relation) array fields generated be always non-null for both array and elements.
-  role: Role!
+  nickNames: [String!]
+  role: Role
   profile: ProfileUpdateOneInlineInput
   posts: PostUpdateManyInlineInput
 }
@@ -392,25 +369,6 @@ input UserConnectInput {
   where: UserWhereUniqueInput!
   # specify the position in the list of connected users, by-defult will add it to end of the list
   position: ConnectPositionInput
-}
-
-input PostCreateInput {
-  createdAt: DateTime!
-  updatedAt: DateTime!
-  title: String!
-  published: Boolean
-  author: UserCreateOneInlineInput!
-  categories: CategoryCreateManyInlineInput
-}
-
-input PostCreateManyInlineInput {
-  create: [PostCreateInput!]
-  connect: [PostWhereUniqueInput!]
-}
-
-input PostCreateOneInlineInput {
-  create: PostCreateInput
-  connect: PostWhereUniqueInput
 }
 
 input CategoryCreateInput {
@@ -557,6 +515,9 @@ input ProfileUpdateManyInput {
 
 input ProfileUpdateInput {
   bio: String
+  # ToDo:: User is mandatory field for profile,
+  # How can we make sure delete / disconnect operation is disabled ?
+  # Should we throw error after the fact ??
   user: UserUpdateOneInlineInput
 }
 
@@ -658,4 +619,221 @@ type ProfileEdge {
   node: Profile!
   cursor: String!
 }
+
+""" 
+Post
+"""
+
+
+type Post implements Node {
+  id: ID! @unique
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  title: String!
+  published: Boolean
+  author: User!
+  categories(
+    where: CategoryWhereInput
+    orderBy: CategoryOrderByInput
+    skip: Int
+    after: ID
+    before: ID
+    first: Int
+    last: Int
+  ): [Category!]!
+  categoriesConnection(
+    where: CategoryWhereInput
+    orderBy: CategoryOrderByInput
+    skip: Int
+    after: ID
+    before: ID
+    first: Int
+    last: Int
+  ): CategoryConnection!
+}
+
+input PostCreateInput {
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  title: String!
+  published: Boolean
+  author: UserCreateOneInlineInput!
+  categories: CategoryCreateManyInlineInput
+}
+
+input PostCreateManyInlineInput {
+  create: [PostCreateInput!]
+  connect: [PostWhereUniqueInput!]
+}
+
+input PostCreateOneInlineInput {
+  create: PostCreateInput
+  connect: PostWhereUniqueInput
+}
+
+input PostUpdateManyInput {
+  createdAt: DateTime
+  updatedAt: DateTime
+  title: String
+  published: Boolean
+}
+
+input PostUpdateInput {
+  createdAt: DateTime
+  updatedAt: DateTime
+  title: String
+  published: Boolean
+  author: UserUpdateOneInlineInput
+  categories: UserUpdateManyInlineInput
+}
+
+input PostUpsertInput {
+  create: PostCreateInput
+  update: PostUpdateInput
+}
+
+input PostUpdateManyInlineInput {
+  create: [PostCreateInput!]
+  connect: [PostConnectInput!]
+  set: [PostWhereUniqueInput!]
+  update: [PostUpdateWithNestedWhereUniqueInput!]
+  upsert: [PostUpsertWithNestedWhereUniqueInput!]
+  disconnect: [PostWhereUniqueInput!]
+  delete: [PostWhereUniqueInput!]
+}
+
+input PostUpdateOneInlineInput {
+  create: PostCreateInput
+  update: PostUpdateWithNestedWhereUniqueInput
+  upsert: PostUpsertWithNestedWhereUniqueInput
+  connect: PostWhereUniqueInput
+  disconnect: Boolean
+  delete: Boolean
+}
+
+input PostUpdateWithNestedWhereUniqueInput {
+  where: PostWhereUniqueInput!
+  data: PostUpdateInput!
+}
+
+input PostUpsertWithNestedWhereUniqueInput {
+  where: PostWhereUniqueInput!
+  data: PostUpsertInput!
+}
+
+input PostConnectInput {
+  where: PostWhereUniqueInput!
+  position: ConnectPositionInput
+}
+
+input PostWhereInput {
+  AND: [PostWhereInput!]
+  OR: [PostWhereInput!]
+  NOT: [PostWhereInput!]
+
+  id: String # equals
+  id_not: String # not equals
+  id_contains: String # contains substring
+  id_not_contains: String # doesn't contain substring
+  id_starts_with: String
+  id_not_starts_with: String
+  id_ends_with: String
+  id_not_ends_with: String
+  id_lt: String # less than
+  id_lte: String # less than or equal
+  id_gt: String # greater than
+  id_gte: String # greater than or equal
+  id_in: [String] # in list
+  id_not_in: [String] # not in list
+
+  createdAt: DateTime
+  """Any other value that exists and is not equal to the given value."""
+  createdAt_not: DateTime
+  """All values that are contained in given list."""
+  createdAt_in: [DateTime]
+  """All values that are not contained in given list."""
+  createdAt_not_in: [DateTime]
+  """All values less than the given value."""
+  createdAt_lt: DateTime
+  """All values less than or equal the given value."""
+  createdAt_lte: DateTime
+  """All values greater than the given value."""
+  createdAt_gt: DateTime
+  """All values greater than or equal the given value."""
+  createdAt_gte: DateTime
+
+  updatedAt: DateTime
+  """Any other value that exists and is not equal to the given value."""
+  updatedAt_not: DateTime
+  """All values that are contained in given list."""
+  updatedAt_in: [DateTime]
+  """All values that are not contained in given list."""
+  updatedAt_not_in: [DateTime]
+  """All values less than the given value."""
+  updatedAt_lt: DateTime
+  """All values less than or equal the given value."""
+  updatedAt_lte: DateTime
+  """All values greater than the given value."""
+  updatedAt_gt: DateTime
+  """All values greater than or equal the given value."""
+  updatedAt_gte: DateTime
+
+  title: String # equals
+  title_not: String # not equals
+  title_contains: String # contains substring
+  title_not_contains: String # doesn't contain substring
+  title_starts_with: String
+  title_not_starts_with: String
+  title_ends_with: String
+  title_not_ends_with: String
+  title_lt: String # less than
+  title_lte: String # less than or equal
+  title_gt: String # greater than
+  title_gte: String # greater than or equal
+  title_in: [String] # in list
+  title_not_in: [String] # not in list
+
+  published: Boolean
+  published_not: Boolean
+
+  author: UserWhereInput
+
+  categories_every: CategoryWhereInput # condition must be ture for all nodes.
+  categories_some: CategoryWhereInput # condition must be true for atleast 1 node.
+  categories_none: CategoryWhereInput # condition must be false for all nodes.
+  categories_is_null: CategoryWhereInput # is this relation field null or empty
+}
+
+input PostWhereUniqueInput {
+  id: ID
+}
+
+enum PostOrderByInput {
+  id_ASC,
+  id_DSC,
+  createdAt_ASC,
+  createdAt_DSC,
+  updatedAt_ASC,
+  updatedAt_DSC,
+  title_ASC,
+  title_DSC,
+  published_ASC,
+  published_DSC,
+}
+
+type PostConnection {
+  pageInfo: PageInfo!
+
+  edges: [PostEdge!]!
+  aggregate: Aggregate!
+}
+
+type PostEdge {
+  node: Post!
+  cursor: String!
+}
+
+""" 
+Category
+"""
 
