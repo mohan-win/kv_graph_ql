@@ -23,7 +23,7 @@ type Query {
   profile(where: ProfileWhereUniqueInput!): Profile
   profiles(
     where: ProfileWhereInput
-    orderBy: ProfileWhereInput
+    orderBy: ProfileOrderByInput
     skip: Int
     after: ID
     before: ID
@@ -32,7 +32,7 @@ type Query {
   ): [Profile!]!
   profilesConnection(
     where: ProfileWhereInput
-    orderBy: ProfileWhereInput
+    orderBy: ProfileOrderByInput
     skip: Int
     after: ID
     before: ID
@@ -89,6 +89,10 @@ type Mutation {
     data: UserUpdateInput!
   ): User
   deleteUser(where: UserWhereUniqueInput!): User
+  upsertUser(
+    where: UserWhereUniqueInput!
+    data: UserUpsertInput!
+  )
   updateManyUsersConnection(
     where: UserWhereInput! 
     data: UserUpdateManyInput!
@@ -113,6 +117,10 @@ type Mutation {
     data: ProfileUpdateInput!
     ): Profile
   deleteProfile(where: ProfileWhereUniqueInput!): Profile
+  upsertProfile(
+    where: ProfileWhereUniqueInput!
+    data: ProfileUpsertInput!
+  )
   updateManyProfilesConnection(
     where: ProfileWhereInput!
     data: ProfileUpdateManyInput!
@@ -180,9 +188,47 @@ type Mutation {
   ): CategoryConnection!
 }
 
+"""
+Common Types
+"""
+
 type Node {
   id: ID!
 }
+
+input ConnectPositionInput {
+  # Connect after the speficied ID
+  after: ID
+  # Connect before the specified ID
+  before: ID
+  # Connect at the first position
+  start: Boolean
+  # Connect at the last position. [default]
+  end:Boolean
+}
+
+type PageInfo {
+  # When paginating forwards, are there more items ?
+  hasNextPage: Boolean!
+  # When paginating backwards, are there more items ?
+  hasPreviousPage: Boolean!
+  # When paginating backwards, cursor to continue
+  startCursor: String
+  # When paginating forwards, cursor to continue
+  endCursor: String
+  # Number of items in current page.
+  pageSize: Int
+}
+
+type Aggregate {
+  count: Int!
+}
+
+
+""" 
+User
+"""
+
 type User implements Node {
   id: ID! @unique
   email: String! @unique
@@ -208,12 +254,6 @@ type User implements Node {
     first: Int
     last: Int
   ): PostConnection!
-}
-
-type Profile implements Node {
-  id: ID! @unique
-  bio: String
-  user: User!
 }
 
 type Post implements Node {
@@ -354,32 +394,6 @@ input UserConnectInput {
   position: ConnectPositionInput
 }
 
-input ConnectPositionInput {
-  # Connect after the speficied ID
-  after: ID
-  # Connect before the specified ID
-  before: ID
-  # Connect at the first position
-  start: Boolean
-  # Connect at the last position. [default]
-  end:Boolean
-}
-
-input ProfileCreateInput {
-  bio: String
-  user: UserCreateOneInlineInput!
-}
-
-input ProfileCreateManyInlineInput {
-  create: [ProfileCreateInput!]
-  connect: [ProfileWhereUniqueInput!]
-}
-
-input ProfileCreateOneInlineInput {
-  create: ProfileCreateInput
-  connect: ProfileWhereUniqueInput
-}
-
 input PostCreateInput {
   createdAt: DateTime!
   updatedAt: DateTime!
@@ -500,6 +514,148 @@ enum UserOrderByInput {
   role_DSC,
 }
 
-input UserConnection {
+type UserConnection {
+  pageInfo: PageInfo!
 
+  edges: [UserEdge!]!
+  aggregate: Aggregate!
 }
+
+type UserEdge {
+  node: User!
+  cursor: String!
+}
+
+""" 
+Profile 
+"""
+
+type Profile implements Node {
+  id: ID! @unique
+  bio: String
+  user: User!
+}
+
+input ProfileCreateInput {
+  bio: String
+  user: UserCreateOneInlineInput!
+}
+
+input ProfileCreateManyInlineInput {
+  create: [ProfileCreateInput!]
+  connect: [ProfileWhereUniqueInput!]
+}
+
+input ProfileCreateOneInlineInput {
+  create: ProfileCreateInput
+  connect: ProfileWhereUniqueInput
+}
+
+input ProfileUpdateManyInput {
+  bio: String
+}
+
+input ProfileUpdateInput {
+  bio: String
+  user: UserUpdateOneInlineInput
+}
+
+input ProfileUpsertInput {
+  create: ProfileCreateInput!
+  update: ProfileUpdateInput!
+}
+
+input ProfileUpdateManyInlineInput {
+  create: [ProfileCreateInput!]
+  connect: [ProfileConnectInput!]
+  set: [ProfileWhereUniqueInput!]
+  update: [ProfileUpdateWithNestedWhereUniqueInput!]
+  upsert: [ProfileUpsertWithNestedWhereUniqueInput!]
+  disconnect: [ProfileWhereUniqueInput!]
+  delete: [ProfileWhereUniqueInput!]
+}
+
+input ProfileUpdateOneInlineInput {
+  create: ProfileCreateInput
+  update: ProfileUpdateWithNestedWhereUniqueInput
+  upsert: ProfileUpsertWithNestedWhereUniqueInput
+  connect: ProfileWhereUniqueInput
+  disconnect: Boolean
+  delete: Boolean
+}
+
+input ProfileUpdateWithNestedWhereUniqueInput {
+  where: ProfileWhereUniqueInput!
+  data: ProfileUpdateInput!
+}
+
+input ProfileUpsertWithNestedWhereUniqueInput {
+  where: ProfileWhereUniqueInput!
+  data: ProfileUpsertInput!
+}
+
+input ProfileConnectInput {
+  where: ProfileWhereUniqueInput!
+  position: ConnectPositionInput
+}
+
+input ProfileWhereInput {
+  AND: [ProfileWhereInput!]
+  OR: [ProfileWhereInput!]
+  NOT: [ProfileWhereInput!]
+
+  id: String # equals
+  id_not: String # not equals
+  id_contains: String # contains substring
+  id_not_contains: String # doesn't contain substring
+  id_starts_with: String
+  id_not_starts_with: String
+  id_ends_with: String
+  id_not_ends_with: String
+  id_lt: String # less than
+  id_lte: String # less than or equal
+  id_gt: String # greater than
+  id_gte: String # greater than or equal
+  id_in: [String] # in list
+  id_not_in: [String] # not in list
+
+  bio: String # equals
+  bio_not: String # not equals
+  bio_contains: String # contains substring
+  bio_not_contains: String # doesn't contain substring
+  bio_starts_with: String
+  bio_not_starts_with: String
+  bio_ends_with: String
+  bio_not_ends_with: String
+  bio_lt: String # less than
+  bio_lte: String # less than or equal
+  bio_gt: String # greater than
+  bio_gte: String # greater than or equal
+  bio_in: [String] # in list
+  bio_not_in: [String] # not in list
+
+  user: UserWhereInput
+}
+
+input ProfileWhereUniqueInput {
+  id: ID
+}
+
+enum ProfileOrderByInput {
+  id_ASC,
+  id_DSC,
+  bio_ASC,
+  bio_DSC,
+}
+
+type ProfileConnection {
+  pageInfo: PageInfo!
+  edges: [ProfileEdge!]!
+  aggregate: Aggregate!
+}
+
+type ProfileEdge {
+  node: Profile!
+  cursor: String!
+}
+
