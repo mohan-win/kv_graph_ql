@@ -185,7 +185,7 @@ type Node {
 }
 type User implements Node {
   id: ID! @unique
-  email: String!
+  email: String! @unique
   name: String
   nickNames: [String!]! # Let (non-connection / non-relation) array fields generated be always non-null for both array and elements.
   role: Role!
@@ -245,7 +245,7 @@ type Post implements Node {
 
 type Category implements Node{
   id: ID! @unique
-  name: String! 
+  name: String! @unique
   posts(
     where: PostWhereInput
     orderBy: PostOrderByInput
@@ -272,7 +272,146 @@ enum Role {
 }
 
 input UserCreateInput {
-  
+  email: String!
+  name: String
+  nickNames: [String!]! 
+  role: Role!
+  profile: ProfileCreateOneInlineInput
+  posts: PostCreateManyInlineInput
+}
+
+input UserCreateManyInlineInput {
+  create: [UserCreateInput!]
+  connect: [UserWhereUniqueInput!]
+}
+
+input UserCreateOneInlineInput {
+  create: UserCreateInput
+  connect: UserWhereUniqueInput
+}
+
+input UserUpdateManyInput {
+  email: String!
+  name: String
+  nickNames: [String!]!
+  role: Role!
+}
+
+input UserUpdateInput {
+  email: String! 
+  name: String
+  nickNames: [String!]! # Let (non-connection / non-relation) array fields generated be always non-null for both array and elements.
+  role: Role!
+  profile: ProfileUpdateOneInlineInput
+  posts: PostUpdateManyInlineInput
+}
+
+input UserUpsertInput {
+  create: UserCreateInput!
+  update: UserUpdateInput!
+}
+
+input UserUpdateManyInlineInput {
+  # Create and connect mutliple users
+  create: [UserCreateInput!]
+  # Connect multiple existing users
+  connect: [UserConnectInput!]
+  # Override currently-connected users with multiple existing users
+  set: [UserWhereUniqueInput!]
+  # Update multiple users
+  update: [UserUpdateWithNestedWhereUniqueInput!]
+  # Upsert multiple user
+  upsert: [UserUpsertWithNestedWhereUniqueInput!]
+  # Disconnect multiple users
+  disconnect: [UserWhereUniqueInput!]
+  # Delete multiple users
+  delete: [UserWhereUniqueInput!]
+}
+
+input UserUpdateOneInlineInput {
+  create: UserCreateInput
+  update: UserUpdateWithNestedWhereUniqueInput
+  upsert: UserUpsertWithNestedWhereUniqueInput
+  connect: UserWhereUniqueInput
+  disconnect: Boolean
+  delete: Boolean
+}
+
+input UserUpdateWithNestedWhereUniqueInput {
+  where: UserWhereUniqueInput!
+  data: UserUpdateInput!
+}
+
+input UserUpsertWithNestedWhereUniqueInput {
+  where: UserWhereUniqueInput!
+  data: UserUpsertInput!
+}
+
+input UserConnectInput {
+  # User to connect
+  where: UserWhereUniqueInput!
+  # specify the position in the list of connected users, by-defult will add it to end of the list
+  position: ConnectPositionInput
+}
+
+input ConnectPositionInput {
+  # Connect after the speficied ID
+  after: ID
+  # Connect before the specified ID
+  before: ID
+  # Connect at the first position
+  start: Boolean
+  # Connect at the last position. [default]
+  end:Boolean
+}
+
+input ProfileCreateInput {
+  bio: String
+  user: UserCreateOneInlineInput!
+}
+
+input ProfileCreateManyInlineInput {
+  create: [ProfileCreateInput!]
+  connect: [ProfileWhereUniqueInput!]
+}
+
+input ProfileCreateOneInlineInput {
+  create: ProfileCreateInput
+  connect: ProfileWhereUniqueInput
+}
+
+input PostCreateInput {
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  title: String!
+  published: Boolean
+  author: UserCreateOneInlineInput!
+  categories: CategoryCreateManyInlineInput
+}
+
+input PostCreateManyInlineInput {
+  create: [PostCreateInput!]
+  connect: [PostWhereUniqueInput!]
+}
+
+input PostCreateOneInlineInput {
+  create: PostCreateInput
+  connect: PostWhereUniqueInput
+}
+
+input CategoryCreateInput {
+  name: String!
+  posts: PostCreateManyInlineInput
+}
+
+input CategoryCreateManyInlineInput {
+  create: [CategoryCreateInput!]
+  connect: [CategoryWhereUniqueInput!]
+}
+
+input CategoryCreateOneInlineInput {
+  create: CategoryCreateInput
+  connect: CategoryWhereUniqueInput
 }
 
 input UserWhereInput {
