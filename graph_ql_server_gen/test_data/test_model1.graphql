@@ -13,12 +13,13 @@ type Query {
   ): [User!]!
   usersConnection(
     where: UserWhereInput
-    orderBy:UserOrderByInput
+    orderBy: UserOrderByInput
     skip: Int
     after: ID
     before: ID
     first: Int
-    last: Int): UserConnection!
+    last: Int
+  ): UserConnection!
   # Profile related top-level queries
   profile(where: ProfileWhereUniqueInput!): Profile
   profiles(
@@ -42,8 +43,8 @@ type Query {
   # Post related top-level queries
   post(where: PostWhereUniqueInput!): Post
   posts(
-    where: PostWhereInput,
-    orderBy: PostOrderByInput,
+    where: PostWhereInput
+    orderBy: PostOrderByInput
     skip: Int
     after: ID
     before: ID
@@ -51,8 +52,8 @@ type Query {
     last: Int
   ): [Post!]!
   postsConnection(
-    where: PostWhereInput,
-    orderBy: PostOrderByInput,
+    where: PostWhereInput
+    orderBy: PostOrderByInput
     skip: Int
     after: ID
     before: ID
@@ -84,17 +85,11 @@ type Query {
 type Mutation {
   # User
   createUser(data: UserCreateInput!): User
-  updateUser(
-    where: UserWhereUniqueInput!
-    data: UserUpdateInput!
-  ): User
+  updateUser(where: UserWhereUniqueInput!, data: UserUpdateInput!): User
   deleteUser(where: UserWhereUniqueInput!): User
-  upsertUser(
-    where: UserWhereUniqueInput!
-    data: UserUpsertInput!
-  ): User
+  upsertUser(where: UserWhereUniqueInput!, data: UserUpsertInput!): User
   updateManyUsersConnection(
-    where: UserWhereInput! 
+    where: UserWhereInput!
     data: UserUpdateManyInput!
     skip: Int
     after: ID
@@ -109,13 +104,13 @@ type Mutation {
     before: ID
     first: Int
     last: Int
-    ): UserConnection!
+  ): UserConnection!
   # Profile
   createProfile(data: ProfileCreateInput!): Profile
   updateProfile(
-    where: ProfileWhereUniqueInput! 
+    where: ProfileWhereUniqueInput!
     data: ProfileUpdateInput!
-    ): Profile
+  ): Profile
   deleteProfile(where: ProfileWhereUniqueInput!): Profile
   upsertProfile(
     where: ProfileWhereUniqueInput!
@@ -140,15 +135,9 @@ type Mutation {
   ): ProfileConnection!
   # Post
   createPost(data: PostCreateInput!): Post
-  updatePost(
-    where: PostWhereUniqueInput! 
-    data: PostUpdateInput!
-    ): Post
+  updatePost(where: PostWhereUniqueInput!, data: PostUpdateInput!): Post
   deletePost(where: PostWhereUniqueInput!): Post
-  upsertPost(
-    where: PostWhereUniqueInput
-    data: PostUpsertInput
-  ): Post
+  upsertPost(where: PostWhereUniqueInput, data: PostUpsertInput): Post
   updateManyPostsConnection(
     where: PostWhereInput!
     data: PostUpdateManyInput!
@@ -169,9 +158,9 @@ type Mutation {
   # Category
   createCategory(data: CategoryCreateInput!): Category
   updateCategory(
-    where: CategoryWhereUniqueInput! 
+    where: CategoryWhereUniqueInput!
     data: CategoryUpdateInput!
-    ): Category
+  ): Category
   deleteCategory(where: CategoryWhereUniqueInput!): Category
   upsertCategory(
     where: CategoryWhereUniqueInput!
@@ -203,7 +192,6 @@ type Mutation {
 """
 Common Types
 """
-
 type Node {
   id: ID!
 }
@@ -216,7 +204,7 @@ input ConnectPositionInput {
   # Connect at the first position
   start: Boolean
   # Connect at the last position. [default]
-  end:Boolean
+  end: Boolean
 }
 
 type PageInfo {
@@ -236,11 +224,9 @@ type Aggregate {
   count: Int!
 }
 
-
-""" 
+"""
 User
 """
-
 type User implements Node {
   id: ID! @unique
   email: String! @unique
@@ -256,7 +242,7 @@ type User implements Node {
     before: ID
     first: Int
     last: Int
-  ):[Post!]!
+  ): [Post!]!
   postsConnection(
     where: PostWhereInput
     orderBy: PostOrderByInput
@@ -276,7 +262,7 @@ enum Role {
 input UserCreateInput {
   email: String!
   name: String
-  nickNames: [String!]! 
+  nickNames: [String!]!
   role: Role!
   profile: ProfileCreateOneInlineInput
   posts: PostCreateManyInlineInput
@@ -300,7 +286,7 @@ input UserUpdateManyInput {
 }
 
 input UserUpdateInput {
-  email: String 
+  email: String
   name: String
   nickNames: [String!]
   role: Role
@@ -378,7 +364,6 @@ input UserWhereInput {
   id_gte: String # greater than or equal
   id_in: [String] # in list
   id_not_in: [String] # not in list
-
   email: String # equals
   email_not: String # not equals
   email_contains: String # contains substring
@@ -393,7 +378,6 @@ input UserWhereInput {
   email_gte: String # greater than or equal
   email_in: [String] # in list
   email_not_in: [String] # not in list
-
   name: String # equals
   name_not: String # not equals
   name_contains: String # contains substring
@@ -408,18 +392,14 @@ input UserWhereInput {
   name_gte: String # greater than or equal
   name_in: [String] # in list
   name_not_in: [String] # not in list
-
   nickNames_contains: String # contains single scalar T
   nickNames_contains_every: [String] # contains all scalar T
   nickNames_contains_some: [String] # contains atleast one scalar T
-
   role: Role # equals
   role_not: Role # not equals
   role_in: [Role] # in list
   role_not_in: [Role] # not in list
-
   profile: ProfileWhereInput # condition must be true for related node.
-
   posts_every: PostWhereInput # condition must be true for all nodes.
   posts_some: PostWhereInput # condition must be true for atleast 1 node
   posts_none: PostWhereInput # condition must be false for all nodes
@@ -432,14 +412,14 @@ input UserWhereUniqueInput {
 }
 
 enum UserOrderByInput {
-  id_ASC,
-  id_DSC,
-  email_ASC,
-  email_DSC,
-  nickNames_ASC, # ToDo:: Find out if they are ordered by list count.
-  nickNames_DSC, 
-  role_ASC, # ToDo:: Find out if they are ordered by location of enum, or enum name ?
-  role_DSC,
+  id_ASC
+  id_DSC
+  email_ASC
+  email_DSC
+  nickNames_ASC # ToDo:: Find out if they are ordered by list count.
+  nickNames_DSC
+  role_ASC # ToDo:: Find out if they are ordered by location of enum, or enum name ?
+  role_DSC
 }
 
 type UserConnection {
@@ -454,10 +434,9 @@ type UserEdge {
   cursor: String!
 }
 
-""" 
-Profile 
 """
-
+Profile
+"""
 type Profile implements Node {
   id: ID! @unique
   bio: String
@@ -549,7 +528,6 @@ input ProfileWhereInput {
   id_gte: String # greater than or equal
   id_in: [String] # in list
   id_not_in: [String] # not in list
-
   bio: String # equals
   bio_not: String # not equals
   bio_contains: String # contains substring
@@ -564,7 +542,6 @@ input ProfileWhereInput {
   bio_gte: String # greater than or equal
   bio_in: [String] # in list
   bio_not_in: [String] # not in list
-
   user: UserWhereInput
 }
 
@@ -573,10 +550,10 @@ input ProfileWhereUniqueInput {
 }
 
 enum ProfileOrderByInput {
-  id_ASC,
-  id_DSC,
-  bio_ASC,
-  bio_DSC,
+  id_ASC
+  id_DSC
+  bio_ASC
+  bio_DSC
 }
 
 type ProfileConnection {
@@ -590,11 +567,9 @@ type ProfileEdge {
   cursor: String!
 }
 
-""" 
+"""
 Post
 """
-
-
 type Post implements Node {
   id: ID! @unique
   createdAt: DateTime!
@@ -715,37 +690,64 @@ input PostWhereInput {
   id_gte: String # greater than or equal
   id_in: [String] # in list
   id_not_in: [String] # not in list
-
   createdAt: DateTime
-  """Any other value that exists and is not equal to the given value."""
+  """
+  Any other value that exists and is not equal to the given value.
+  """
   createdAt_not: DateTime
-  """All values that are contained in given list."""
+  """
+  All values that are contained in given list.
+  """
   createdAt_in: [DateTime]
-  """All values that are not contained in given list."""
+  """
+  All values that are not contained in given list.
+  """
   createdAt_not_in: [DateTime]
-  """All values less than the given value."""
+  """
+  All values less than the given value.
+  """
   createdAt_lt: DateTime
-  """All values less than or equal the given value."""
+  """
+  All values less than or equal the given value.
+  """
   createdAt_lte: DateTime
-  """All values greater than the given value."""
+  """
+  All values greater than the given value.
+  """
   createdAt_gt: DateTime
-  """All values greater than or equal the given value."""
+  """
+  All values greater than or equal the given value.
+  """
   createdAt_gte: DateTime
 
   updatedAt: DateTime
-  """Any other value that exists and is not equal to the given value."""
+  """
+  Any other value that exists and is not equal to the given value.
+  """
   updatedAt_not: DateTime
-  """All values that are contained in given list."""
+  """
+  All values that are contained in given list.
+  """
   updatedAt_in: [DateTime]
-  """All values that are not contained in given list."""
+  """
+  All values that are not contained in given list.
+  """
   updatedAt_not_in: [DateTime]
-  """All values less than the given value."""
+  """
+  All values less than the given value.
+  """
   updatedAt_lt: DateTime
-  """All values less than or equal the given value."""
+  """
+  All values less than or equal the given value.
+  """
   updatedAt_lte: DateTime
-  """All values greater than the given value."""
+  """
+  All values greater than the given value.
+  """
   updatedAt_gt: DateTime
-  """All values greater than or equal the given value."""
+  """
+  All values greater than or equal the given value.
+  """
   updatedAt_gte: DateTime
 
   title: String # equals
@@ -762,7 +764,6 @@ input PostWhereInput {
   title_gte: String # greater than or equal
   title_in: [String] # in list
   title_not_in: [String] # not in list
-
   published: Boolean
   published_not: Boolean
 
@@ -779,16 +780,16 @@ input PostWhereUniqueInput {
 }
 
 enum PostOrderByInput {
-  id_ASC,
-  id_DSC,
-  createdAt_ASC,
-  createdAt_DSC,
-  updatedAt_ASC,
-  updatedAt_DSC,
-  title_ASC,
-  title_DSC,
-  published_ASC,
-  published_DSC,
+  id_ASC
+  id_DSC
+  createdAt_ASC
+  createdAt_DSC
+  updatedAt_ASC
+  updatedAt_DSC
+  title_ASC
+  title_DSC
+  published_ASC
+  published_DSC
 }
 
 type PostConnection {
@@ -803,11 +804,10 @@ type PostEdge {
   cursor: String!
 }
 
-""" 
+"""
 Category
 """
-
-type Category implements Node{
+type Category implements Node {
   id: ID! @unique
   name: String! @unique
   posts(
@@ -818,7 +818,7 @@ type Category implements Node{
     before: String
     first: Int
     last: Int
-  ):[Post!]!
+  ): [Post!]!
   postsConnection(
     where: PostWhereInput
     orderBy: PostOrderByInput
@@ -848,7 +848,7 @@ input CategoryCreateOneInlineInput {
 """
 # Not relevant!! Because all fields in category are unique fields.
 input CategoryUpdateManyInput {
-  
+
 }
 """
 input CategoryUpdateInput {
@@ -914,7 +914,6 @@ input CategoryWhereInput {
   id_gte: String # greater than or equal
   id_in: [String] # in list
   id_not_in: [String] # not in list
-
   name: String # equals
   name_not: String # not equals
   name_contains: String # contains substring
@@ -929,7 +928,6 @@ input CategoryWhereInput {
   name_gte: String # greater than or equal
   name_in: [String] # in list
   name_not_in: [String] # not in list
-
   posts_every: PostWhereInput # condition must be true for all nodes.
   posts_some: PostWhereInput # condition must be true for atleast 1 node
   posts_none: PostWhereInput # condition must be false for all nodes
@@ -942,9 +940,9 @@ input CategoryWhereUniqueInput {
 }
 
 enum CategoryOrderByInput {
-  id_ASC,
-  id_DSC,
-  name_ASC,
+  id_ASC
+  id_DSC
+  name_ASC
   name_DSC
 }
 
@@ -959,5 +957,3 @@ type CategoryEdge {
   node: Category!
   cursor: String!
 }
-
-
