@@ -33,6 +33,41 @@ pub fn delcarations<'src>(
 }
 
 #[inline(always)]
+fn config_decl<'src>() -> impl Parser<'src, &'src str, Declaration<'src>, Err<Rich<'src, char>>> {
+    text::keyword("config")
+        .padded()
+        .then(
+            ascii::ident()
+                .map_with(|tok, e| Token::Ident(tok, e.span()))
+                .padded(),
+        )
+        .then(just('{'))
+        .then(config_pair().repeated().collect::<Vec<ConfigPair>>())
+        .then(just('}').padded())
+        .map(|((((_, config_name), _), config_pairs), _)| {
+            Declaration::Config(ConfigDecl {
+                name: config_name,
+                config_pairs,
+            })
+        })
+}
+
+#[inline(always)]
+fn config_pair<'src>() -> impl Parser<'src, &'src str, ConfigPair<'src>, Err<Rich<'src, char>>> {
+    ascii::ident()
+        .map_with(|ident, e| Token::Ident(ident, e.span()))
+        .padded()
+        .then(just('=').padded())
+        .then(bool().or(number()).or(string()).padded())
+        .map(
+            |((key, _), value): ((Token<'src>, char), Token<'src>)| ConfigPair {
+                name: key,
+                value: value.try_into().unwrap(),
+            },
+        )
+}
+
+#[inline(always)]
 fn string<'src>() -> impl Parser<'src, &'src str, Token<'src>, Err<Rich<'src, char>>> {
     just('"')
         .then(any().filter(|c: &char| *c != '"').repeated())
@@ -67,41 +102,6 @@ fn bool<'src>() -> impl Parser<'src, &'src str, Token<'src>, Err<Rich<'src, char
 }
 
 #[inline(always)]
-fn config_pair<'src>() -> impl Parser<'src, &'src str, ConfigPair<'src>, Err<Rich<'src, char>>> {
-    ascii::ident()
-        .map_with(|ident, e| Token::Ident(ident, e.span()))
-        .padded()
-        .then(just('=').padded())
-        .then(bool().or(number()).or(string()).padded())
-        .map(
-            |((key, _), value): ((Token<'src>, char), Token<'src>)| ConfigPair {
-                name: key,
-                value: value.try_into().unwrap(),
-            },
-        )
-}
-
-#[inline(always)]
-fn config_decl<'src>() -> impl Parser<'src, &'src str, Declaration<'src>, Err<Rich<'src, char>>> {
-    text::keyword("config")
-        .padded()
-        .then(
-            ascii::ident()
-                .map_with(|tok, e| Token::Ident(tok, e.span()))
-                .padded(),
-        )
-        .then(just('{'))
-        .then(config_pair().repeated().collect::<Vec<ConfigPair>>())
-        .then(just('}').padded())
-        .map(|((((_, config_name), _), config_pairs), _)| {
-            Declaration::Config(ConfigDecl {
-                name: config_name,
-                config_pairs,
-            })
-        })
-}
-
-#[inline(always)]
 fn enum_decl<'src>() -> impl Parser<'src, &'src str, Declaration<'src>, Err<Rich<'src, char>>> {
     let identifier = ascii::ident().map_with(|tok, e| Token::Ident(tok, e.span()));
     text::keyword("enum")
@@ -124,6 +124,38 @@ fn enum_decl<'src>() -> impl Parser<'src, &'src str, Declaration<'src>, Err<Rich
                 })
             },
         )
+}
+
+#[inline(always)]
+fn model_decl<'src>() -> impl Parser<'src, &'src str, Declaration<'src>, Err<Rich<'src, char>>> {
+    text::keyword("model")
+        .padded()
+        .then(ascii::ident().padded())
+        .then(just('{'))
+        .then(field_decl().repeated().collect::<Vec<FieldDecl>>())
+        .then(just('}').padded())
+        .map_with(
+            |((((_model, name), _open_brace), fields), _close_brace), e| {
+                Declaration::Model(ModelDecl {
+                    name: Token::Ident(name, e.span()),
+                    fields,
+                })
+            },
+        )
+}
+
+#[inline(always)]
+fn field_decl<'src>() -> impl Parser<'src, &'src str, FieldDecl<'src>, Err<Rich<'src, char>>> {
+    ascii::ident()
+        .padded()
+        .map_with(|tok, e| Token::Ident(tok, e.span()))
+        .then(field_type().padded())
+        .then(attribute().padded().repeated().collect::<Vec<Attribute>>())
+        .map(|((name, field_type), attributes)| FieldDecl {
+            name,
+            field_type,
+            attributes,
+        })
 }
 
 #[inline(always)]
@@ -176,38 +208,6 @@ fn attribute<'src>() -> impl Parser<'src, &'src str, Attribute<'src>, Err<Rich<'
                 arg,
             }
         })
-}
-
-#[inline(always)]
-fn field_decl<'src>() -> impl Parser<'src, &'src str, FieldDecl<'src>, Err<Rich<'src, char>>> {
-    ascii::ident()
-        .padded()
-        .map_with(|tok, e| Token::Ident(tok, e.span()))
-        .then(field_type().padded())
-        .then(attribute().padded().repeated().collect::<Vec<Attribute>>())
-        .map(|((name, field_type), attributes)| FieldDecl {
-            name,
-            field_type,
-            attributes,
-        })
-}
-
-#[inline(always)]
-fn model_decl<'src>() -> impl Parser<'src, &'src str, Declaration<'src>, Err<Rich<'src, char>>> {
-    text::keyword("model")
-        .padded()
-        .then(ascii::ident().padded())
-        .then(just('{'))
-        .then(field_decl().repeated().collect::<Vec<FieldDecl>>())
-        .then(just('}').padded())
-        .map_with(
-            |((((_model, name), _open_brace), fields), _close_brace), e| {
-                Declaration::Model(ModelDecl {
-                    name: Token::Ident(name, e.span()),
-                    fields,
-                })
-            },
-        )
 }
 
 #[cfg(test)]
