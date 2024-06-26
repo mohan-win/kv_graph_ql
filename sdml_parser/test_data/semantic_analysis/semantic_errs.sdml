@@ -21,6 +21,7 @@ model Post {
     updatedAt   DateTime
     title       ShortStr
     published   Bool
+    deleted     Boolean        @default(False) 
     author      User
     category    Category[]
 }

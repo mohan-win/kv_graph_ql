@@ -1,7 +1,8 @@
 use chumsky::container::Seq;
 
 use crate::ast::{
-    Attribute, DataModel, Declaration, EnumDecl, FieldDecl, ModelDecl, Span, Token, Type,
+    Attribute, DataModel, Declaration, EnumDecl, FieldDecl, ModelDecl, PrimitiveType, Span, Token,
+    Type,
 };
 use core::fmt;
 use std::{
@@ -215,6 +216,7 @@ fn validate_attribute<'src>(
     let valid_attribs_with_no_args = ["unique"];
     let valid_attributes_with_args = ["default"];
     let valid_attribute_arg_fns = ["now"];
+    let valid_attribute_arg_values = ["true", "false"];
     let mut all_attributes = Vec::new();
     all_attributes.extend_from_slice(&valid_attribs_with_no_args[..]);
     all_attributes.extend_from_slice(&valid_attributes_with_args[..]);
@@ -255,8 +257,22 @@ fn validate_attribute<'src>(
                     model_name: parent_model_ident.ident_name().unwrap(),
                 })
             } else if !attribute.arg.as_ref().unwrap().is_function {
-                // See if the arg is a valid enum value of the given type.
-                if let Type::Enum(enum_name) = &*parent_field.field_type.r#type() {
+                if let Type::Primitive(PrimitiveType::Boolean) = &*parent_field.field_type.r#type()
+                {
+                    // See if the arg is a valid boolean value.
+                    if !valid_attribute_arg_values.contains(&attribute_arg_name) {
+                        Err(SemanticError::InvalidAttributeArg {
+                            span: attribute_arg.span(),
+                            attrib_arg_name: attribute_arg_name,
+                            attrib_name: attribute_name,
+                            field_name: parent_field.name.ident_name().unwrap(),
+                            model_name: parent_model_ident.ident_name().unwrap(),
+                        })
+                    } else {
+                        Ok(())
+                    }
+                } else if let Type::Enum(enum_name) = &*parent_field.field_type.r#type() {
+                    // See if the arg is a valid enum value of the given type.
                     if let Some((_, enum_decl)) = enums.get_key_value(
                         enum_name
                             .ident_name()
@@ -404,7 +420,15 @@ mod tests {
                         field_name: "published",
                         model_name: "Post",
                     },
+                    SemanticError::InvalidAttributeArg {
+                        span: Span::new(535, 550),
+                        attrib_arg_name: "False",
+                        attrib_name: "default",
+                        field_name: "deleted",
+                        model_name: "Post",
+                    },
                 ];
+
                 assert_eq!(expected_errs.len(), errs.len());
                 errs.iter()
                     .for_each(|err| assert!(expected_errs.contains(err)))
