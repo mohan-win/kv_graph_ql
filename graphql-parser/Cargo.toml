@@ -1,0 +1,22 @@
+[package]
+authors = ["sunli <scott_s829@163.com>", "Koxiaet", "mohan <mohan_win@outlook.com>"]
+categories = ["network-programming", "asynchronous"]
+description = "GraphQL query parser for async-graphql"
+documentation = "https://docs.rs/async-graphql/"
+edition = "2021"
+homepage = "https://github.com/async-graphql/async-graphql"
+keywords = ["futures", "async", "graphql"]
+license = "MIT OR Apache-2.0"
+name = "graphql-parser"
+repository = "https://github.com/async-graphql/async-graphql"
+version = "7.0.6"
+
+[dependencies]
+graphql-value.workspace = true
+pest = "2.7.8"
+serde.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+pest_generator = "2.7.8"
+proc-macro2 = "1.0.79"
