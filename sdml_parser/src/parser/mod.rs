@@ -216,9 +216,8 @@ fn attribute<'src>() -> impl Parser<'src, &'src str, Attribute<'src>, Err<Rich<'
 mod tests {
     use std::{collections::HashMap, vec};
 
-    use crate::ast::{ConfigValue, Span};
-
     use super::*;
+    use crate::ast::{ConfigValue, Span};
 
     #[test]
     fn test_string() {
@@ -804,5 +803,21 @@ mod tests {
         let decls = delcarations().parse(sdml_str).into_result().unwrap();
         let ast_result = semantic_analysis(decls);
         assert_eq!(ast_result, Ok(ast));
+    }
+
+    #[test]
+    fn test_happy_path_parse() {
+        let test_model1_sdml = std::fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/test_model1.sdml"
+        ))
+        .unwrap();
+
+        let decls = delcarations()
+            .parse(&test_model1_sdml)
+            .into_result()
+            .unwrap();
+        let ast_result = semantic_analysis(decls);
+        assert!(ast_result.is_ok());
     }
 }
