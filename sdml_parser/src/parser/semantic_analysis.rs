@@ -405,7 +405,9 @@ mod tests {
                         model_name: "Post",
                     },
                 ];
-                assert_eq!(expected_errs, errs);
+                assert_eq!(expected_errs.len(), errs.len());
+                errs.iter()
+                    .for_each(|err| assert!(expected_errs.contains(err)))
             }
         }
     }

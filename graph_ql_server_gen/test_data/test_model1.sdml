@@ -20,7 +20,7 @@ model Post {
     createdAt   DateTime    @default(now())
     updatedAt   DateTime
     title       ShortStr
-    published   Bool     @default(False)
+    published   Boolean     @default(false)
     author      User
     category    Category[]
 }
@@ -33,9 +33,4 @@ model Category {
 enum Role {
     USER
     ADMIN
-}
-
-enum Bool {
-    True
-    False
 }
