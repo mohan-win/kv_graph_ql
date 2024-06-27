@@ -118,10 +118,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "graphql-parser"
+name = "graphql_parser"
 version = "7.0.6"
 dependencies = [
- "graphql-value",
+ "graphql_value",
  "pest",
  "pest_generator",
  "proc-macro2",
@@ -130,7 +130,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "graphql-value"
+name = "graphql_value"
 version = "7.0.6"
 dependencies = [
  "bytes",
@@ -270,11 +270,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f3cb5ba0dc43242ce17de99c180e96db90b235b8a9fdc9543c96d2209116bd9f"
 
 [[package]]
-name = "schema-transpiler"
+name = "schema_transpiler"
 version = "0.1.0"
 
 [[package]]
-name = "sdml-parser"
+name = "sdml_parser"
 version = "0.1.0"
 dependencies = [
  "chumsky",

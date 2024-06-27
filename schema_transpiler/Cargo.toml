@@ -1,5 +1,5 @@
 [package]
-name = "schema-transpiler"
+name = "schema_transpiler"
 version = "0.1.0"
 edition = "2021"
 

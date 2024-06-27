@@ -7,12 +7,12 @@ edition = "2021"
 homepage = "https://github.com/async-graphql/async-graphql"
 keywords = ["futures", "async", "graphql"]
 license = "MIT OR Apache-2.0"
-name = "graphql-parser"
+name = "graphql_parser"
 repository = "https://github.com/async-graphql/async-graphql"
 version = "7.0.6"
 
 [dependencies]
-graphql-value.workspace = true
+graphql_value.workspace = true
 pest = "2.7.8"
 serde.workspace = true
 serde_json.workspace = true

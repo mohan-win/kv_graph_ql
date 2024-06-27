@@ -1,5 +1,5 @@
 [package]
-name = "graphql-value"
+name = "graphql_value"
 version = "7.0.6"
 authors = ["sunli <scott_s829@163.com>", "Koxiaet", "mohan <mohan_win@outlook.com>"]
 edition = "2021"
