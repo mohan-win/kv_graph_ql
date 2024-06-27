@@ -1,6 +1,6 @@
 use std::{collections::BTreeMap, fmt::Debug};
 
-use async_graphql_value::*;
+use graphql_value::*;
 use bytes::Bytes;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 

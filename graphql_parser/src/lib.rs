@@ -12,7 +12,7 @@
 
 use std::fmt::{self, Display, Formatter};
 
-use async_graphql_value::Name;
+use graphql_value::Name;
 pub use parse::{parse_query, parse_schema};
 use pest::{error::LineColLocation, RuleType};
 pub use pos::{Pos, Positioned};

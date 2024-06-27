@@ -24,9 +24,9 @@ mod generated;
 mod service;
 mod utils;
 
-use async_graphql_value::{ConstValue, Name, Number, Value};
 pub use executable::parse_query;
 use generated::Rule;
+use graphql_value::{ConstValue, Name, Number, Value};
 pub use service::parse_schema;
 
 struct GraphQLParser;
