@@ -124,7 +124,6 @@ dependencies = [
  "graphql_value",
  "pest",
  "pest_derive",
- "pest_generator",
  "serde",
  "serde_json",
 ]

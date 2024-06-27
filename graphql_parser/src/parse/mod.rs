@@ -10,6 +10,7 @@ use pest::{
 };
 use pest_derive::Parser;
 
+/// GraphQLParser from pest.
 #[derive(Parser)]
 #[grammar = "graphql.pest"]
 struct GraphQLParser;
