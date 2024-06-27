@@ -8,6 +8,12 @@ use pest::{
     iterators::{Pair, Pairs},
     Parser,
 };
+use pest_derive::Parser;
+
+#[derive(Parser)]
+#[grammar = "graphql.pest"]
+struct GraphQLParser;
+
 use utils::*;
 
 use crate::{
@@ -20,16 +26,12 @@ mod executable;
 #[allow(clippy::redundant_static_lifetimes)]
 #[rustfmt::skip]
 #[allow(dead_code)]
-mod generated;
 mod service;
 mod utils;
 
 pub use executable::parse_query;
-use generated::Rule;
 use graphql_value::{ConstValue, Name, Number, Value};
 pub use service::parse_schema;
-
-struct GraphQLParser;
 
 fn parse_operation_type(
     pair: Pair<Rule>,

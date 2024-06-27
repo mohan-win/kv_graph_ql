@@ -13,10 +13,10 @@ version = "7.0.6"
 
 [dependencies]
 graphql_value.workspace = true
-pest = "2.7.8"
+pest = "2.7.10"
+pest_derive = "2.7.10"
 serde.workspace = true
 serde_json.workspace = true
 
 [dev-dependencies]
-pest_generator = "2.7.8"
-proc-macro2 = "1.0.79"
+pest_generator = "2.7.10"
