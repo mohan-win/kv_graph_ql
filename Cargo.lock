@@ -281,6 +281,10 @@ checksum = "f3cb5ba0dc43242ce17de99c180e96db90b235b8a9fdc9543c96d2209116bd9f"
 [[package]]
 name = "schema_transpiler"
 version = "0.1.0"
+dependencies = [
+ "graphql_value",
+ "sdml_parser",
+]
 
 [[package]]
 name = "sdml_parser"
