@@ -1,4 +1,4 @@
-use graphql_value::{ConstValue, Name, Value};
+use super::*;
 use std::fmt::{self, Display, Formatter, Write};
 
 /// A GraphQL file or request string defining a GraphQL service.
@@ -64,7 +64,7 @@ pub struct TypeDefinition {
 #[derive(Debug, Clone)]
 pub enum TypeKind {
     /// A scalar type.
-    Sclar,
+    Scalar,
     /// An object type.
     Object(ObjectType),
     /// An interface type.

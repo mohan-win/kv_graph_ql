@@ -9,4 +9,5 @@
 
 mod service_document;
 
+pub use graphql_value::*;
 pub use service_document::*;
