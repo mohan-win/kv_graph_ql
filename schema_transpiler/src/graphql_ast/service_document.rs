@@ -1,7 +1,237 @@
 use graphql_value::{ConstValue, Name, Value};
 use std::fmt::{self, Display, Formatter, Write};
 
+/// A GraphQL file or request string defining a GraphQL service.
+///
+/// [Reference](https://spec.graphql.org/October2021/#Document).
+#[derive(Debug, Clone)]
+pub struct ServiceDocument {
+    pub definitions: Vec<TypeSystemDefinition>,
+}
 
+/// A definition concerning the type system of a GraphQL service.
+///
+/// [Reference](https://spec.graphql.org/October2021/#TypeSystemDefinition). This enum also covers
+/// [extensions](https://spec.graphql.org/October2021/#TypeSystemExtension).
+#[derive(Debug, Clone)]
+pub enum TypeSystemDefinition {
+    /// The definition of the schema of the service.
+    Schema(SchemaDefinition),
+    /// The definition of a type in the service.
+    Type(TypeDefinition),
+    /// The definition of a directive in the service.
+    Directive(DirectiveDefinition),
+}
+
+/// The definition of the schema in a GraphQL service.
+///
+/// [Reference](https://spec.graphql.org/October2021/#SchemaDefinition). This also covers
+/// [extensions](https://spec.graphql.org/October2021/#SchemaExtension).
+#[derive(Debug, Clone)]
+pub struct SchemaDefinition {
+    /// Whether the schema is an extension of another schema.
+    pub extend: bool,
+    /// The directives of the schema definition
+    pub directives: Vec<ConstDirective>,
+    /// The query root. This is always `Some` when the schema is not extended.
+    pub query: Option<Name>,
+    /// The mutation root, if present.
+    pub mutation: Option<Name>,
+    /// The subscription root, if present.
+    pub subscription: Option<Name>,
+}
+
+/// The definition of a type in a GraphQL service.
+///
+/// [Reference](https://spec.graphql.org/October2021/#TypeDefinition). This also covers
+/// [extensions](https://spec.graphql.org/October2021/#TypeExtension).
+#[derive(Debug, Clone)]
+pub struct TypeDefinition {
+    /// Whether the type is an extension of another type.
+    pub extend: bool,
+    /// The description of the type, if present. This is never present on an
+    /// extension type.
+    pub description: Option<String>,
+    /// The name of the type
+    pub name: Name,
+    /// The directives of the type definition.
+    pub directives: Vec<ConstDirective>,
+    /// Which kind of type being defined, scalar, object, enum etc..
+    pub kind: TypeKind,
+}
+
+/// A kind of type; scalar, object, enum, etc.
+#[derive(Debug, Clone)]
+pub enum TypeKind {
+    /// A scalar type.
+    Sclar,
+    /// An object type.
+    Object(ObjectType),
+    /// An interface type.
+    Interface(InterfaceType),
+    /// A union type.
+    Union(UnionType),
+    /// An enum type
+    Enum(EnumType),
+    /// An input object type.
+    InputObject(InputObjectType),
+}
+
+///
+/// The definition of an object type.
+///
+/// [Reference](https://spec.graphql.org/October2021/#ObjectTypeDefinition).
+#[derive(Debug, Clone)]
+pub struct ObjectType {
+    /// The interfaces implemented by object.
+    pub implements: Vec<Name>,
+    /// Fields of the object type.
+    pub fields: Vec<FieldDefinition>,
+}
+
+/// The definition of a field inside an object or interface.
+///
+/// [Reference](https://spec.graphql.org/October2021/#FieldDefinition).
+#[derive(Debug, Clone)]
+pub struct FieldDefinition {
+    /// The description of the field.
+    pub description: Option<String>,
+    /// Name of the field.
+    pub name: String,
+    /// Arguments of the field.
+    pub argments: Vec<InputValueDefinition>,
+    /// Type of the field.
+    pub ty: Type,
+    /// Directive of the field.
+    pub directives: Vec<ConstDirective>,
+}
+
+/// The definition of an interface type.
+///
+/// [Reference](https://spec.graphql.org/October2021/#InterfaceType).
+#[derive(Debug, Clone)]
+pub struct InterfaceType {
+    /// Interfaces implemented by this interface.
+    pub implements: Vec<Name>,
+    /// Fields of the interface type.
+    pub fields: Vec<FieldDefinition>,
+}
+
+/// The definition of a union type.
+///
+/// [Reference](https://spec.graphql.org/October2021/#UnionTypeDefinition).
+#[derive(Debug, Clone)]
+pub struct UnionType {
+    /// The member types of the union.
+    pub members: Vec<Name>,
+}
+
+/// The definition of an enum.
+///
+/// [Reference](https://spec.graphql.org/October2021/#EnumTypeDefinition).
+#[derive(Debug, Clone)]
+pub struct EnumType {
+    /// Possible values of the enum.
+    pub values: Vec<EnumValueDefinition>,
+}
+
+/// The definition of the value inside an enum.
+///
+/// [Reference](https://spec.graphql.org/October2021/#EnumValueDefinition).
+#[derive(Debug, Clone)]
+pub struct EnumValueDefinition {
+    /// The description.
+    pub description: Option<String>,
+    /// The enum value name.
+    pub value: Name,
+    /// The directives of the enum value.
+    pub directives: Vec<ConstDirective>,
+}
+
+/// The definition of an input object.
+///
+/// [Reference](https://spec.graphql.org/October2021/#InputObjectTypeDefinition).
+#[derive(Debug, Clone)]
+pub struct InputObjectType {
+    /// The fields of the input object.
+    pub fields: Vec<InputValueDefinition>,
+}
+
+/// The definition of an input value inside the arguments of a field.
+///
+/// [Reference](https://spec.graphql.org/October2021/#InputValueDefinition).
+#[derive(Debug, Clone)]
+pub struct InputValueDefinition {
+    /// Description of the argument.
+    pub description: Option<String>,
+    /// Name of the arument.
+    pub name: Name,
+    /// Type of the argument
+    pub ty: Type,
+    /// The default value of the argument, if any.
+    pub default_value: Option<ConstValue>,
+    /// The directives of the input value.
+    pub directives: Vec<ConstDirective>,
+}
+
+/// The definition of a directive in a service
+///
+/// [Reference](https://spec.graphql.org/October2021/#DirectiveDefinition).
+#[derive(Debug, Clone)]
+pub struct DirectiveDefinition {
+    /// The description of the directive.
+    pub description: Option<String>,
+    /// Name of the directive.
+    pub name: Name,
+    /// Arguments to the directive.
+    pub arguments: Vec<InputValueDefinition>,
+    /// Whether the directive can be repeated.
+    pub is_repeatable: bool,
+    /// Locations where the directive applies to.
+    pub locations: Vec<DirectiveLocation>,
+}
+
+/// Where the directive can be applied to.
+///
+/// [Reference](https://spec.graphql.org/October2021/#DirectiveLocation).
+#[derive(Debug, Clone)]
+pub enum DirectiveLocation {
+    // ExecutableDirectiveLocation
+    Query,
+    Mutation,
+    Subscription,
+    Field,
+    FragmentDefinition,
+    FragmentSpread,
+    InlineFragment,
+    VariableDefinition,
+
+    // TypeSystemDirectiveLocation
+    /// A [schema](struct.SchemaDefinition.html)
+    Schema,
+    /// A [scalar](struct.TypeKind.html#variant.Scalar)
+    Scalar,
+    /// An [object](struct.ObjectType.html)
+    Object,
+    /// A [field definition](struct.FieldDefinition.html)
+    FieldDefinition,
+    /// An [input value definition](struct.InputValueDefinition.html) as the
+    /// argument of the field but not on an input object.
+    ArgumentDefinition,
+    /// An [interface](struct.InterfaceType.html).
+    Interface,
+    /// A [union](struct.UnionType.html).
+    Union,
+    /// An [enum](struct.EnumType.html).
+    Enum,
+    /// An [value of an enum](struct.EnumValueDefinition.html).
+    EnumValue,
+    /// An [input object](struct.InputObjectType.html).
+    InputObject,
+    /// An [input value definition](struct.InputValueDefinition.html) on an
+    /// input object but not on a argument.
+    InputFieldDefinition,
+}
 
 /// The type of an operation; `query`, `mutation` or `subscription`.
 ///
