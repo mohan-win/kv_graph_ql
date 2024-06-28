@@ -233,29 +233,6 @@ pub enum DirectiveLocation {
     InputFieldDefinition,
 }
 
-/// The type of an operation; `query`, `mutation` or `subscription`.
-///
-/// [Reference](https://spec.graphql.org/October2021/#OperationType).
-#[derive(Debug, PartialEq, Eq, Copy, Clone)]
-pub enum OperationType {
-    /// A query.
-    Query,
-    /// A mutation.
-    Mutation,
-    /// A subscription.
-    Subscription,
-}
-
-impl Display for OperationType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str(match self {
-            Self::Query => "query",
-            Self::Mutation => "mutation",
-            Self::Subscription => "subscription",
-        })
-    }
-}
-
 /// A GraphQL type, for example `String` or `[String!]!`.
 ///
 /// [Reference](https://spec.graphql.org/October2021/#Type).
