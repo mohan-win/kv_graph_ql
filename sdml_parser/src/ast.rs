@@ -44,6 +44,16 @@ impl<'src> Token<'src> {
             None
         }
     }
+    pub fn try_ident_name(&self) -> Result<&'src str, (&'static str, Span)> {
+        if let Token::Ident(name, _) = self {
+            Ok(name)
+        } else {
+            Err((
+                "Can't get the identifier name for a non-identifier",
+                self.span(),
+            ))
+        }
+    }
     pub fn span(&self) -> Span {
         match self {
             Token::Ident(_, sp) => *sp,

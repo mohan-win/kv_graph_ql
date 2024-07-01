@@ -134,6 +134,7 @@ version = "7.0.6"
 dependencies = [
  "bytes",
  "indexmap",
+ "sdml_parser",
  "serde",
  "serde_json",
 ]

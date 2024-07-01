@@ -16,3 +16,4 @@ serde_json.workspace = true
 serde.workspace = true
 bytes.workspace = true
 indexmap.workspace = true
+sdml_parser.workspace = true
