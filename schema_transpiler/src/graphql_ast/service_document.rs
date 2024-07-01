@@ -1,5 +1,7 @@
 use super::*;
-use std::fmt::{self, Display, Formatter, Write};
+use std::fmt::{self, write, Display, Formatter, Write};
+
+mod display_helpers;
 
 /// A GraphQL file or request string defining a GraphQL service.
 ///
@@ -176,7 +178,15 @@ pub struct InputValueDefinition {
 
 impl fmt::Display for InputValueDefinition {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        unimplemented!()
+        write!(f, "\n")?; // Note: Start each input argument with a newline so that they needn't be comma separated.
+        display_helpers::write_description_ln(f, &self.description)?;
+        write!(f, "{}: {}", self.name, self.ty)?;
+        if self.default_value.is_some() {
+            write!(f, " = {}", self.default_value.as_ref().unwrap())?;
+        }
+        self.directives
+            .iter()
+            .try_for_each(|directive| write!(f, " {}", directive))
     }
 }
 
@@ -387,9 +397,9 @@ impl Directive {
 
 #[cfg(test)]
 mod test {
-    use graphql_value::{ConstValue, Name, Number};
+    use graphql_value::{ConstValue, Name};
 
-    use super::ConstDirective;
+    use super::{ConstDirective, InputValueDefinition, Type};
 
     #[test]
     fn test_const_directive_display_trait() {
@@ -425,5 +435,69 @@ mod test {
             "@some(arg1: \"String value\", arg2: true, arg3: \"Another string value\")",
             some_directive.to_string()
         );
+    }
+
+    #[test]
+    fn test_input_value_definition_display_trait() {
+        let deprecated_directive = ConstDirective {
+            name: Name::new("deprecated"),
+            arguments: vec![(
+                Name::new("reason"),
+                ConstValue::String("Use some_other_field".to_string()),
+            )],
+        };
+
+        let some_directive = ConstDirective {
+            name: Name::new("some"),
+            arguments: vec![
+                (
+                    Name::new("arg1"),
+                    ConstValue::String("String value".to_string()),
+                ),
+                (Name::new("arg2"), ConstValue::Boolean(true)),
+                (
+                    Name::new("arg3"),
+                    ConstValue::String("Another string value".to_string()),
+                ),
+            ],
+        };
+
+        let id_input_value = InputValueDefinition {
+            description: Some("This is some id with default value as def_id".to_string()),
+            name: Name::new("id"),
+            ty: Type::new("ID").unwrap(),
+            default_value: Some(ConstValue::String("def_id".to_string())),
+            directives: vec![some_directive, deprecated_directive],
+        };
+
+        let id_input_value_expected_str = r#"
+"""This is some id with default value as def_id"""
+id: ID = "def_id" @some(arg1: "String value", arg2: true, arg3: "Another string value") @deprecated(reason: "Use some_other_field")"#;
+        assert_eq!(id_input_value_expected_str, id_input_value.to_string());
+
+        let id_input_value = InputValueDefinition {
+            description: Some("This is some id with default value as def_id".to_string()),
+            name: Name::new("id"),
+            ty: Type::new("ID").unwrap(),
+            default_value: None,
+            directives: vec![],
+        };
+
+        let id_input_value_expected_str = r#"
+"""This is some id with default value as def_id"""
+id: ID"#;
+        assert_eq!(id_input_value_expected_str, id_input_value.to_string());
+
+        let id_input_value = InputValueDefinition {
+            description: None,
+            name: Name::new("id"),
+            ty: Type::new("ID").unwrap(),
+            default_value: None,
+            directives: vec![],
+        };
+
+        let id_input_value_expected_str = r#"
+id: ID"#;
+        assert_eq!(id_input_value_expected_str, id_input_value.to_string());
     }
 }
