@@ -4,13 +4,10 @@
 //! SDML models.
 //!
 mod error;
-use std::fmt::format;
 
 use super::*;
 pub use error::ErrorGraphQLGen;
-use graphql_ast::InputValueDefinition;
-use sdml_ast::{Span, Token};
-pub type CodeGenResult<T> = Result<T, ErrorGraphQLGen>;
+pub type GraphQLGenResult<T> = Result<T, ErrorGraphQLGen>;
 
 /// Date time scalar definition.
 fn scalar_def_date_time() -> graphql_ast::TypeDefinition {
@@ -51,13 +48,14 @@ fn interface_def_node() -> graphql_ast::TypeDefinition {
 }
 
 /// Generates necessary filter arguments for a string field.
-fn input_filters_str_field_def<'src>(field_name: &sdml_ast::Token<'src>) -> CodeGenResult<Vec<InputValueDefinition>> {
-    let field_name: &'src str = field_name.try_ident_name().map_err(|(error, pos)| ErrorGraphQLGen::SDMLError { error, pos})?;
+fn input_filters_str_field_def<'src>(
+    field_name: &sdml_ast::Token<'src>,
+) -> GraphQLGenResult<Vec<graphql_ast::InputValueDefinition>> {
+    let field_name: &'src str = field_name
+        .try_ident_name()
+        .map_err(|(error, pos)| ErrorGraphQLGen::SDMLError { error, pos })?;
     // Names of the fields whose type is a list
-    let list_field_names_fmt = [
-        ("{}_in", "in list"),
-        ("{}_not_in", "not in list"),
-    ];
+    let list_field_names_fmt = [("{}_in", "in list"), ("{}_not_in", "not in list")];
     let non_list_field_names_fmt = [
         ("{}", "equals"),
         ("{}_not", "not equals"),
@@ -73,17 +71,40 @@ fn input_filters_str_field_def<'src>(field_name: &sdml_ast::Token<'src>) -> Code
         ("{}_gte", "greater than or equals"),
     ];
 
-    let list_fields = list_field_names_fmt.into_iter().for_each(|(field_format, field_desc)| {
-        let field_name = field_format.replace("{}", field_name);
-        InputValueDefinition {
-            
-        }
-    });
+    let list_fields = list_field_names_fmt
+        .into_iter()
+        .map(|(field_format, field_desc)| {
+            let field_name = graphql_ast::Name::new(field_format.replace("{}", field_name));
+            let field_type =
+                graphql_ast::Type::new("[String]").expect("This should be of type String list");
+            graphql_ast::InputValueDefinition {
+                description: Some(field_desc.to_string()),
+                name: field_name,
+                ty: field_type,
+                default_value: None,
+                directives: vec![],
+            }
+        });
 
+    let non_list_fields = non_list_field_names_fmt
+        .into_iter()
+        .map(|(field_format, field_desc)| {
+            let field_name = graphql_ast::Name::new(field_format.replace("{}", field_name));
+            let field_type =
+                graphql_ast::Type::new("String").expect("This should be of type String");
+            graphql_ast::InputValueDefinition {
+                description: Some(field_desc.to_string()),
+                name: field_name,
+                ty: field_type,
+                default_value: None,
+                directives: vec![],
+            }
+        });
+
+    Ok(non_list_fields.chain(list_fields).collect())
 }
 
-
-fn model_where_input_def<'src>(
+/*fn model_where_input_def<'src>(
     model: &sdml_ast::ModelDecl<'src>,
 ) -> CodeGenResult<graphql_ast::TypeDefinition> {
     let name: graphql_ast::Name = model
@@ -102,4 +123,4 @@ fn model_where_input_def<'src>(
         directives: vec![],
         kind: graphql_ast::TypeKind::InputObject(graphql_ast::InputObjectType { fields: () }),
     })
-}
+}*/
