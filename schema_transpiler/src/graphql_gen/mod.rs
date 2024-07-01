@@ -124,3 +124,11 @@ fn input_filters_str_field_def<'src>(
         kind: graphql_ast::TypeKind::InputObject(graphql_ast::InputObjectType { fields: () }),
     })
 }*/
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_input_filters_str_field_def() {
+        
+    }
+}

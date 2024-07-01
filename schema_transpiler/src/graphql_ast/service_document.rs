@@ -174,6 +174,12 @@ pub struct InputValueDefinition {
     pub directives: Vec<ConstDirective>,
 }
 
+impl fmt::Display for InputValueDefinition {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        unimplemented!()
+    }
+}
+
 /// The definition of a directive in a service
 ///
 /// [Reference](https://spec.graphql.org/October2021/#DirectiveDefinition).
@@ -332,6 +338,18 @@ impl ConstDirective {
     }
 }
 
+impl fmt::Display for ConstDirective {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let args: String = self
+            .arguments
+            .iter()
+            .map(|(name, const_value)| format!("{name}: {const_value}, "))
+            .collect();
+        let args = args.trim_end_matches([',', ' ']);
+        write!(f, "@{}({})", self.name, args)
+    }
+}
+
 /// A GraphQL directive, such as `@deprecated(reason: "Use the other field")`.
 ///
 /// [Reference](https://spec.graphql.org/October2021/#Directive).
@@ -364,5 +382,48 @@ impl Directive {
             .iter()
             .find(|item| item.0 == name)
             .map(|item| &item.1)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use graphql_value::{ConstValue, Name, Number};
+
+    use super::ConstDirective;
+
+    #[test]
+    fn test_const_directive_display_trait() {
+        let deprecated_directive = ConstDirective {
+            name: Name::new("deprecated"),
+            arguments: vec![(
+                Name::new("reason"),
+                ConstValue::String("Use some_other_field".to_string()),
+            )],
+        };
+
+        assert_eq!(
+            "@deprecated(reason: \"Use some_other_field\")",
+            deprecated_directive.to_string()
+        );
+
+        let some_directive = ConstDirective {
+            name: Name::new("some"),
+            arguments: vec![
+                (
+                    Name::new("arg1"),
+                    ConstValue::String("String value".to_string()),
+                ),
+                (Name::new("arg2"), ConstValue::Boolean(true)),
+                (
+                    Name::new("arg3"),
+                    ConstValue::String("Another string value".to_string()),
+                ),
+            ],
+        };
+
+        assert_eq!(
+            "@some(arg1: \"String value\", arg2: true, arg3: \"Another string value\")",
+            some_directive.to_string()
+        );
     }
 }
