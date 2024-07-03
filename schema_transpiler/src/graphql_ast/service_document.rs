@@ -1,5 +1,6 @@
+pub use display_helpers::*; // Import and expose the Display trait implementation for the service document types.
+
 use super::*;
-use std::fmt::{self, write, Display, Formatter, Write};
 
 mod display_helpers;
 
@@ -99,7 +100,7 @@ pub struct FieldDefinition {
     /// The description of the field.
     pub description: Option<String>,
     /// Name of the field.
-    pub name: String,
+    pub name: Name,
     /// Arguments of the field.
     pub argments: Vec<InputValueDefinition>,
     /// Type of the field.
@@ -174,20 +175,6 @@ pub struct InputValueDefinition {
     pub default_value: Option<ConstValue>,
     /// The directives of the input value.
     pub directives: Vec<ConstDirective>,
-}
-
-impl fmt::Display for InputValueDefinition {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "\n")?; // Note: Start each input argument with a newline so that they needn't be comma separated.
-        display_helpers::write_description_ln(f, &self.description)?;
-        write!(f, "{}: {}", self.name, self.ty)?;
-        if self.default_value.is_some() {
-            write!(f, " = {}", self.default_value.as_ref().unwrap())?;
-        }
-        self.directives
-            .iter()
-            .try_for_each(|directive| write!(f, " {}", directive))
-    }
 }
 
 /// The definition of a directive in a service
@@ -281,16 +268,6 @@ impl Type {
     }
 }
 
-impl Display for Type {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        self.base.fmt(f)?;
-        if !self.nullable {
-            f.write_char('!')?;
-        }
-        Ok(())
-    }
-}
-
 /// A GraphQL base type, for example `String` or `[String!]`. This does not
 /// include whether the type is nullable; for that see [Type](struct.Type.html).
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -299,15 +276,6 @@ pub enum BaseType {
     Named(Name),
     /// A list type, such as `[String]`.
     List(Box<Type>),
-}
-
-impl Display for BaseType {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Named(name) => f.write_str(name),
-            Self::List(ty) => write!(f, "[{}]", ty),
-        }
-    }
 }
 
 /// A const GraphQL directive, such as `@deprecated(reason: "Use the other
@@ -348,18 +316,6 @@ impl ConstDirective {
     }
 }
 
-impl fmt::Display for ConstDirective {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let args: String = self
-            .arguments
-            .iter()
-            .map(|(name, const_value)| format!("{name}: {const_value}, "))
-            .collect();
-        let args = args.trim_end_matches([',', ' ']);
-        write!(f, "@{}({})", self.name, args)
-    }
-}
-
 /// A GraphQL directive, such as `@deprecated(reason: "Use the other field")`.
 ///
 /// [Reference](https://spec.graphql.org/October2021/#Directive).
@@ -392,112 +348,5 @@ impl Directive {
             .iter()
             .find(|item| item.0 == name)
             .map(|item| &item.1)
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use graphql_value::{ConstValue, Name};
-
-    use super::{ConstDirective, InputValueDefinition, Type};
-
-    #[test]
-    fn test_const_directive_display_trait() {
-        let deprecated_directive = ConstDirective {
-            name: Name::new("deprecated"),
-            arguments: vec![(
-                Name::new("reason"),
-                ConstValue::String("Use some_other_field".to_string()),
-            )],
-        };
-
-        assert_eq!(
-            "@deprecated(reason: \"Use some_other_field\")",
-            deprecated_directive.to_string()
-        );
-
-        let some_directive = ConstDirective {
-            name: Name::new("some"),
-            arguments: vec![
-                (
-                    Name::new("arg1"),
-                    ConstValue::String("String value".to_string()),
-                ),
-                (Name::new("arg2"), ConstValue::Boolean(true)),
-                (
-                    Name::new("arg3"),
-                    ConstValue::String("Another string value".to_string()),
-                ),
-            ],
-        };
-
-        assert_eq!(
-            "@some(arg1: \"String value\", arg2: true, arg3: \"Another string value\")",
-            some_directive.to_string()
-        );
-    }
-
-    #[test]
-    fn test_input_value_definition_display_trait() {
-        let deprecated_directive = ConstDirective {
-            name: Name::new("deprecated"),
-            arguments: vec![(
-                Name::new("reason"),
-                ConstValue::String("Use some_other_field".to_string()),
-            )],
-        };
-
-        let some_directive = ConstDirective {
-            name: Name::new("some"),
-            arguments: vec![
-                (
-                    Name::new("arg1"),
-                    ConstValue::String("String value".to_string()),
-                ),
-                (Name::new("arg2"), ConstValue::Boolean(true)),
-                (
-                    Name::new("arg3"),
-                    ConstValue::String("Another string value".to_string()),
-                ),
-            ],
-        };
-
-        let id_input_value = InputValueDefinition {
-            description: Some("This is some id with default value as def_id".to_string()),
-            name: Name::new("id"),
-            ty: Type::new("ID").unwrap(),
-            default_value: Some(ConstValue::String("def_id".to_string())),
-            directives: vec![some_directive, deprecated_directive],
-        };
-
-        let id_input_value_expected_str = r#"
-"""This is some id with default value as def_id"""
-id: ID = "def_id" @some(arg1: "String value", arg2: true, arg3: "Another string value") @deprecated(reason: "Use some_other_field")"#;
-        assert_eq!(id_input_value_expected_str, id_input_value.to_string());
-
-        let id_input_value = InputValueDefinition {
-            description: Some("This is some id with default value as def_id".to_string()),
-            name: Name::new("id"),
-            ty: Type::new("ID").unwrap(),
-            default_value: None,
-            directives: vec![],
-        };
-
-        let id_input_value_expected_str = r#"
-"""This is some id with default value as def_id"""
-id: ID"#;
-        assert_eq!(id_input_value_expected_str, id_input_value.to_string());
-
-        let id_input_value = InputValueDefinition {
-            description: None,
-            name: Name::new("id"),
-            ty: Type::new("ID").unwrap(),
-            default_value: None,
-            directives: vec![],
-        };
-
-        let id_input_value_expected_str = r#"
-id: ID"#;
-        assert_eq!(id_input_value_expected_str, id_input_value.to_string());
     }
 }
