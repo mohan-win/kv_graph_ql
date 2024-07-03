@@ -290,11 +290,8 @@ fn display_type_inside_block(f: &mut fmt::Formatter, r#type: impl fmt::Display) 
 
 #[cfg(test)]
 mod test {
+    use super::*;
     use graphql_value::{ConstValue, Name};
-
-    use crate::graphql_ast::InputObjectType;
-
-    use super::{ConstDirective, InputValueDefinition, Type};
 
     #[test]
     fn test_const_directive_display_trait() {
@@ -423,7 +420,7 @@ id: ID"#;
 
         let id_input_value1 = InputValueDefinition {
             description: Some("This is some id with default value as def_id".to_string()),
-            name: Name::new("id"),
+            name: Name::new("id1"),
             ty: Type::new("ID").unwrap(),
             default_value: Some(ConstValue::String("def_id".to_string())),
             directives: vec![some_directive, deprecated_directive],
@@ -431,7 +428,7 @@ id: ID"#;
 
         let id_input_value2 = InputValueDefinition {
             description: Some("This is some id".to_string()),
-            name: Name::new("id"),
+            name: Name::new("id2"),
             ty: Type::new("ID").unwrap(),
             default_value: None,
             directives: vec![],
@@ -439,7 +436,7 @@ id: ID"#;
 
         let id_input_value3 = InputValueDefinition {
             description: None,
-            name: Name::new("id"),
+            name: Name::new("id3"),
             ty: Type::new("ID").unwrap(),
             default_value: None,
             directives: vec![],
@@ -448,10 +445,10 @@ id: ID"#;
         let input_object_type = InputObjectType { fields };
         let expected_input_object_type_graphql = r#"
 """This is some id with default value as def_id"""
-id: ID = "def_id" @some(arg1: "String value", arg2: true, arg3: "Another string value") @deprecated(reason: "Use some_other_field")
+id1: ID = "def_id" @some(arg1: "String value", arg2: true, arg3: "Another string value") @deprecated(reason: "Use some_other_field")
 """This is some id"""
-id: ID
-id: ID"#;
+id2: ID
+id3: ID"#;
         assert_eq!(
             expected_input_object_type_graphql,
             input_object_type.to_string()
@@ -460,6 +457,71 @@ id: ID"#;
 
     #[test]
     fn test_type_definition_input() {
-        unimplemented!()
+        let deprecated_directive = ConstDirective {
+            name: Name::new("deprecated"),
+            arguments: vec![(
+                Name::new("reason"),
+                ConstValue::String("Use some_other_field".to_string()),
+            )],
+        };
+
+        let some_directive = ConstDirective {
+            name: Name::new("some"),
+            arguments: vec![
+                (
+                    Name::new("arg1"),
+                    ConstValue::String("String value".to_string()),
+                ),
+                (Name::new("arg2"), ConstValue::Boolean(true)),
+                (
+                    Name::new("arg3"),
+                    ConstValue::String("Another string value".to_string()),
+                ),
+            ],
+        };
+
+        let id_input_value1 = InputValueDefinition {
+            description: Some("This is some id with default value as def_id".to_string()),
+            name: Name::new("id1"),
+            ty: Type::new("ID").unwrap(),
+            default_value: Some(ConstValue::String("def_id".to_string())),
+            directives: vec![some_directive.clone(), deprecated_directive],
+        };
+
+        let id_input_value2 = InputValueDefinition {
+            description: Some("This is some id".to_string()),
+            name: Name::new("id2"),
+            ty: Type::new("ID").unwrap(),
+            default_value: None,
+            directives: vec![],
+        };
+
+        let id_input_value3 = InputValueDefinition {
+            description: None,
+            name: Name::new("id3"),
+            ty: Type::new("ID").unwrap(),
+            default_value: None,
+            directives: vec![],
+        };
+        let fields = vec![id_input_value1, id_input_value2, id_input_value3];
+        let input_object_type = InputObjectType { fields };
+        let input_type_def = TypeDefinition {
+            extend: false,
+            description: Some("Input object type definition with 3 fields".to_string()),
+            name: Name::new("MyInputObject"),
+            directives: vec![some_directive.clone(), some_directive],
+            kind: TypeKind::InputObject(input_object_type),
+        };
+        let expected_input_type_def_graphql = r#"
+"""Input object type definition with 3 fields"""
+input MyInputObject @some(arg1: "String value", arg2: true, arg3: "Another string value") @some(arg1: "String value", arg2: true, arg3: "Another string value") {
+"""This is some id with default value as def_id"""
+id1: ID = "def_id" @some(arg1: "String value", arg2: true, arg3: "Another string value") @deprecated(reason: "Use some_other_field")
+"""This is some id"""
+id2: ID
+id3: ID
+}
+"#;
+        assert_eq!(expected_input_type_def_graphql, input_type_def.to_string());
     }
 }
