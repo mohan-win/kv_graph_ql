@@ -10,6 +10,75 @@ use super::*;
 use crate::graphql_ast;
 use std::fmt::{self, Write};
 
+impl fmt::Display for SchemaDefinition {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        ln_display_description_ln(f, &self.description)?;
+        write!(f, "schema")?;
+        display_directives(f, &self.directives)?;
+        f.write_str(" {")?;
+        self.query
+            .as_ref()
+            .map_or_else(|| Ok(()), |query_type| write!(f, "query: {}", query_type))?;
+        self.mutation.as_ref().map_or_else(
+            || Ok(()),
+            |mutation_type| write!(f, "mutation :{}", mutation_type),
+        )?;
+        self.subscription.as_ref().map_or_else(
+            || Ok(()),
+            |subscription_type| write!(f, "subscription: {}", subscription_type),
+        )?;
+        f.write_str("\n}\n")
+    }
+}
+
+impl fmt::Display for DirectiveDefinition {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        ln_display_description_ln(f, &self.description)?;
+        write!(f, "directive @{}", &self.name)?;
+        if self.arguments.len() > 0 {
+            write!(f, "(")?;
+            self.arguments
+                .iter()
+                .try_for_each(|argument| f.write_str(&argument.to_string()))?;
+            write!(f, "\n)")?;
+        }
+        if self.is_repeatable {
+            write!(f, " repeatable")?;
+        }
+        write!(f, " on")?;
+        self.locations
+            .iter()
+            .try_for_each(|loc| write!(f, "\n| {}", loc))?;
+        write!(f, "\n")
+    }
+}
+
+impl fmt::Display for DirectiveLocation {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            DirectiveLocation::Query => write!(f, "QUERY"),
+            DirectiveLocation::Mutation => write!(f, "MUTATION"),
+            DirectiveLocation::Subscription => write!(f, "SUBSCRIPTION"),
+            DirectiveLocation::Field => write!(f, "FIELD"),
+            DirectiveLocation::FragmentDefinition => write!(f, "FRAGMENT_DEFINITION"),
+            DirectiveLocation::FragmentSpread => write!(f, "FRAGMENT_SPREAD"),
+            DirectiveLocation::InlineFragment => write!(f, "INLINE_FRAGMENT"),
+            DirectiveLocation::VariableDefinition => write!(f, "VARIABLE_DEFINITION"),
+            DirectiveLocation::Schema => write!(f, "SCHEMA"),
+            DirectiveLocation::Scalar => write!(f, "SCALAR"),
+            DirectiveLocation::Object => write!(f, "OBJECT"),
+            DirectiveLocation::FieldDefinition => write!(f, "FIELD_DEFINITION"),
+            DirectiveLocation::ArgumentDefinition => write!(f, "ARGUMENT_DEFINITION"),
+            DirectiveLocation::Interface => write!(f, "INTERFACE"),
+            DirectiveLocation::Union => write!(f, "UNION"),
+            DirectiveLocation::Enum => write!(f, "ENUM"),
+            DirectiveLocation::EnumValue => write!(f, "ENUM_VALUE"),
+            DirectiveLocation::InputObject => write!(f, "INPUT_OBJECT"),
+            DirectiveLocation::InputFieldDefinition => write!(f, "INPUT_FIELD_DEFINITION"),
+        }
+    }
+}
+
 impl fmt::Display for TypeDefinition {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         ln_display_description_ln(f, &self.description)?;

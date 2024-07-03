@@ -34,6 +34,9 @@ pub enum TypeSystemDefinition {
 pub struct SchemaDefinition {
     /// Whether the schema is an extension of another schema.
     pub extend: bool,
+    /// The description of the type, if present. This is never present on an
+    /// extension type.
+    pub description: Option<String>,
     /// The directives of the schema definition
     pub directives: Vec<ConstDirective>,
     /// The query root. This is always `Some` when the schema is not extended.
