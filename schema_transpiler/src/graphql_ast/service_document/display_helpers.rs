@@ -899,7 +899,6 @@ union Person @nightly(reason: "This is not yet stable") =
             }),
         };
 
-        println!("{}", search_result_union);
         assert_eq!(expected_graphql, search_result_union.to_string());
 
         let person_union = TypeDefinition {
@@ -918,7 +917,93 @@ union Person @nightly(reason: "This is not yet stable") =
             }),
         };
 
-        println!("{}", person_union);
         assert_eq!(expected_graphql_1, person_union.to_string());
+    }
+
+    #[test]
+    fn test_enum_type() {
+        let expected_graphql = r#"
+"""User role enum"""
+enum Role @saveAsNumberInDB(startsFrom: 0, maxValue: 255) {
+"""The User"""
+USER
+"""The Admin"""
+ADMIN
+"""The old root role"""
+ROOT @deprecated(reason: "Use either USER or ADMIN")
+}
+"#;
+        let expected_graphql_1 = r#"
+enum LivingThings {
+ANIMAL
+PLANT
+OTHER
+}
+"#;
+        let user_role_enum = TypeDefinition {
+            extend: false,
+            description: Some("User role enum".to_string()),
+            name: Name::new("Role"),
+            directives: vec![ConstDirective {
+                name: Name::new("saveAsNumberInDB"),
+                arguments: vec![
+                    (Name::new("startsFrom"), 0.into()),
+                    (Name::new("maxValue"), 255.into()),
+                ],
+            }],
+            kind: TypeKind::Enum(EnumType {
+                values: vec![
+                    EnumValueDefinition {
+                        description: Some("The User".to_string()),
+                        value: Name::new("USER"),
+                        directives: vec![],
+                    },
+                    EnumValueDefinition {
+                        description: Some("The Admin".to_string()),
+                        value: Name::new("ADMIN"),
+                        directives: vec![],
+                    },
+                    EnumValueDefinition {
+                        description: Some("The old root role".to_string()),
+                        value: Name::new("ROOT"),
+                        directives: vec![ConstDirective {
+                            name: Name::new("deprecated"),
+                            arguments: vec![(
+                                Name::new("reason"),
+                                ConstValue::String("Use either USER or ADMIN".to_string()),
+                            )],
+                        }],
+                    },
+                ],
+            }),
+        };
+        assert_eq!(expected_graphql, user_role_enum.to_string());
+
+        let living_things_enum = TypeDefinition {
+            extend: false,
+            description: None,
+            name: Name::new("LivingThings"),
+            directives: vec![],
+            kind: TypeKind::Enum(EnumType {
+                values: vec![
+                    EnumValueDefinition {
+                        description: None,
+                        value: Name::new("ANIMAL"),
+                        directives: vec![],
+                    },
+                    EnumValueDefinition {
+                        description: None,
+                        value: Name::new("PLANT"),
+                        directives: vec![],
+                    },
+                    EnumValueDefinition {
+                        description: None,
+                        value: Name::new("OTHER"),
+                        directives: vec![],
+                    },
+                ],
+            }),
+        };
+        assert_eq!(expected_graphql_1, living_things_enum.to_string());
     }
 }
