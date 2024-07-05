@@ -874,4 +874,51 @@ createdAt: DateTime!
         };
         assert_eq!(expected_graphql, interface_type_def.to_string());
     }
+
+    #[test]
+    fn test_union_type() {
+        let expected_graphql = r#"
+"""Search result union"""
+union SearchResult = 
+| User
+| Post
+"#;
+        let expected_graphql_1 = r#"
+union Person @nightly(reason: "This is not yet stable") = 
+| User
+| Admin
+| Guest
+"#;
+        let search_result_union = TypeDefinition {
+            extend: false,
+            description: Some("Search result union".to_string()),
+            name: Name::new("SearchResult"),
+            directives: vec![],
+            kind: TypeKind::Union(UnionType {
+                members: vec![Name::new("User"), Name::new("Post")],
+            }),
+        };
+
+        println!("{}", search_result_union);
+        assert_eq!(expected_graphql, search_result_union.to_string());
+
+        let person_union = TypeDefinition {
+            extend: false,
+            description: None,
+            name: Name::new("Person"),
+            directives: vec![ConstDirective {
+                name: Name::new("nightly"),
+                arguments: vec![(
+                    Name::new("reason"),
+                    ConstValue::String("This is not yet stable".to_string()),
+                )],
+            }],
+            kind: TypeKind::Union(UnionType {
+                members: vec![Name::new("User"), Name::new("Admin"), Name::new("Guest")],
+            }),
+        };
+
+        println!("{}", person_union);
+        assert_eq!(expected_graphql_1, person_union.to_string());
+    }
 }
