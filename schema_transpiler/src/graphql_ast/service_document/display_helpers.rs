@@ -290,6 +290,8 @@ fn display_type_inside_block(f: &mut fmt::Formatter, r#type: impl fmt::Display) 
 
 #[cfg(test)]
 mod test {
+    use std::vec;
+
     use super::*;
     use graphql_value::{ConstValue, Name};
 
@@ -523,5 +525,121 @@ id3: ID
 }
 "#;
         assert_eq!(expected_input_type_def_graphql, input_type_def.to_string());
+    }
+
+    #[test]
+    fn test_type_definition_object() {
+        let expected_graphql = r#"
+"""Root query object"""
+type Query {
+"""Fetch users for the given criteria"""
+users(
+"""Users where input"""
+where: UserWhereInput
+orderBy: UserOrderByInput
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): [User!]! @deprecated(reason: "use userConnection for better performance")
+adminUser: User
+me: User!
+}
+"#;
+        let users_field_args = vec![
+            InputValueDefinition {
+                description: Some("Users where input".to_string()),
+                name: Name::new("where"),
+                ty: Type::new("UserWhereInput").unwrap(),
+                default_value: None,
+                directives: vec![],
+            },
+            InputValueDefinition {
+                description: None,
+                name: Name::new("orderBy"),
+                ty: Type::new("UserOrderByInput").unwrap(),
+                default_value: None,
+                directives: vec![],
+            },
+            InputValueDefinition {
+                description: None,
+                name: Name::new("skip"),
+                ty: Type::new("Int").unwrap(),
+                default_value: None,
+                directives: vec![],
+            },
+            InputValueDefinition {
+                description: None,
+                name: Name::new("after"),
+                ty: Type::new("ID").unwrap(),
+                default_value: None,
+                directives: vec![],
+            },
+            InputValueDefinition {
+                description: None,
+                name: Name::new("before"),
+                ty: Type::new("ID").unwrap(),
+                default_value: None,
+                directives: vec![],
+            },
+            InputValueDefinition {
+                description: None,
+                name: Name::new("first"),
+                ty: Type::new("Int").unwrap(),
+                default_value: None,
+                directives: vec![],
+            },
+            InputValueDefinition {
+                description: None,
+                name: Name::new("last"),
+                ty: Type::new("Int").unwrap(),
+                default_value: None,
+                directives: vec![],
+            },
+        ];
+        let deprecated_directive = ConstDirective {
+            name: Name::new("deprecated"),
+            arguments: vec![(
+                Name::new("reason"),
+                ConstValue::String("use userConnection for better performance".to_string()),
+            )],
+        };
+        let users_field = FieldDefinition {
+            description: Some("Fetch users for the given criteria".to_string()),
+            name: Name::new("users"),
+            argments: users_field_args,
+            ty: Type::new("[User!]!").unwrap(),
+            directives: vec![deprecated_directive],
+        };
+        let admin_field = FieldDefinition {
+            description: None,
+            name: Name::new("adminUser"),
+            argments: vec![],
+            ty: Type::new("User").unwrap(),
+            directives: vec![],
+        };
+        let me_field = FieldDefinition {
+            description: None,
+            name: Name::new("me"),
+            argments: vec![],
+            ty: Type::new("User!").unwrap(),
+            directives: vec![],
+        };
+
+        let query_object_type = ObjectType {
+            implements: vec![],
+            fields: vec![users_field, admin_field, me_field],
+        };
+
+        let query_type_def = TypeDefinition {
+            extend: false,
+            description: Some("Root query object".to_string()),
+            name: Name::new("Query"),
+            directives: vec![],
+            kind: TypeKind::Object(query_object_type),
+        };
+        println!("{}", query_type_def);
+        assert_eq!(expected_graphql, query_type_def.to_string());
     }
 }
