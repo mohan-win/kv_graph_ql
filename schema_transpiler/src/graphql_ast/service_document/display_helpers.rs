@@ -643,7 +643,6 @@ me: User!
             directives: vec![],
             kind: TypeKind::Object(query_object_type),
         };
-        println!("{}", query_type_def);
         assert_eq!(expected_graphql, query_type_def.to_string());
     }
     #[test]
@@ -701,7 +700,178 @@ createdAt: DateTime!
                 ],
             }),
         };
-        println!("{}", object_type_def);
         assert_eq!(expected_graphql, object_type_def.to_string());
+    }
+
+    #[test]
+    fn test_type_definition_interface() {
+        let expected_graphql = r#"
+"""Root query interface"""
+interface RootQuery {
+"""Fetch users for the given criteria"""
+users(
+"""Users where input"""
+where: UserWhereInput
+orderBy: UserOrderByInput
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): [User!]! @deprecated(reason: "use userConnection for better performance")
+adminUser: User
+me: User!
+}
+"#;
+        let users_field_args = vec![
+            InputValueDefinition {
+                description: Some("Users where input".to_string()),
+                name: Name::new("where"),
+                ty: Type::new("UserWhereInput").unwrap(),
+                default_value: None,
+                directives: vec![],
+            },
+            InputValueDefinition {
+                description: None,
+                name: Name::new("orderBy"),
+                ty: Type::new("UserOrderByInput").unwrap(),
+                default_value: None,
+                directives: vec![],
+            },
+            InputValueDefinition {
+                description: None,
+                name: Name::new("skip"),
+                ty: Type::new("Int").unwrap(),
+                default_value: None,
+                directives: vec![],
+            },
+            InputValueDefinition {
+                description: None,
+                name: Name::new("after"),
+                ty: Type::new("ID").unwrap(),
+                default_value: None,
+                directives: vec![],
+            },
+            InputValueDefinition {
+                description: None,
+                name: Name::new("before"),
+                ty: Type::new("ID").unwrap(),
+                default_value: None,
+                directives: vec![],
+            },
+            InputValueDefinition {
+                description: None,
+                name: Name::new("first"),
+                ty: Type::new("Int").unwrap(),
+                default_value: None,
+                directives: vec![],
+            },
+            InputValueDefinition {
+                description: None,
+                name: Name::new("last"),
+                ty: Type::new("Int").unwrap(),
+                default_value: None,
+                directives: vec![],
+            },
+        ];
+        let deprecated_directive = ConstDirective {
+            name: Name::new("deprecated"),
+            arguments: vec![(
+                Name::new("reason"),
+                ConstValue::String("use userConnection for better performance".to_string()),
+            )],
+        };
+        let users_field = FieldDefinition {
+            description: Some("Fetch users for the given criteria".to_string()),
+            name: Name::new("users"),
+            arguments: users_field_args,
+            ty: Type::new("[User!]!").unwrap(),
+            directives: vec![deprecated_directive],
+        };
+        let admin_field = FieldDefinition {
+            description: None,
+            name: Name::new("adminUser"),
+            arguments: vec![],
+            ty: Type::new("User").unwrap(),
+            directives: vec![],
+        };
+        let me_field = FieldDefinition {
+            description: None,
+            name: Name::new("me"),
+            arguments: vec![],
+            ty: Type::new("User!").unwrap(),
+            directives: vec![],
+        };
+
+        let query_interface_type = InterfaceType {
+            implements: vec![],
+            fields: vec![users_field, admin_field, me_field],
+        };
+
+        let query_interface_def = TypeDefinition {
+            extend: false,
+            description: Some("Root query interface".to_string()),
+            name: Name::new("RootQuery"),
+            directives: vec![],
+            kind: TypeKind::Interface(query_interface_type),
+        };
+        assert_eq!(expected_graphql, query_interface_def.to_string());
+    }
+    #[test]
+    fn test_type_definition_interface_1() {
+        let expected_graphql = r#"
+"""User system model interface"""
+interface User implements Node & Entity @deprecated(reason: "use UserV2 when saving new users") {
+"""The unique identifier"""
+id: ID! @unique
+email: String! @unique
+"""The time the document was created"""
+createdAt: DateTime!
+}
+"#;
+        let deprecated_user_directive = ConstDirective {
+            name: Name::new("deprecated"),
+            arguments: vec![(
+                Name::new("reason"),
+                ConstValue::String("use UserV2 when saving new users".to_string()),
+            )],
+        };
+        let unique_directive = ConstDirective {
+            name: Name::new("unique"),
+            arguments: vec![],
+        };
+        let interface_type_def = TypeDefinition {
+            extend: false,
+            description: Some("User system model interface".to_string()),
+            name: Name::new("User"),
+            directives: vec![deprecated_user_directive],
+            kind: TypeKind::Interface(InterfaceType {
+                implements: vec![Name::new("Node"), Name::new("Entity")],
+                fields: vec![
+                    FieldDefinition {
+                        description: Some("The unique identifier".to_string()),
+                        name: Name::new("id"),
+                        arguments: vec![],
+                        ty: Type::new("ID!").unwrap(),
+                        directives: vec![unique_directive.clone()],
+                    },
+                    FieldDefinition {
+                        description: None,
+                        name: Name::new("email"),
+                        arguments: vec![],
+                        ty: Type::new("String!").unwrap(),
+                        directives: vec![unique_directive.clone()],
+                    },
+                    FieldDefinition {
+                        description: Some("The time the document was created".to_string()),
+                        name: Name::new("createdAt"),
+                        arguments: vec![],
+                        ty: Type::new("DateTime!").unwrap(),
+                        directives: vec![],
+                    },
+                ],
+            }),
+        };
+        assert_eq!(expected_graphql, interface_type_def.to_string());
     }
 }
