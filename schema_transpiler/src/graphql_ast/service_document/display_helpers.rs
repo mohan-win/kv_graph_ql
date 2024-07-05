@@ -300,7 +300,7 @@ mod test {
     use graphql_value::{ConstValue, Name};
 
     #[test]
-    fn test_const_directive_display_trait() {
+    fn test_const_directive_def() {
         let deprecated_directive = ConstDirective {
             name: Name::new("deprecated"),
             arguments: vec![(
@@ -336,7 +336,7 @@ mod test {
     }
 
     #[test]
-    fn test_input_value_definition_display_trait() {
+    fn test_input_value_def() {
         let deprecated_directive = ConstDirective {
             name: Name::new("deprecated"),
             arguments: vec![(
@@ -400,7 +400,7 @@ id: ID"#;
     }
 
     #[test]
-    fn test_input_object_type() {
+    fn test_input_object_def() {
         let deprecated_directive = ConstDirective {
             name: Name::new("deprecated"),
             arguments: vec![(
@@ -532,7 +532,7 @@ id3: ID
     }
 
     #[test]
-    fn test_type_definition_object() {
+    fn test_object_def() {
         let expected_graphql = r#"
 """Root query object"""
 type Query {
@@ -646,7 +646,7 @@ me: User!
         assert_eq!(expected_graphql, query_type_def.to_string());
     }
     #[test]
-    fn test_type_definition_object_1() {
+    fn test_object_def_1() {
         let expected_graphql = r#"
 """User system model"""
 type User implements Node & Entity @deprecated(reason: "use UserV2 when saving new users") {
@@ -704,7 +704,7 @@ createdAt: DateTime!
     }
 
     #[test]
-    fn test_type_definition_interface() {
+    fn test_interface_def() {
         let expected_graphql = r#"
 """Root query interface"""
 interface RootQuery {
@@ -818,7 +818,7 @@ me: User!
         assert_eq!(expected_graphql, query_interface_def.to_string());
     }
     #[test]
-    fn test_type_definition_interface_1() {
+    fn test_interface_def_1() {
         let expected_graphql = r#"
 """User system model interface"""
 interface User implements Node & Entity @deprecated(reason: "use UserV2 when saving new users") {
@@ -876,7 +876,7 @@ createdAt: DateTime!
     }
 
     #[test]
-    fn test_union_type() {
+    fn test_union_type_def() {
         let expected_graphql = r#"
 """Search result union"""
 union SearchResult = 
@@ -1005,5 +1005,50 @@ OTHER
             }),
         };
         assert_eq!(expected_graphql_1, living_things_enum.to_string());
+    }
+
+    #[test]
+    fn test_scalar_type_def() {
+        let expected_graphql = r#"
+"""Date scalar"""
+scalar Date @deprecated(reason: "Use DateTime scalar")
+"#;
+        let expected_graphql_1 = r#"
+scalar DateTime @auto_generated @version(no: 1)
+"#;
+        let date_scalar = TypeDefinition {
+            extend: false,
+            description: Some("Date scalar".to_string()),
+            name: Name::new("Date"),
+            directives: vec![ConstDirective {
+                name: Name::new("deprecated"),
+                arguments: vec![(
+                    Name::new("reason"),
+                    ConstValue::String("Use DateTime scalar".to_string()),
+                )],
+            }],
+            kind: TypeKind::Scalar,
+        };
+
+        assert_eq!(expected_graphql, date_scalar.to_string());
+
+        let date_time_scalar = TypeDefinition {
+            extend: false,
+            description: None,
+            name: Name::new("DateTime"),
+            directives: vec![
+                ConstDirective {
+                    name: Name::new("auto_generated"),
+                    arguments: vec![],
+                },
+                ConstDirective {
+                    name: Name::new("version"),
+                    arguments: vec![(Name::new("no"), 1.into())],
+                },
+            ],
+            kind: TypeKind::Scalar,
+        };
+
+        assert_eq!(expected_graphql_1, date_time_scalar.to_string());
     }
 }
