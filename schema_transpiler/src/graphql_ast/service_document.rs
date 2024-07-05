@@ -106,7 +106,7 @@ pub struct FieldDefinition {
     /// Name of the field.
     pub name: Name,
     /// Arguments of the field.
-    pub argments: Vec<InputValueDefinition>,
+    pub arguments: Vec<InputValueDefinition>,
     /// Type of the field.
     pub ty: Type,
     /// Directive of the field.

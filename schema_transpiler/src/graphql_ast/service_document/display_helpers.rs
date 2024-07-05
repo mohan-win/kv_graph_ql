@@ -156,11 +156,11 @@ impl fmt::Display for InterfaceType {
 impl fmt::Display for FieldDefinition {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         ln_display_description_ln(f, &self.description)?;
-        if self.argments.len() == 0 {
+        if self.arguments.len() == 0 {
             write!(f, "{}: {}", self.name, self.ty)?;
         } else {
             write!(f, "{}(", self.name)?;
-            self.argments
+            self.arguments
                 .iter()
                 .try_for_each(|argument| f.write_str(&argument.to_string()))?;
             write!(f, "\n): {}", self.ty)?;
@@ -236,13 +236,17 @@ impl fmt::Display for BaseType {
 
 impl fmt::Display for ConstDirective {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let args: String = self
-            .arguments
-            .iter()
-            .map(|(name, const_value)| format!("{name}: {const_value}, "))
-            .collect();
-        let args = args.trim_end_matches([',', ' ']);
-        write!(f, "@{}({})", self.name, args)
+        if self.arguments.len() == 0 {
+            write!(f, "@{}", self.name)
+        } else {
+            let args: String = self
+                .arguments
+                .iter()
+                .map(|(name, const_value)| format!("{name}: {const_value}, "))
+                .collect();
+            let args = args.trim_end_matches([',', ' ']);
+            write!(f, "@{}({})", self.name, args)
+        }
     }
 }
 
@@ -272,9 +276,9 @@ fn display_directives(
 fn display_implements(f: &mut fmt::Formatter, interfaces: &Vec<Name>) -> fmt::Result {
     if interfaces.len() > 1 {
         let interfaces_str = interfaces.iter().fold(" ".to_string(), |acc, interface| {
-            format!("{}{} &", acc, interface)
+            format!("{}{} & ", acc, interface)
         });
-        let interfaces_str = interfaces_str.trim_end_matches(" &");
+        let interfaces_str = interfaces_str.trim_end_matches(" & ");
         write!(f, " implements{}", interfaces_str)
     } else {
         Ok(())
@@ -608,21 +612,21 @@ me: User!
         let users_field = FieldDefinition {
             description: Some("Fetch users for the given criteria".to_string()),
             name: Name::new("users"),
-            argments: users_field_args,
+            arguments: users_field_args,
             ty: Type::new("[User!]!").unwrap(),
             directives: vec![deprecated_directive],
         };
         let admin_field = FieldDefinition {
             description: None,
             name: Name::new("adminUser"),
-            argments: vec![],
+            arguments: vec![],
             ty: Type::new("User").unwrap(),
             directives: vec![],
         };
         let me_field = FieldDefinition {
             description: None,
             name: Name::new("me"),
-            argments: vec![],
+            arguments: vec![],
             ty: Type::new("User!").unwrap(),
             directives: vec![],
         };
@@ -641,5 +645,63 @@ me: User!
         };
         println!("{}", query_type_def);
         assert_eq!(expected_graphql, query_type_def.to_string());
+    }
+    #[test]
+    fn test_type_definition_object_1() {
+        let expected_graphql = r#"
+"""User system model"""
+type User implements Node & Entity @deprecated(reason: "use UserV2 when saving new users") {
+"""The unique identifier"""
+id: ID! @unique
+email: String! @unique
+"""The time the document was created"""
+createdAt: DateTime!
+}
+"#;
+        let deprecated_user_directive = ConstDirective {
+            name: Name::new("deprecated"),
+            arguments: vec![(
+                Name::new("reason"),
+                ConstValue::String("use UserV2 when saving new users".to_string()),
+            )],
+        };
+        let unique_directive = ConstDirective {
+            name: Name::new("unique"),
+            arguments: vec![],
+        };
+        let object_type_def = TypeDefinition {
+            extend: false,
+            description: Some("User system model".to_string()),
+            name: Name::new("User"),
+            directives: vec![deprecated_user_directive],
+            kind: TypeKind::Object(ObjectType {
+                implements: vec![Name::new("Node"), Name::new("Entity")],
+                fields: vec![
+                    FieldDefinition {
+                        description: Some("The unique identifier".to_string()),
+                        name: Name::new("id"),
+                        arguments: vec![],
+                        ty: Type::new("ID!").unwrap(),
+                        directives: vec![unique_directive.clone()],
+                    },
+                    FieldDefinition {
+                        description: None,
+                        name: Name::new("email"),
+                        arguments: vec![],
+                        ty: Type::new("String!").unwrap(),
+                        directives: vec![unique_directive.clone()],
+                    },
+                    FieldDefinition {
+                        description: Some("The time the document was created".to_string()),
+                        name: Name::new("createdAt"),
+                        arguments: vec![],
+                        ty: Type::new("DateTime!").unwrap(),
+                        directives: vec![],
+                    },
+                ],
+            }),
+        };
+        println!("{}", object_type_def);
+        assert_eq!(expected_graphql, object_type_def.to_string());
     }
 }
