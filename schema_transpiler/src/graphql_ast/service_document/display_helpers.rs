@@ -36,14 +36,14 @@ impl fmt::Display for SchemaDefinition {
         f.write_str(" {")?;
         self.query
             .as_ref()
-            .map_or_else(|| Ok(()), |query_type| write!(f, "query: {}", query_type))?;
+            .map_or_else(|| Ok(()), |query_type| write!(f, "\nquery: {}", query_type))?;
         self.mutation.as_ref().map_or_else(
             || Ok(()),
-            |mutation_type| write!(f, "mutation :{}", mutation_type),
+            |mutation_type| write!(f, "\nmutation: {}", mutation_type),
         )?;
         self.subscription.as_ref().map_or_else(
             || Ok(()),
-            |subscription_type| write!(f, "subscription: {}", subscription_type),
+            |subscription_type| write!(f, "\nsubscription: {}", subscription_type),
         )?;
         f.write_str("\n}\n")
     }
@@ -1050,5 +1050,106 @@ scalar DateTime @auto_generated @version(no: 1)
         };
 
         assert_eq!(expected_graphql_1, date_time_scalar.to_string());
+    }
+
+    #[test]
+    fn test_directive_def() {
+        let expected_graphql = r#"
+"""Delegate field directive"""
+directive @delegateField(
+name: String!
+) repeatable on
+| OBJECT
+| INTERFACE
+"#;
+        let expected_graphql_1 = r#"
+directive @deprecated(
+reason: String = "No longer supported"
+) on
+| FIELD_DEFINITION
+| ENUM_VALUE
+"#;
+        let delegate_field_directive = DirectiveDefinition {
+            description: Some("Delegate field directive".to_string()),
+            name: Name::new("delegateField"),
+            arguments: vec![{
+                InputValueDefinition {
+                    description: None,
+                    name: Name::new("name"),
+                    ty: Type::new("String!").unwrap(),
+                    default_value: None,
+                    directives: vec![],
+                }
+            }],
+            is_repeatable: true,
+            locations: vec![DirectiveLocation::Object, DirectiveLocation::Interface],
+        };
+
+        assert_eq!(expected_graphql, delegate_field_directive.to_string());
+
+        let deprecated_directive = DirectiveDefinition {
+            description: None,
+            name: Name::new("deprecated"),
+            arguments: vec![{
+                InputValueDefinition {
+                    description: None,
+                    name: Name::new("reason"),
+                    ty: Type::new("String").unwrap(),
+                    default_value: Some(ConstValue::String("No longer supported".to_string())),
+                    directives: vec![],
+                }
+            }],
+            is_repeatable: false,
+            locations: vec![
+                DirectiveLocation::FieldDefinition,
+                DirectiveLocation::EnumValue,
+            ],
+        };
+
+        assert_eq!(expected_graphql_1, deprecated_directive.to_string());
+    }
+
+    #[test]
+    fn test_schema_def() {
+        let expected_graphql = r#"
+"""My awesome app schema"""
+schema @version(no: 1) {
+query: MyRootQueryType
+mutation: MyRootMutationType
+}
+"#;
+        let expected_graphql_1 = r#"
+"""My awesome app schema"""
+schema @version(no: 1) {
+query: MyRootQueryType
+mutation: MyRootMutationType
+subscription: MyRootSubscriptionType
+}
+"#;
+        let schema_def = SchemaDefinition {
+            extend: false,
+            description: Some("My awesome app schema".to_string()),
+            directives: vec![ConstDirective {
+                name: Name::new("version"),
+                arguments: vec![(Name::new("no"), 1.into())],
+            }],
+            query: Some(Name::new("MyRootQueryType")),
+            mutation: Some(Name::new("MyRootMutationType")),
+            subscription: None,
+        };
+        assert_eq!(expected_graphql, schema_def.to_string());
+
+        let schema_def_1 = SchemaDefinition {
+            extend: false,
+            description: Some("My awesome app schema".to_string()),
+            directives: vec![ConstDirective {
+                name: Name::new("version"),
+                arguments: vec![(Name::new("no"), 1.into())],
+            }],
+            query: Some(Name::new("MyRootQueryType")),
+            mutation: Some(Name::new("MyRootMutationType")),
+            subscription: Some(Name::new("MyRootSubscriptionType")),
+        };
+        assert_eq!(expected_graphql_1, schema_def_1.to_string());
     }
 }
