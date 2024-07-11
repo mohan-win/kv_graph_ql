@@ -64,7 +64,7 @@ fn input_filters_str_field_def<'src>(
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
     let field_name: &'src str = field_name
         .try_ident_name()
-        .map_err(|(error, pos)| ErrorGraphQLGen::SDMLError { error, pos })?;
+        .map_err(ErrorGraphQLGen::new_sdml_error)?;
     // Names of the fields whose type is a list
     let list_field_names_fmt = [("{}_in", "in list"), ("{}_not_in", "not in list")];
     let non_list_field_names_fmt = [
@@ -101,6 +101,54 @@ fn input_filters_str_field_def<'src>(
         .map(|(field_format, field_desc)| {
             let field_name = Name::new(field_format.replace("{}", field_name));
             let field_type = Type::new("String").expect("This should be of type String");
+            InputValueDefinition {
+                description: Some(field_desc.to_string()),
+                name: field_name,
+                ty: field_type,
+                default_value: None,
+                directives: vec![],
+            }
+        });
+
+    Ok(non_list_fields.chain(list_fields).collect())
+}
+
+fn input_filters_int_field_def<'src>(
+    field_name: &sdml_ast::Token<'src>,
+) -> GraphQLGenResult<Vec<InputValueDefinition>> {
+    let field_name: &'src str = field_name
+        .try_ident_name()
+        .map_err(ErrorGraphQLGen::new_sdml_error)?;
+    // Names of the fields whose type is a list
+    let list_field_names_fmt = [("{}_in", "in list"), ("{}_not_in", "not in list")];
+    let non_list_field_names_fmt = [
+        ("{}", "equals"),
+        ("{}_not", "not equals"),
+        ("{}_lt", "less than"),
+        ("{}_lte", "less than or equals"),
+        ("{}_gt", "greater than"),
+        ("{}_gte", "greater than or equals"),
+    ];
+
+    let list_fields = list_field_names_fmt
+        .into_iter()
+        .map(|(field_format, field_desc)| {
+            let field_name = Name::new(field_format.replace("{}", field_name));
+            let field_type = Type::new("[Integer]").expect("This should be of type String list");
+            InputValueDefinition {
+                description: Some(field_desc.to_string()),
+                name: field_name,
+                ty: field_type,
+                default_value: None,
+                directives: vec![],
+            }
+        });
+
+    let non_list_fields = non_list_field_names_fmt
+        .into_iter()
+        .map(|(field_format, field_desc)| {
+            let field_name = Name::new(field_format.replace("{}", field_name));
+            let field_type = Type::new("Integer").expect("This should be of type String");
             InputValueDefinition {
                 description: Some(field_desc.to_string()),
                 name: field_name,
@@ -178,31 +226,23 @@ id: ID! @unique
     fn test_input_filters_str_field_def() {
         let expected_str = r#"
 """equals"""
-field: String
+field: Integer
 """not equals"""
-field_not: String
-"""contains substring"""
-field_contains: String
-"""doesn't contain substring"""
-field_not_contains: String
-field_starts_with: String
-field_not_starts_with: String
-field_ends_with: String
-field_not_ends_with: String
+field_not: Integer
 """less than"""
-field_lt: String
+field_lt: Integer
 """less than or equals"""
-field_lte: String
+field_lte: Integer
 """greater than"""
-field_gt: String
+field_gt: Integer
 """greater than or equals"""
-field_gte: String
+field_gte: Integer
 """in list"""
-field_in: [String]
+field_in: [Integer]
 """not in list"""
-field_not_in: [String]"#;
+field_not_in: [Integer]"#;
         let str_field_input_filters =
-            input_filters_str_field_def(&sdml_ast::Token::Ident("field", Span::new(0, 0)))
+            input_filters_int_field_def(&sdml_ast::Token::Ident("field", Span::new(0, 0)))
                 .expect("It should be a valid output");
         let actual_str = str_field_input_filters
             .into_iter()
