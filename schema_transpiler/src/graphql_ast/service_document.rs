@@ -1,6 +1,6 @@
 use super::*;
 
-mod display_helpers;
+pub mod display_helpers;
 
 /// A GraphQL file or request string defining a GraphQL service.
 ///

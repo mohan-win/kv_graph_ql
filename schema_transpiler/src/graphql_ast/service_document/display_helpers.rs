@@ -255,7 +255,7 @@ impl fmt::Display for ConstDirective {
 #[inline(always)]
 fn ln_display_description_ln(f: &mut fmt::Formatter, desc: &Option<String>) -> fmt::Result {
     write!(f, "\n")?;
-    if desc.is_some() {
+    if desc.is_some() && desc.as_ref().unwrap().len() > 0 {
         write!(f, "\"\"\"{}\"\"\"\n", desc.as_ref().unwrap())
     } else {
         Ok(())

@@ -136,6 +136,8 @@ fn input_filters_str_field_def<'src>(
 
 #[cfg(test)]
 mod tests {
+    use sdml_ast::Span;
+
     use super::*;
 
     #[test]
@@ -173,5 +175,38 @@ id: ID! @unique
     }
 
     #[test]
-    fn test_input_filters_str_field_def() {}
+    fn test_input_filters_str_field_def() {
+        let expected_str = r#"
+"""equals"""
+field: String
+"""not equals"""
+field_not: String
+"""contains substring"""
+field_contains: String
+"""doesn't contain substring"""
+field_not_contains: String
+field_starts_with: String
+field_not_starts_with: String
+field_ends_with: String
+field_not_ends_with: String
+"""less than"""
+field_lt: String
+"""less than or equals"""
+field_lte: String
+"""greater than"""
+field_gt: String
+"""greater than or equals"""
+field_gte: String
+"""in list"""
+field_in: [String]
+"""not in list"""
+field_not_in: [String]"#;
+        let str_field_input_filters =
+            input_filters_str_field_def(&sdml_ast::Token::Ident("field", Span::new(0, 0)))
+                .expect("It should be a valid output");
+        let actual_str = str_field_input_filters
+            .into_iter()
+            .fold("".to_string(), |acc, x| format!("{}{}", acc, x.to_string()));
+        assert_eq!(expected_str, actual_str);
+    }
 }
