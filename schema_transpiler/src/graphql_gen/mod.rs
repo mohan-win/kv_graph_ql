@@ -7,42 +7,53 @@ mod error;
 
 use super::*;
 pub use error::ErrorGraphQLGen;
+use graphql_ast::*;
+
 pub type GraphQLGenResult<T> = Result<T, ErrorGraphQLGen>;
 
 /// Date time scalar definition.
-fn scalar_def_date_time() -> graphql_ast::TypeDefinition {
-    graphql_ast::TypeDefinition {
+fn scalar_date_time_def() -> TypeDefinition {
+    TypeDefinition {
       extend: false,
       description: Some("A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the date-timeformat outlined in section 5.6 of the RFC 3339 profile of the ISO 8601 standard for representationof dates and times using the Gregorian calendar.".to_string()),
-      name: graphql_ast::Name::new("DateTime"),
+      name: Name::new("DateTime"),
       directives: vec![],
-      kind: graphql_ast::TypeKind::Scalar,
+      kind: TypeKind::Scalar,
     }
 }
 
 /// Unique directive definition.
-fn directive_def_unique() -> graphql_ast::DirectiveDefinition {
-    graphql_ast::DirectiveDefinition {
-        description: Some("@unique directive on an object field. When applied to an object field, the value of the field should be unique across all objects of the same type".to_string()),
-        name: graphql_ast::Name::new("unique"),
+fn directive_unique_def() -> DirectiveDefinition {
+    DirectiveDefinition {
+        description: Some("When applied to an object field, the value of the field should be unique across all object instances of the same type".to_string()),
+        name: Name::new("unique"),
         arguments: vec![],
         is_repeatable: false,
-        locations: vec![graphql_ast::DirectiveLocation::FieldDefinition],
+        locations: vec![DirectiveLocation::FieldDefinition],
     }
 }
 
 /// Node interface definition.
-fn interface_def_node() -> graphql_ast::TypeDefinition {
-    graphql_ast::TypeDefinition {
+fn interface_node_def() -> TypeDefinition {
+    TypeDefinition {
         extend: false,
         description: Some(
-            "Node interface as per Relay GraphQL Global Object Identification Spec".to_string(),
+            "Node interface as per Relay GraphQL Global Object Identification Spec. https://relay.dev/docs/guides/graphql-server-specification/#object-identification".to_string(),
         ),
-        name: graphql_ast::Name::new("Node"),
+        name: Name::new("Node"),
         directives: vec![],
-        kind: graphql_ast::TypeKind::Interface(graphql_ast::InterfaceType {
+        kind: TypeKind::Interface(InterfaceType {
             implements: vec![],
-            fields: vec![],
+            fields: vec![FieldDefinition {
+                description: Some("ID field with globally unique ID".to_string()),
+                name: Name::new("id"),
+                arguments: vec![],
+                ty: Type::new("ID!").unwrap(),
+                directives: vec![ConstDirective {
+                    name: Name::new("unique"),
+                    arguments: vec![],
+                }],
+            }],
         }),
     }
 }
@@ -50,7 +61,7 @@ fn interface_def_node() -> graphql_ast::TypeDefinition {
 /// Generates necessary filter arguments for a string field.
 fn input_filters_str_field_def<'src>(
     field_name: &sdml_ast::Token<'src>,
-) -> GraphQLGenResult<Vec<graphql_ast::InputValueDefinition>> {
+) -> GraphQLGenResult<Vec<InputValueDefinition>> {
     let field_name: &'src str = field_name
         .try_ident_name()
         .map_err(|(error, pos)| ErrorGraphQLGen::SDMLError { error, pos })?;
@@ -74,10 +85,9 @@ fn input_filters_str_field_def<'src>(
     let list_fields = list_field_names_fmt
         .into_iter()
         .map(|(field_format, field_desc)| {
-            let field_name = graphql_ast::Name::new(field_format.replace("{}", field_name));
-            let field_type =
-                graphql_ast::Type::new("[String]").expect("This should be of type String list");
-            graphql_ast::InputValueDefinition {
+            let field_name = Name::new(field_format.replace("{}", field_name));
+            let field_type = Type::new("[String]").expect("This should be of type String list");
+            InputValueDefinition {
                 description: Some(field_desc.to_string()),
                 name: field_name,
                 ty: field_type,
@@ -89,10 +99,9 @@ fn input_filters_str_field_def<'src>(
     let non_list_fields = non_list_field_names_fmt
         .into_iter()
         .map(|(field_format, field_desc)| {
-            let field_name = graphql_ast::Name::new(field_format.replace("{}", field_name));
-            let field_type =
-                graphql_ast::Type::new("String").expect("This should be of type String");
-            graphql_ast::InputValueDefinition {
+            let field_name = Name::new(field_format.replace("{}", field_name));
+            let field_type = Type::new("String").expect("This should be of type String");
+            InputValueDefinition {
                 description: Some(field_desc.to_string()),
                 name: field_name,
                 ty: field_type,
@@ -127,8 +136,42 @@ fn input_filters_str_field_def<'src>(
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
-    fn test_input_filters_str_field_def() {
-        
+    fn test_scalar_defs() {
+        let expected_graph_ql = r#"
+"""A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the date-timeformat outlined in section 5.6 of the RFC 3339 profile of the ISO 8601 standard for representationof dates and times using the Gregorian calendar."""
+scalar DateTime
+"#;
+        let date_time_scalar = scalar_date_time_def();
+        assert_eq!(expected_graph_ql, date_time_scalar.to_string())
     }
+
+    #[test]
+    fn test_directive_defs() {
+        let expected_graph_ql = r#"
+"""When applied to an object field, the value of the field should be unique across all object instances of the same type"""
+directive @unique on
+| FIELD_DEFINITION
+"#;
+        let unique_directive = directive_unique_def();
+        assert_eq!(expected_graph_ql, unique_directive.to_string());
+    }
+
+    #[test]
+    fn test_node_interface_def() {
+        let expected_graph_ql = r#"
+"""Node interface as per Relay GraphQL Global Object Identification Spec. https://relay.dev/docs/guides/graphql-server-specification/#object-identification"""
+interface Node {
+"""ID field with globally unique ID"""
+id: ID! @unique
+}
+"#;
+        let node_interface_def = interface_node_def();
+        assert_eq!(expected_graph_ql, node_interface_def.to_string());
+    }
+
+    #[test]
+    fn test_input_filters_str_field_def() {}
 }
