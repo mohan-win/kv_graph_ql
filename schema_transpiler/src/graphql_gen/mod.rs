@@ -59,7 +59,7 @@ fn interface_node_def() -> TypeDefinition {
 }
 
 /// Generates necessary filter arguments for a string field.
-fn input_filters_str_field_def<'src>(
+fn input_filters_string_field_def<'src>(
     field_name: &sdml_ast::Token<'src>,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
     let field_name: &'src str = field_name
@@ -84,30 +84,22 @@ fn input_filters_str_field_def<'src>(
 
     let list_fields = list_field_names_fmt
         .into_iter()
-        .map(|(field_format, field_desc)| {
-            let field_name = Name::new(field_format.replace("{}", field_name));
-            let field_type = Type::new("[String]").expect("This should be of type String list");
-            InputValueDefinition {
-                description: Some(field_desc.to_string()),
-                name: field_name,
-                ty: field_type,
-                default_value: None,
-                directives: vec![],
-            }
+        .map(|(field_format, field_desc)| InputValueDefinition {
+            description: Some(field_desc.to_string()),
+            name: Name::new(field_format.replace("{}", field_name)),
+            ty: Type::new("[String]").unwrap(),
+            default_value: None,
+            directives: vec![],
         });
 
     let non_list_fields = non_list_field_names_fmt
         .into_iter()
-        .map(|(field_format, field_desc)| {
-            let field_name = Name::new(field_format.replace("{}", field_name));
-            let field_type = Type::new("String").expect("This should be of type String");
-            InputValueDefinition {
-                description: Some(field_desc.to_string()),
-                name: field_name,
-                ty: field_type,
-                default_value: None,
-                directives: vec![],
-            }
+        .map(|(field_format, field_desc)| InputValueDefinition {
+            description: Some(field_desc.to_string()),
+            name: Name::new(field_format.replace("{}", field_name)),
+            ty: Type::new("String").unwrap(),
+            default_value: None,
+            directives: vec![],
         });
 
     Ok(non_list_fields.chain(list_fields).collect())
@@ -141,30 +133,112 @@ fn input_filters_number_field_def<'src>(
     };
     let list_fields = list_field_names_fmt
         .into_iter()
-        .map(|(field_format, field_desc)| {
-            let field_name = Name::new(field_format.replace("{}", field_name));
-            let field_type = Type::new(num_type_list).expect("This should be of type String list");
-            InputValueDefinition {
-                description: Some(field_desc.to_string()),
-                name: field_name,
-                ty: field_type,
-                default_value: None,
-                directives: vec![],
-            }
+        .map(|(field_format, field_desc)| InputValueDefinition {
+            description: Some(field_desc.to_string()),
+            name: Name::new(field_format.replace("{}", field_name)),
+            ty: Type::new(num_type_list).unwrap(),
+            default_value: None,
+            directives: vec![],
         });
 
     let non_list_fields = non_list_field_names_fmt
         .into_iter()
-        .map(|(field_format, field_desc)| {
-            let field_name = Name::new(field_format.replace("{}", field_name));
-            let field_type = Type::new(num_type).expect("This should be of type String");
-            InputValueDefinition {
-                description: Some(field_desc.to_string()),
-                name: field_name,
-                ty: field_type,
-                default_value: None,
-                directives: vec![],
-            }
+        .map(|(field_format, field_desc)| InputValueDefinition {
+            description: Some(field_desc.to_string()),
+            name: Name::new(field_format.replace("{}", field_name)),
+            ty: Type::new(num_type).unwrap(),
+            default_value: None,
+            directives: vec![],
+        });
+
+    Ok(non_list_fields.chain(list_fields).collect())
+}
+
+fn input_filters_boolean_field_def<'src>(
+    field_name: &sdml_ast::Token<'src>,
+) -> GraphQLGenResult<Vec<InputValueDefinition>> {
+    let field_name: &'src str = field_name
+        .try_ident_name()
+        .map_err(ErrorGraphQLGen::new_sdml_error)?;
+    let non_list_field_names_fmt = [("{}", "equals"), ("{}_not", "not equals")];
+    let non_list_fields = non_list_field_names_fmt
+        .into_iter()
+        .map(|(field_format, field_desc)| InputValueDefinition {
+            description: Some(field_desc.to_string()),
+            name: Name::new(field_format.replace("{}", field_name)),
+            ty: Type::new("Boolean").unwrap(),
+            default_value: None,
+            directives: vec![],
+        })
+        .collect();
+    Ok(non_list_fields)
+}
+
+fn input_filters_enum_field_def<'src>(
+    field_name: &sdml_ast::Token<'src>,
+    enum_type_name: &Name,
+) -> GraphQLGenResult<Vec<InputValueDefinition>> {
+    let field_name: &'src str = field_name
+        .try_ident_name()
+        .map_err(ErrorGraphQLGen::new_sdml_error)?;
+    let list_field_names_fmt = [("{}_in", "in list"), ("{}_not_in", "not in list")];
+    let non_list_field_names_fmt = [("{}", "equals"), ("{}_not", "not equals")];
+
+    let list_fields = list_field_names_fmt
+        .into_iter()
+        .map(|(field_format, field_desc)| InputValueDefinition {
+            description: Some(field_desc.to_string()),
+            name: Name::new(field_format.replace("{}", field_name)),
+            ty: Type::new(&format!("[{enum_type_name}]")).unwrap(),
+            default_value: None,
+            directives: vec![],
+        });
+
+    let non_list_fields = non_list_field_names_fmt
+        .into_iter()
+        .map(|(field_format, field_desc)| InputValueDefinition {
+            description: Some(field_desc.to_string()),
+            name: Name::new(field_format.replace("{}", field_name)),
+            ty: Type::new(enum_type_name).unwrap(),
+            default_value: None,
+            directives: vec![],
+        });
+
+    Ok(non_list_fields.chain(list_fields).collect())
+}
+
+fn input_filters_list_field_def<'src>(
+    field_name: &sdml_ast::Token<'src>,
+    scalar_type_name: &Name,
+) -> GraphQLGenResult<Vec<InputValueDefinition>> {
+    let field_name: &'src str = field_name
+        .try_ident_name()
+        .map_err(ErrorGraphQLGen::new_sdml_error)?;
+    // Names of the fields whose type is a list
+    let list_field_names_fmt = [
+        ("{}_contains_every", "contains all scalars T"),
+        ("{}_contains_some", "contains atleast 1 scalar T"),
+    ];
+    let non_list_field_names_fmt = [("{}_contains", "contains single scalar T")];
+
+    let list_fields = list_field_names_fmt
+        .into_iter()
+        .map(|(field_format, field_desc)| InputValueDefinition {
+            description: Some(field_desc.to_string()),
+            name: Name::new(field_format.replace("{}", field_name)),
+            ty: Type::new(&format!("[{scalar_type_name}]")).unwrap(),
+            default_value: None,
+            directives: vec![],
+        });
+
+    let non_list_fields = non_list_field_names_fmt
+        .into_iter()
+        .map(|(field_format, field_desc)| InputValueDefinition {
+            description: Some(field_desc.to_string()),
+            name: Name::new(field_format.replace("{}", field_name)),
+            ty: Type::new(scalar_type_name).unwrap(),
+            default_value: None,
+            directives: vec![],
         });
 
     Ok(non_list_fields.chain(list_fields).collect())
@@ -259,7 +333,7 @@ field_in: [String]
 """not in list"""
 field_not_in: [String]"#;
         let str_field_input_filters =
-            input_filters_str_field_def(&sdml_ast::Token::Ident("field", Span::new(0, 0)))
+            input_filters_string_field_def(&sdml_ast::Token::Ident("field", Span::new(0, 0)))
                 .expect("It should be a valid output");
         let actual_str = str_field_input_filters
             .into_iter()
@@ -325,5 +399,63 @@ field_not_in: [Float]"#;
             .into_iter()
             .fold("".to_string(), |acc, x| format!("{}{}", acc, x.to_string()));
         assert_eq!(expected_str, actual_str);
+    }
+
+    #[test]
+    fn test_input_filters_boolean_field_def() {
+        let expected_str = r#"
+"""equals"""
+field: Boolean
+"""not equals"""
+field_not: Boolean"#;
+        let boolean_field_input_filters =
+            input_filters_boolean_field_def(&sdml_ast::Token::Ident("field", Span::new(0, 0)))
+                .expect("It should be a valid output");
+        let actual_str = boolean_field_input_filters
+            .into_iter()
+            .fold("".to_string(), |acc, x| format!("{}{}", acc, x.to_string()));
+        assert_eq!(expected_str, actual_str);
+    }
+
+    #[test]
+    fn test_input_filters_enum_field_def() {
+        let expected_str = r#"
+"""equals"""
+userRole: Role
+"""not equals"""
+userRole_not: Role
+"""in list"""
+userRole_in: [Role]
+"""not in list"""
+userRole_not_in: [Role]"#;
+        let enum_field_input_filters = input_filters_enum_field_def(
+            &sdml_ast::Token::Ident("userRole", Span::new(0, 0)),
+            &Name::new("Role"),
+        )
+        .expect("It should be a valid output");
+        let actual_str = enum_field_input_filters
+            .into_iter()
+            .fold("".to_string(), |acc, x| format!("{}{}", acc, x.to_string()));
+        assert_eq!(expected_str, actual_str);
+    }
+
+    #[test]
+    fn test_input_filters_list_field_def() {
+        let expected_str = r#"
+"""contains single scalar T"""
+field_contains: String
+"""contains all scalars T"""
+field_contains_every: [String]
+"""contains atleast 1 scalar T"""
+field_contains_some: [String]"#;
+        let string_list_field_input_filters = input_filters_list_field_def(
+            &sdml_ast::Token::Ident("field", Span::new(0, 0)),
+            &Name::new("String"),
+        )
+        .expect("It should be a valid output");
+        let actual_str = string_list_field_input_filters
+            .into_iter()
+            .fold("".to_string(), |acc, x| format!("{}{}", acc, x));
+        assert_eq!(expected_str, actual_str)
     }
 }
