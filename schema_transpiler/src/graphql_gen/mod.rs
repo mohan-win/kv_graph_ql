@@ -113,8 +113,13 @@ fn input_filters_str_field_def<'src>(
     Ok(non_list_fields.chain(list_fields).collect())
 }
 
-fn input_filters_int_field_def<'src>(
+enum NumberType {
+    Integer,
+    Float,
+}
+fn input_filters_number_field_def<'src>(
     field_name: &sdml_ast::Token<'src>,
+    number_type: NumberType,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
     let field_name: &'src str = field_name
         .try_ident_name()
@@ -130,11 +135,15 @@ fn input_filters_int_field_def<'src>(
         ("{}_gte", "greater than or equals"),
     ];
 
+    let (num_type, num_type_list) = match number_type {
+        NumberType::Integer => ("Integer", "[Integer]"),
+        NumberType::Float => ("Float", "[Float]"),
+    };
     let list_fields = list_field_names_fmt
         .into_iter()
         .map(|(field_format, field_desc)| {
             let field_name = Name::new(field_format.replace("{}", field_name));
-            let field_type = Type::new("[Integer]").expect("This should be of type String list");
+            let field_type = Type::new(num_type_list).expect("This should be of type String list");
             InputValueDefinition {
                 description: Some(field_desc.to_string()),
                 name: field_name,
@@ -148,7 +157,7 @@ fn input_filters_int_field_def<'src>(
         .into_iter()
         .map(|(field_format, field_desc)| {
             let field_name = Name::new(field_format.replace("{}", field_name));
-            let field_type = Type::new("Integer").expect("This should be of type String");
+            let field_type = Type::new(num_type).expect("This should be of type String");
             InputValueDefinition {
                 description: Some(field_desc.to_string()),
                 name: field_name,
@@ -226,6 +235,42 @@ id: ID! @unique
     fn test_input_filters_str_field_def() {
         let expected_str = r#"
 """equals"""
+field: String
+"""not equals"""
+field_not: String
+"""contains substring"""
+field_contains: String
+"""doesn't contain substring"""
+field_not_contains: String
+field_starts_with: String
+field_not_starts_with: String
+field_ends_with: String
+field_not_ends_with: String
+"""less than"""
+field_lt: String
+"""less than or equals"""
+field_lte: String
+"""greater than"""
+field_gt: String
+"""greater than or equals"""
+field_gte: String
+"""in list"""
+field_in: [String]
+"""not in list"""
+field_not_in: [String]"#;
+        let str_field_input_filters =
+            input_filters_str_field_def(&sdml_ast::Token::Ident("field", Span::new(0, 0)))
+                .expect("It should be a valid output");
+        let actual_str = str_field_input_filters
+            .into_iter()
+            .fold("".to_string(), |acc, x| format!("{}{}", acc, x.to_string()));
+        assert_eq!(expected_str, actual_str);
+    }
+
+    #[test]
+    fn test_input_filters_int_field_def() {
+        let expected_str = r#"
+"""equals"""
 field: Integer
 """not equals"""
 field_not: Integer
@@ -241,10 +286,42 @@ field_gte: Integer
 field_in: [Integer]
 """not in list"""
 field_not_in: [Integer]"#;
-        let str_field_input_filters =
-            input_filters_int_field_def(&sdml_ast::Token::Ident("field", Span::new(0, 0)))
-                .expect("It should be a valid output");
-        let actual_str = str_field_input_filters
+        let int_field_input_filters = input_filters_number_field_def(
+            &sdml_ast::Token::Ident("field", Span::new(0, 0)),
+            NumberType::Integer,
+        )
+        .expect("It should be a valid output");
+        let actual_str = int_field_input_filters
+            .into_iter()
+            .fold("".to_string(), |acc, x| format!("{}{}", acc, x.to_string()));
+        assert_eq!(expected_str, actual_str);
+    }
+
+    #[test]
+    fn test_input_filters_float_field_def() {
+        let expected_str = r#"
+"""equals"""
+field: Float
+"""not equals"""
+field_not: Float
+"""less than"""
+field_lt: Float
+"""less than or equals"""
+field_lte: Float
+"""greater than"""
+field_gt: Float
+"""greater than or equals"""
+field_gte: Float
+"""in list"""
+field_in: [Float]
+"""not in list"""
+field_not_in: [Float]"#;
+        let float_field_input_filters = input_filters_number_field_def(
+            &sdml_ast::Token::Ident("field", Span::new(0, 0)),
+            NumberType::Float,
+        )
+        .expect("It should be a valid output");
+        let actual_str = float_field_input_filters
             .into_iter()
             .fold("".to_string(), |acc, x| format!("{}{}", acc, x.to_string()));
         assert_eq!(expected_str, actual_str);
