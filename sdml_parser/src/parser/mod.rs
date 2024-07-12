@@ -184,7 +184,10 @@ fn field_type<'src>() -> impl Parser<'src, &'src str, FieldType<'src>, Err<Rich<
             }
             .map_or(
                 Type::Unknown(Token::Ident(r#type, e.span())),
-                Type::Primitive,
+                |primitive_type| Type::Primitive {
+                    r#type: primitive_type,
+                    token: Token::Ident(r#type, e.span()),
+                },
             );
             FieldType::new(
                 r#type,
@@ -419,7 +422,10 @@ mod tests {
         assert_eq!(
             field_type().parse("Boolean").into_result(),
             Ok(FieldType::new(
-                Type::Primitive(PrimitiveType::Boolean),
+                Type::Primitive {
+                    r#type: PrimitiveType::Boolean,
+                    token: Token::Ident("Boolean", Span::new(0, 0))
+                },
                 false,
                 false
             ))
@@ -428,7 +434,10 @@ mod tests {
         assert_eq!(
             field_type().parse("ShortStr").into_result(),
             Ok(FieldType::new(
-                Type::Primitive(PrimitiveType::ShortStr),
+                Type::Primitive {
+                    r#type: PrimitiveType::ShortStr,
+                    token: Token::Ident("ShortStr", Span::new(0, 0))
+                },
                 false,
                 false,
             ))
@@ -437,7 +446,10 @@ mod tests {
         assert_eq!(
             field_type().parse("ShortStr?").into_result(),
             Ok(FieldType::new(
-                Type::Primitive(PrimitiveType::ShortStr),
+                Type::Primitive {
+                    r#type: PrimitiveType::ShortStr,
+                    token: Token::Ident("ShortStr", Span::new(0, 0))
+                },
                 true,
                 false,
             ))
@@ -446,7 +458,10 @@ mod tests {
         assert_eq!(
             field_type().parse("ShortStr[]").into_result(),
             Ok(FieldType::new(
-                Type::Primitive(PrimitiveType::ShortStr),
+                Type::Primitive {
+                    r#type: PrimitiveType::ShortStr,
+                    token: Token::Ident("ShortStr", Span::new(0, 0)),
+                },
                 false,
                 true,
             ))
@@ -513,7 +528,14 @@ mod tests {
                 .into_result(),
             Ok(FieldDecl {
                 name: Token::Ident("id", Span::new(0, 0)),
-                field_type: FieldType::new(Type::Primitive(PrimitiveType::ShortStr), true, false),
+                field_type: FieldType::new(
+                    Type::Primitive {
+                        r#type: PrimitiveType::ShortStr,
+                        token: Token::Ident("ShortStr", Span::new(0, 0))
+                    },
+                    true,
+                    false
+                ),
                 attributes: vec![
                     Attribute {
                         name: Token::Ident("unique_id", Span::new(0, 0)),
@@ -536,7 +558,14 @@ mod tests {
                 .into_result(),
             Ok(FieldDecl {
                 name: Token::Ident("id", Span::new(0, 0)),
-                field_type: FieldType::new(Type::Primitive(PrimitiveType::ShortStr), true, false),
+                field_type: FieldType::new(
+                    Type::Primitive {
+                        r#type: PrimitiveType::ShortStr,
+                        token: Token::Ident("ShortStr", Span::new(0, 0))
+                    },
+                    true,
+                    false
+                ),
                 attributes: vec![]
             })
         );
@@ -562,7 +591,10 @@ mod tests {
                     FieldDecl {
                         name: Token::Ident("email", Span::new(0, 0)),
                         field_type: FieldType::new(
-                            Type::Primitive(PrimitiveType::ShortStr),
+                            Type::Primitive {
+                                r#type: (PrimitiveType::ShortStr),
+                                token: Token::Ident("ShortStr", Span::new(0, 0))
+                            },
                             false,
                             false
                         ),
@@ -574,7 +606,10 @@ mod tests {
                     FieldDecl {
                         name: Token::Ident("name", Span::new(0, 0)),
                         field_type: FieldType::new(
-                            Type::Primitive(PrimitiveType::ShortStr),
+                            Type::Primitive {
+                                r#type: (PrimitiveType::ShortStr),
+                                token: Token::Ident("ShortStr", Span::new(0, 0))
+                            },
                             true,
                             false
                         ),
@@ -583,7 +618,10 @@ mod tests {
                     FieldDecl {
                         name: Token::Ident("nickNames", Span::new(0, 0)),
                         field_type: FieldType::new(
-                            Type::Primitive(PrimitiveType::ShortStr),
+                            Type::Primitive {
+                                r#type: (PrimitiveType::ShortStr),
+                                token: Token::Ident("ShortStr", Span::new(0, 0))
+                            },
                             false,
                             true
                         ),
@@ -675,7 +713,10 @@ mod tests {
                     FieldDecl {
                         name: Token::Ident("email", Span::new(0, 0)),
                         field_type: FieldType::new(
-                            Type::Primitive(PrimitiveType::ShortStr),
+                            Type::Primitive {
+                                r#type: (PrimitiveType::ShortStr),
+                                token: Token::Ident("ShortStr", Span::new(0, 0)),
+                            },
                             false,
                             false,
                         ),
@@ -687,7 +728,10 @@ mod tests {
                     FieldDecl {
                         name: Token::Ident("name", Span::new(0, 0)),
                         field_type: FieldType::new(
-                            Type::Primitive(PrimitiveType::ShortStr),
+                            Type::Primitive {
+                                r#type: (PrimitiveType::ShortStr),
+                                token: Token::Ident("ShortStr", Span::new(0, 0)),
+                            },
                             true,
                             false,
                         ),
@@ -696,7 +740,10 @@ mod tests {
                     FieldDecl {
                         name: Token::Ident("nickNames", Span::new(0, 0)),
                         field_type: FieldType::new(
-                            Type::Primitive(PrimitiveType::ShortStr),
+                            Type::Primitive {
+                                r#type: (PrimitiveType::ShortStr),
+                                token: Token::Ident("ShortStr", Span::new(0, 0)),
+                            },
                             false,
                             true,
                         ),

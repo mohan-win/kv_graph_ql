@@ -186,7 +186,10 @@ impl<'src> FieldType<'src> {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Type<'src> {
-    Primitive(PrimitiveType),
+    Primitive {
+        r#type: PrimitiveType,
+        token: Token<'src>,
+    },
     Enum(Token<'src>),
     /// If field type is other model type, then its a `Relation`.
     Relation(Token<'src>),

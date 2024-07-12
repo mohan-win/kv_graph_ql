@@ -257,7 +257,10 @@ fn validate_attribute<'src>(
                     model_name: parent_model_ident.ident_name().unwrap(),
                 })
             } else if !attribute.arg.as_ref().unwrap().is_function {
-                if let Type::Primitive(PrimitiveType::Boolean) = &*parent_field.field_type.r#type()
+                if let Type::Primitive {
+                    r#type: PrimitiveType::Boolean,
+                    ..
+                } = &*parent_field.field_type.r#type()
                 {
                     // See if the arg is a valid boolean value.
                     if !valid_attribute_arg_values.contains(&attribute_arg_name) {
