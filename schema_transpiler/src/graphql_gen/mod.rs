@@ -176,11 +176,18 @@ fn input_filters_boolean_field_def<'src>(
 
 fn input_filters_enum_field_def<'src>(
     field_name: &sdml_ast::Token<'src>,
-    enum_type_name: &Name,
+    enum_type: &sdml_ast::Type<'src>,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
     let field_name: &'src str = field_name
         .try_ident_name()
         .map_err(ErrorGraphQLGen::new_sdml_error)?;
+    let enum_type_name = if let sdml_ast::Type::Enum(enum_type_token) = enum_type {
+        enum_type_token
+            .try_ident_name()
+            .map_err(ErrorGraphQLGen::new_sdml_error)?;
+    } else {
+        Err(ErrorGraphQLGen::new_sdml_error(("", )))
+    }?;
     let list_field_names_fmt = [("{}_in", "in list"), ("{}_not_in", "not in list")];
     let non_list_field_names_fmt = [("{}", "equals"), ("{}_not", "not equals")];
 
@@ -242,6 +249,12 @@ fn input_filters_list_field_def<'src>(
         });
 
     Ok(non_list_fields.chain(list_fields).collect())
+}
+
+fn input_filters_relation_field_def<'src>(
+    field_name: &sdml_ast::Token<'src>,
+    field_type_name: &Name,
+) {
 }
 
 /*fn model_where_input_def<'src>(
