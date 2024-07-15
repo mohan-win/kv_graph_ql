@@ -231,7 +231,6 @@ fn input_filters_list_field_def<'src>(
             pos: scalar_type.token().span(),
         }),
     }?;
-    let (scalar_type, scalar_type_list) = (scalar_type.clone(), scalar_type.into_list_type());
     // Names of the fields whose type is a list
     let list_field_names_fmt = [
         ("{}_contains_every", "contains all scalars T"),
@@ -247,11 +246,11 @@ fn input_filters_list_field_def<'src>(
     )
 }
 
-fn input_filters_relation_field_def<'src>(
+/*fn input_filters_relation_field_def<'src>(
     field_name: &sdml_ast::Token<'src>,
-    field_type_name: &Name,
-) {
-}
+    target_relation: &sdml_ast::FieldType<'src>,
+) -> GraphQLGenResult<Vec<InputValueDefinition>> {
+}*/
 
 /*fn model_where_input_def<'src>(
     model: &sdml_ast::ModelDecl<'src>,
