@@ -6,7 +6,7 @@ pub enum ErrorGraphQLGen {
     /// Error in SDML file
     SDMLError {
         /// error details.
-        error: &'static str,
+        error: String,
         /// position in SDML file.
         pos: sdml_parser::ast::Span,
     },
@@ -14,6 +14,9 @@ pub enum ErrorGraphQLGen {
 
 impl ErrorGraphQLGen {
     pub fn new_sdml_error((error, pos): (&'static str, Span)) -> Self {
-        Self::SDMLError { error, pos }
+        Self::SDMLError {
+            error: error.to_string(),
+            pos,
+        }
     }
 }

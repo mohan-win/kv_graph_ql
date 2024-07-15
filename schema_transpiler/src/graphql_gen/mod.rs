@@ -63,7 +63,7 @@ fn input_filters_string_field_def<'src>(
     field_name: &sdml_ast::Token<'src>,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
     let field_name: &'src str = field_name
-        .try_ident_name()
+        .try_get_ident_name()
         .map_err(ErrorGraphQLGen::new_sdml_error)?;
     // Names of the fields whose type is a list
     let list_field_names_fmt = [("{}_in", "in list"), ("{}_not_in", "not in list")];
@@ -114,7 +114,7 @@ fn input_filters_number_field_def<'src>(
     number_type: NumberType,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
     let field_name: &'src str = field_name
-        .try_ident_name()
+        .try_get_ident_name()
         .map_err(ErrorGraphQLGen::new_sdml_error)?;
     // Names of the fields whose type is a list
     let list_field_names_fmt = [("{}_in", "in list"), ("{}_not_in", "not in list")];
@@ -158,7 +158,7 @@ fn input_filters_boolean_field_def<'src>(
     field_name: &sdml_ast::Token<'src>,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
     let field_name: &'src str = field_name
-        .try_ident_name()
+        .try_get_ident_name()
         .map_err(ErrorGraphQLGen::new_sdml_error)?;
     let non_list_field_names_fmt = [("{}", "equals"), ("{}_not", "not equals")];
     let non_list_fields = non_list_field_names_fmt
@@ -176,17 +176,20 @@ fn input_filters_boolean_field_def<'src>(
 
 fn input_filters_enum_field_def<'src>(
     field_name: &sdml_ast::Token<'src>,
-    enum_type: &sdml_ast::Type<'src>,
+    r#type: &sdml_ast::Type<'src>,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
     let field_name: &'src str = field_name
-        .try_ident_name()
+        .try_get_ident_name()
         .map_err(ErrorGraphQLGen::new_sdml_error)?;
-    let enum_type_name = if let sdml_ast::Type::Enum(enum_type_token) = enum_type {
+    let enum_type_name = if let sdml_ast::Type::Enum(enum_type_token) = r#type {
         enum_type_token
-            .try_ident_name()
-            .map_err(ErrorGraphQLGen::new_sdml_error)?;
+            .try_get_ident_name()
+            .map_err(ErrorGraphQLGen::new_sdml_error)
     } else {
-        Err(ErrorGraphQLGen::new_sdml_error(("", )))
+        Err(ErrorGraphQLGen::SDMLError {
+            error: format!("Incorrect type {:?} is passed instead of enum type", r#type),
+            pos: r#type.token().span(),
+        })
     }?;
     let list_field_names_fmt = [("{}_in", "in list"), ("{}_not_in", "not in list")];
     let non_list_field_names_fmt = [("{}", "equals"), ("{}_not", "not equals")];
@@ -216,11 +219,23 @@ fn input_filters_enum_field_def<'src>(
 
 fn input_filters_list_field_def<'src>(
     field_name: &sdml_ast::Token<'src>,
-    scalar_type_name: &Name,
+    scalar_type: &sdml_ast::Type<'src>,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
     let field_name: &'src str = field_name
-        .try_ident_name()
+        .try_get_ident_name()
         .map_err(ErrorGraphQLGen::new_sdml_error)?;
+    let scalar_type = match scalar_type {
+        sdml_ast::Type::Primitive { r#type, .. } => Ok(Type::new_from_primitive_type(*r#type, true)),
+        sdml_ast::Type::Enum(enum_type_token) => enum_type_token.try_get_ident_name().map_or_else(
+            |e| Err(ErrorGraphQLGen::new_sdml_error(e)),
+            |ident| Ok(Type::new(ident).unwrap()),
+        ),
+        _ => Err(ErrorGraphQLGen::SDMLError {
+            error: format!("Only primitive types and enum types can be represented as scalars in GraphQL instead type {scalar_type:?} is passed"),
+            pos: scalar_type.token().span(),
+        }),
+    }?;
+    let (scalar_type, scalar_type_list) = (scalar_type.clone(), scalar_type.into_list_type());
     // Names of the fields whose type is a list
     let list_field_names_fmt = [
         ("{}_contains_every", "contains all scalars T"),
@@ -233,7 +248,7 @@ fn input_filters_list_field_def<'src>(
         .map(|(field_format, field_desc)| InputValueDefinition {
             description: Some(field_desc.to_string()),
             name: Name::new(field_format.replace("{}", field_name)),
-            ty: Type::new(&format!("[{scalar_type_name}]")).unwrap(),
+            ty: scalar_type_list.clone(),
             default_value: None,
             directives: vec![],
         });
@@ -243,7 +258,7 @@ fn input_filters_list_field_def<'src>(
         .map(|(field_format, field_desc)| InputValueDefinition {
             description: Some(field_desc.to_string()),
             name: Name::new(field_format.replace("{}", field_name)),
-            ty: Type::new(scalar_type_name).unwrap(),
+            ty: scalar_type.clone(),
             default_value: None,
             directives: vec![],
         });
@@ -443,7 +458,7 @@ userRole_in: [Role]
 userRole_not_in: [Role]"#;
         let enum_field_input_filters = input_filters_enum_field_def(
             &sdml_ast::Token::Ident("userRole", Span::new(0, 0)),
-            &Name::new("Role"),
+            &sdml_ast::Type::Enum(sdml_ast::Token::Ident("Role", Span::new(0, 0))),
         )
         .expect("It should be a valid output");
         let actual_str = enum_field_input_filters
@@ -463,7 +478,10 @@ field_contains_every: [String]
 field_contains_some: [String]"#;
         let string_list_field_input_filters = input_filters_list_field_def(
             &sdml_ast::Token::Ident("field", Span::new(0, 0)),
-            &Name::new("String"),
+            &sdml_ast::Type::Primitive {
+                r#type: sdml_ast::PrimitiveType::ShortStr,
+                token: sdml_ast::Token::Ident("String", Span::new(0, 0)),
+            },
         )
         .expect("It should be a valid output");
         let actual_str = string_list_field_input_filters

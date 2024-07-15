@@ -44,7 +44,16 @@ impl<'src> Token<'src> {
             None
         }
     }
-    pub fn try_ident_name(&self) -> Result<&'src str, (&'static str, Span)> {
+    pub fn span(&self) -> Span {
+        match self {
+            Token::Ident(_, sp) => *sp,
+            Token::Str(_, sp) => *sp,
+            Token::Int(_, sp) => *sp,
+            Token::Float(_, sp) => *sp,
+            Token::Bool(_, sp) => *sp,
+        }
+    }
+    pub fn try_get_ident_name(&self) -> Result<&'src str, (&'static str, Span)> {
         if let Token::Ident(name, _) = self {
             Ok(name)
         } else {
@@ -54,13 +63,10 @@ impl<'src> Token<'src> {
             ))
         }
     }
-    pub fn span(&self) -> Span {
+    pub fn try_into_graphql_name(self) -> Result<graphql_value::Name, (&'static str, Span)> {
         match self {
-            Token::Ident(_, sp) => *sp,
-            Token::Str(_, sp) => *sp,
-            Token::Int(_, sp) => *sp,
-            Token::Float(_, sp) => *sp,
-            Token::Bool(_, sp) => *sp,
+            Token::Ident(name, _) => Ok(graphql_value::Name::new(name)),
+            other => Err(("GraphQL name should be a valid identifier", other.span())),
         }
     }
 }
@@ -196,6 +202,17 @@ pub enum Type<'src> {
     /// If the field type is Enum or Relation, in the first pass it will be set to Unknown with identifier token.
     /// Then only during scemantic analysis its actual user defined type is determined.
     Unknown(Token<'src>),
+}
+
+impl<'src> Type<'src> {
+    pub fn token(&self) -> &Token<'src> {
+        match self {
+            Self::Primitive { token, .. } => token,
+            Self::Enum(token) => token,
+            Self::Relation(token) => token,
+            Self::Unknown(token) => token,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -52,16 +52,6 @@ impl Name {
     }
 }
 
-impl<'src> TryFrom<sdml_parser::ast::Token<'src>> for Name {
-    type Error = (&'static str, sdml_parser::ast::Span); // (Error, Position in SDML file)
-    fn try_from(value: sdml_parser::ast::Token<'src>) -> Result<Self, Self::Error> {
-        match value {
-            sdml_parser::ast::Token::Ident(name, _) => Ok(Name::new(name)),
-            other => Err(("GraphQL name should be a valid identifier", other.span())),
-        }
-    }
-}
-
 impl AsRef<str> for Name {
     fn as_ref(&self) -> &str {
         &self.0

@@ -134,7 +134,6 @@ version = "7.0.6"
 dependencies = [
  "bytes",
  "indexmap",
- "sdml_parser",
  "serde",
  "serde_json",
 ]
@@ -292,6 +291,7 @@ name = "sdml_parser"
 version = "0.1.0"
 dependencies = [
  "chumsky",
+ "graphql_value",
 ]
 
 [[package]]
