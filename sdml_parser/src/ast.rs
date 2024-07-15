@@ -63,7 +63,7 @@ impl<'src> Token<'src> {
             ))
         }
     }
-    pub fn try_into_graphql_name(self) -> Result<graphql_value::Name, (&'static str, Span)> {
+    pub fn try_get_graphql_name(&self) -> Result<graphql_value::Name, (&'static str, Span)> {
         match self {
             Token::Ident(name, _) => Ok(graphql_value::Name::new(name)),
             other => Err(("GraphQL name should be a valid identifier", other.span())),

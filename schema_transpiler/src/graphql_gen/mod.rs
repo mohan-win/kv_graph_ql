@@ -58,14 +58,54 @@ fn interface_node_def() -> TypeDefinition {
     }
 }
 
-/// Generates necessary filter arguments for a string field.
-fn input_filters_string_field_def<'src>(
+/// Generates input filters for the given field.
+/// # Arguments
+///
+/// * `field_name` - field name token from sdml ast.
+/// * `field_type` - field's graphQL type.
+/// * `list_field_names_fmt` -  array of input field names format, of type `list`.
+/// It should be an array of tuple with 1st element being the field name, and 2nd element of tuple being its description.
+/// Ex. \[("{}_in", "in list"), ("{}_not_in", "not in list")\]
+/// * `non_list_field_names_fmt` - array of input field names format, of type `non-list`.
+/// It should be an array of tuple with 1st element being the field name, and 2nd element of tuple being its description.
+/// Ex. \[("{}", "equals"),("{}_not", "not equals")\]
+#[inline]
+fn generate_input_filters<'src>(
     field_name: &sdml_ast::Token<'src>,
+    field_type: Type,
+    list_field_names_fmt: &[(&str, &str)],
+    non_list_field_names_fmt: &[(&str, &str)],
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
     let field_name: &'src str = field_name
         .try_get_ident_name()
         .map_err(ErrorGraphQLGen::new_sdml_error)?;
-    // Names of the fields whose type is a list
+    let (field_type, list_field_type) = (field_type.clone(), field_type.into_list_type());
+    let non_list_fields = non_list_field_names_fmt
+        .into_iter()
+        .map(|(field_format, field_desc)| InputValueDefinition {
+            description: Some(field_desc.to_string()),
+            name: Name::new(field_format.replace("{}", field_name)),
+            ty: field_type.clone(),
+            default_value: None,
+            directives: vec![],
+        });
+    let list_fields = list_field_names_fmt
+        .into_iter()
+        .map(|(field_format, field_desc)| InputValueDefinition {
+            description: Some(field_desc.to_string()),
+            name: Name::new(field_format.replace("{}", field_name)),
+            ty: list_field_type.clone(),
+            default_value: None,
+            directives: vec![],
+        });
+
+    Ok(non_list_fields.chain(list_fields).collect())
+}
+
+/// Generates necessary filter arguments for a string field.
+fn input_filters_string_field_def<'src>(
+    field_name: &sdml_ast::Token<'src>,
+) -> GraphQLGenResult<Vec<InputValueDefinition>> {
     let list_field_names_fmt = [("{}_in", "in list"), ("{}_not_in", "not in list")];
     let non_list_field_names_fmt = [
         ("{}", "equals"),
@@ -81,28 +121,12 @@ fn input_filters_string_field_def<'src>(
         ("{}_gt", "greater than"),
         ("{}_gte", "greater than or equals"),
     ];
-
-    let list_fields = list_field_names_fmt
-        .into_iter()
-        .map(|(field_format, field_desc)| InputValueDefinition {
-            description: Some(field_desc.to_string()),
-            name: Name::new(field_format.replace("{}", field_name)),
-            ty: Type::new("[String]").unwrap(),
-            default_value: None,
-            directives: vec![],
-        });
-
-    let non_list_fields = non_list_field_names_fmt
-        .into_iter()
-        .map(|(field_format, field_desc)| InputValueDefinition {
-            description: Some(field_desc.to_string()),
-            name: Name::new(field_format.replace("{}", field_name)),
-            ty: Type::new("String").unwrap(),
-            default_value: None,
-            directives: vec![],
-        });
-
-    Ok(non_list_fields.chain(list_fields).collect())
+    generate_input_filters(
+        field_name,
+        Type::new("String").unwrap(),
+        &list_field_names_fmt,
+        &non_list_field_names_fmt,
+    )
 }
 
 enum NumberType {
@@ -113,9 +137,6 @@ fn input_filters_number_field_def<'src>(
     field_name: &sdml_ast::Token<'src>,
     number_type: NumberType,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
-    let field_name: &'src str = field_name
-        .try_get_ident_name()
-        .map_err(ErrorGraphQLGen::new_sdml_error)?;
     // Names of the fields whose type is a list
     let list_field_names_fmt = [("{}_in", "in list"), ("{}_not_in", "not in list")];
     let non_list_field_names_fmt = [
@@ -127,60 +148,54 @@ fn input_filters_number_field_def<'src>(
         ("{}_gte", "greater than or equals"),
     ];
 
-    let (num_type, num_type_list) = match number_type {
-        NumberType::Integer => ("Integer", "[Integer]"),
-        NumberType::Float => ("Float", "[Float]"),
+    let num_type = match number_type {
+        NumberType::Integer => Type::new("Integer").unwrap(),
+        NumberType::Float => Type::new("Float").unwrap(),
     };
-    let list_fields = list_field_names_fmt
-        .into_iter()
-        .map(|(field_format, field_desc)| InputValueDefinition {
-            description: Some(field_desc.to_string()),
-            name: Name::new(field_format.replace("{}", field_name)),
-            ty: Type::new(num_type_list).unwrap(),
-            default_value: None,
-            directives: vec![],
-        });
-
-    let non_list_fields = non_list_field_names_fmt
-        .into_iter()
-        .map(|(field_format, field_desc)| InputValueDefinition {
-            description: Some(field_desc.to_string()),
-            name: Name::new(field_format.replace("{}", field_name)),
-            ty: Type::new(num_type).unwrap(),
-            default_value: None,
-            directives: vec![],
-        });
-
-    Ok(non_list_fields.chain(list_fields).collect())
+    generate_input_filters(
+        field_name,
+        num_type,
+        &list_field_names_fmt,
+        &non_list_field_names_fmt,
+    )
 }
 
 fn input_filters_boolean_field_def<'src>(
     field_name: &sdml_ast::Token<'src>,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
-    let field_name: &'src str = field_name
-        .try_get_ident_name()
-        .map_err(ErrorGraphQLGen::new_sdml_error)?;
     let non_list_field_names_fmt = [("{}", "equals"), ("{}_not", "not equals")];
-    let non_list_fields = non_list_field_names_fmt
-        .into_iter()
-        .map(|(field_format, field_desc)| InputValueDefinition {
-            description: Some(field_desc.to_string()),
-            name: Name::new(field_format.replace("{}", field_name)),
-            ty: Type::new("Boolean").unwrap(),
-            default_value: None,
-            directives: vec![],
-        })
-        .collect();
-    Ok(non_list_fields)
+    generate_input_filters(
+        field_name,
+        Type::new("Boolean").unwrap(),
+        &[],
+        &non_list_field_names_fmt,
+    )
+}
+
+fn input_filters_datetime_field_def<'src>(
+    field_name: &sdml_ast::Token<'src>,
+) -> GraphQLGenResult<Vec<InputValueDefinition>> {
+    let list_field_names_fmt = [("{}_in", "in list"), ("{}_not_in", "not in list")];
+    let non_list_field_names_fmt = [
+        ("{}", "equals"),
+        ("{}_not", "not equals"),
+        ("{}_lt", "less than"),
+        ("{}_lte", "less than or equals"),
+        ("{}_gt", "greater than"),
+        ("{}_gte", "greater than or equals"),
+    ];
+    generate_input_filters(
+        field_name,
+        Type::new("DateTime").unwrap(),
+        &list_field_names_fmt,
+        &non_list_field_names_fmt,
+    )
 }
 
 fn input_filters_enum_field_def<'src>(
     field_name: &sdml_ast::Token<'src>,
     r#type: &sdml_ast::Type<'src>,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
-    let field_name: &'src str = field_name
-        .try_get_ident_name()
-        .map_err(ErrorGraphQLGen::new_sdml_error)?;
     let enum_type_name = if let sdml_ast::Type::Enum(enum_type_token) = r#type {
         enum_type_token
             .try_get_ident_name()
@@ -193,37 +208,18 @@ fn input_filters_enum_field_def<'src>(
     }?;
     let list_field_names_fmt = [("{}_in", "in list"), ("{}_not_in", "not in list")];
     let non_list_field_names_fmt = [("{}", "equals"), ("{}_not", "not equals")];
-
-    let list_fields = list_field_names_fmt
-        .into_iter()
-        .map(|(field_format, field_desc)| InputValueDefinition {
-            description: Some(field_desc.to_string()),
-            name: Name::new(field_format.replace("{}", field_name)),
-            ty: Type::new(&format!("[{enum_type_name}]")).unwrap(),
-            default_value: None,
-            directives: vec![],
-        });
-
-    let non_list_fields = non_list_field_names_fmt
-        .into_iter()
-        .map(|(field_format, field_desc)| InputValueDefinition {
-            description: Some(field_desc.to_string()),
-            name: Name::new(field_format.replace("{}", field_name)),
-            ty: Type::new(enum_type_name).unwrap(),
-            default_value: None,
-            directives: vec![],
-        });
-
-    Ok(non_list_fields.chain(list_fields).collect())
+    generate_input_filters(
+        field_name,
+        Type::new(enum_type_name).unwrap(),
+        &list_field_names_fmt,
+        &non_list_field_names_fmt,
+    )
 }
 
 fn input_filters_list_field_def<'src>(
     field_name: &sdml_ast::Token<'src>,
     scalar_type: &sdml_ast::Type<'src>,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
-    let field_name: &'src str = field_name
-        .try_get_ident_name()
-        .map_err(ErrorGraphQLGen::new_sdml_error)?;
     let scalar_type = match scalar_type {
         sdml_ast::Type::Primitive { r#type, .. } => Ok(Type::new_from_primitive_type(*r#type, true)),
         sdml_ast::Type::Enum(enum_type_token) => enum_type_token.try_get_ident_name().map_or_else(
@@ -243,27 +239,12 @@ fn input_filters_list_field_def<'src>(
     ];
     let non_list_field_names_fmt = [("{}_contains", "contains single scalar T")];
 
-    let list_fields = list_field_names_fmt
-        .into_iter()
-        .map(|(field_format, field_desc)| InputValueDefinition {
-            description: Some(field_desc.to_string()),
-            name: Name::new(field_format.replace("{}", field_name)),
-            ty: scalar_type_list.clone(),
-            default_value: None,
-            directives: vec![],
-        });
-
-    let non_list_fields = non_list_field_names_fmt
-        .into_iter()
-        .map(|(field_format, field_desc)| InputValueDefinition {
-            description: Some(field_desc.to_string()),
-            name: Name::new(field_format.replace("{}", field_name)),
-            ty: scalar_type.clone(),
-            default_value: None,
-            directives: vec![],
-        });
-
-    Ok(non_list_fields.chain(list_fields).collect())
+    generate_input_filters(
+        field_name,
+        scalar_type,
+        &list_field_names_fmt,
+        &non_list_field_names_fmt,
+    )
 }
 
 fn input_filters_relation_field_def<'src>(
