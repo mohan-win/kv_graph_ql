@@ -3,10 +3,11 @@
 //! This module exposes necessary functions to generate GraphQL types for
 //! SDML models.
 //!
-mod error;
+pub mod error;
+pub mod open_crud;
 
 use super::*;
-pub use error::ErrorGraphQLGen;
+use error::ErrorGraphQLGen;
 use graphql_ast::*;
 
 pub type GraphQLGenResult<T> = Result<T, ErrorGraphQLGen>;

@@ -154,6 +154,7 @@ pub struct EnumDecl<'src> {
     pub elements: Vec<Token<'src>>,
 }
 
+/// Represents an entity inside the application domain.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ModelDecl<'src> {
     pub name: Token<'src>,
