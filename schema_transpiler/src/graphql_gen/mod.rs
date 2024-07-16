@@ -64,7 +64,7 @@ fn interface_node_def() -> TypeDefinition {
 /// # Arguments
 ///
 /// * `field_name` - field name token from sdml ast.
-/// * `field_type` - field's graphQL type.
+/// * `field_type_name` - field's graphQL type name. Ex. "String"
 /// * `list_field_names_fmt` -  array of input field names format, of type `list`.
 /// It should be an array of tuple with 1st element being the field name, and 2nd element of tuple being its description.
 /// Ex. \[("{}_in", "in list"), ("{}_not_in", "not in list")\]
@@ -74,20 +74,19 @@ fn interface_node_def() -> TypeDefinition {
 #[inline]
 fn generate_input_filters<'src>(
     field_name: &sdml_ast::Token<'src>,
-    field_type: Type,
+    field_type_name: &'src str,
     list_field_names_fmt: &[(&str, &str)],
     non_list_field_names_fmt: &[(&str, &str)],
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
     let field_name: &'src str = field_name
         .try_get_ident_name()
         .map_err(ErrorGraphQLGen::new_sdml_error)?;
-    let (field_type, list_field_type) = (field_type.clone(), field_type.into_list_type());
     let non_list_fields = non_list_field_names_fmt
         .into_iter()
         .map(|(field_format, field_desc)| InputValueDefinition {
             description: Some(field_desc.to_string()),
             name: Name::new(field_format.replace("{}", field_name)),
-            ty: field_type.clone(),
+            ty: Type::new(field_type_name).unwrap(),
             default_value: None,
             directives: vec![],
         });
@@ -96,7 +95,7 @@ fn generate_input_filters<'src>(
         .map(|(field_format, field_desc)| InputValueDefinition {
             description: Some(field_desc.to_string()),
             name: Name::new(field_format.replace("{}", field_name)),
-            ty: list_field_type.clone(),
+            ty: Type::new(&format!("[{field_type_name}]")).unwrap(),
             default_value: None,
             directives: vec![],
         });
@@ -125,7 +124,7 @@ fn input_filters_string_field_def<'src>(
     ];
     generate_input_filters(
         field_name,
-        Type::new("String").unwrap(),
+        "String",
         &list_field_names_fmt,
         &non_list_field_names_fmt,
     )
@@ -151,8 +150,8 @@ fn input_filters_number_field_def<'src>(
     ];
 
     let num_type = match number_type {
-        NumberType::Integer => Type::new("Integer").unwrap(),
-        NumberType::Float => Type::new("Float").unwrap(),
+        NumberType::Integer => "Integer",
+        NumberType::Float => "Float",
     };
     generate_input_filters(
         field_name,
@@ -166,12 +165,7 @@ fn input_filters_boolean_field_def<'src>(
     field_name: &sdml_ast::Token<'src>,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
     let non_list_field_names_fmt = [("{}", "equals"), ("{}_not", "not equals")];
-    generate_input_filters(
-        field_name,
-        Type::new("Boolean").unwrap(),
-        &[],
-        &non_list_field_names_fmt,
-    )
+    generate_input_filters(field_name, "Boolean", &[], &non_list_field_names_fmt)
 }
 
 fn input_filters_datetime_field_def<'src>(
@@ -188,7 +182,7 @@ fn input_filters_datetime_field_def<'src>(
     ];
     generate_input_filters(
         field_name,
-        Type::new("DateTime").unwrap(),
+        "DateTime",
         &list_field_names_fmt,
         &non_list_field_names_fmt,
     )
@@ -212,7 +206,7 @@ fn input_filters_enum_field_def<'src>(
     let non_list_field_names_fmt = [("{}", "equals"), ("{}_not", "not equals")];
     generate_input_filters(
         field_name,
-        Type::new(enum_type_name).unwrap(),
+        enum_type_name,
         &list_field_names_fmt,
         &non_list_field_names_fmt,
     )
@@ -223,10 +217,12 @@ fn input_filters_list_field_def<'src>(
     scalar_type: &sdml_ast::Type<'src>,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
     let scalar_type = match scalar_type {
-        sdml_ast::Type::Primitive { r#type, .. } => Ok(Type::new_from_primitive_type(*r#type, true)),
+        sdml_ast::Type::Primitive { r#type, .. } => {
+            Ok(Type::map_primitive_type_to_graphql_ty_name(r#type))
+        },
         sdml_ast::Type::Enum(enum_type_token) => enum_type_token.try_get_ident_name().map_or_else(
             |e| Err(ErrorGraphQLGen::new_sdml_error(e)),
-            |ident| Ok(Type::new(ident).unwrap()),
+            |ident| Ok(ident.to_string()),
         ),
         _ => Err(ErrorGraphQLGen::SDMLError {
             error: format!("Only primitive types and enum types can be represented as scalars in GraphQL instead type {scalar_type:?} is passed"),
@@ -242,7 +238,7 @@ fn input_filters_list_field_def<'src>(
 
     generate_input_filters(
         field_name,
-        scalar_type,
+        &scalar_type,
         &list_field_names_fmt,
         &non_list_field_names_fmt,
     )
@@ -311,6 +307,37 @@ fn input_filters_relation_field_def<'src>(
             },
         ])
     }
+}
+
+/// Returns logical operation filters, for the given `where input type`.
+/// # Arguments
+/// `where_input_ty` - Where input type.
+fn input_logical_operations_def(
+    where_input_ty_name: &str,
+) -> GraphQLGenResult<Vec<InputValueDefinition>> {
+    Ok(vec![
+        InputValueDefinition {
+            description: Some("Logical AND on all given filters.".to_string()),
+            name: Name::new("AND"),
+            ty: Type::new(&format!("[{where_input_ty_name}!]")).unwrap(),
+            default_value: None,
+            directives: vec![],
+        },
+        InputValueDefinition {
+            description: Some("Logical OR on all given filters.".to_string()),
+            name: Name::new("OR"),
+            ty: Type::new(&format!("[{where_input_ty_name}!]")).unwrap(),
+            default_value: None,
+            directives: vec![],
+        },
+        InputValueDefinition {
+            description: Some("Logical NOT on all given filters combined by AND.".to_string()),
+            name: Name::new("NOT"),
+            ty: Type::new(&format!("[{where_input_ty_name}!]")).unwrap(),
+            default_value: None,
+            directives: vec![],
+        },
+    ])
 }
 
 /*fn model_where_input_def<'src>(
@@ -577,5 +604,23 @@ profile_is_null: Boolean"#;
             .into_iter()
             .fold("".to_string(), |acc, x| format!("{}{}", acc, x));
         assert_eq!(expected_str, actual_str)
+    }
+
+    #[test]
+    fn test_input_logical_operations_def() {
+        let expected_str = r#"
+"""Logical AND on all given filters."""
+AND: [UserWhereInput!]
+"""Logical OR on all given filters."""
+OR: [UserWhereInput!]
+"""Logical NOT on all given filters combined by AND."""
+NOT: [UserWhereInput!]"#;
+        let logical_operations =
+            input_logical_operations_def("UserWhereInput").expect("It should be a valid output");
+        let actual_str = logical_operations
+            .into_iter()
+            .fold("".to_string(), |acc, x| format!("{acc}{x}"));
+        println!("{}", actual_str);
+        assert_eq!(expected_str, actual_str);
     }
 }

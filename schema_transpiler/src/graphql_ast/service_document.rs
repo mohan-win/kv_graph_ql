@@ -249,25 +249,6 @@ pub struct Type {
 }
 
 impl Type {
-    pub fn new_from_primitive_type(
-        r#type: sdml_parser::ast::PrimitiveType,
-        nullable: bool,
-    ) -> Self {
-        use sdml_parser::ast::PrimitiveType;
-        let type_str = match r#type {
-            PrimitiveType::ShortStr | PrimitiveType::LongStr => "String",
-            PrimitiveType::DateTime => "DateTime",
-            PrimitiveType::Boolean => "Boolean",
-            PrimitiveType::Int32 | PrimitiveType::Int64 => "Integer",
-            PrimitiveType::Float64 => "Float",
-        };
-        if nullable {
-            Self::new(type_str).unwrap()
-        } else {
-            Self::new(&format!("{type_str}!")).unwrap()
-        }
-    }
-
     /// Create a type from the type string.
     #[must_use]
     pub fn new(ty: &str) -> Option<Self> {
@@ -287,22 +268,19 @@ impl Type {
         })
     }
 
-    /// Converts this type into a list type.
-    /// If it is already a list type, then returns the same type.
-    pub fn into_list_type(self) -> Self {
-        match self.base {
-            BaseType::Named(name) => Type::new(&format!("[{name}]")).unwrap(),
-            _ => self,
+    /// Returns the graphql type name for the given SDML primitve type.
+    pub(crate) fn map_primitive_type_to_graphql_ty_name(
+        r#type: &sdml_parser::ast::PrimitiveType,
+    ) -> String {
+        use sdml_parser::ast::PrimitiveType;
+        match r#type {
+            PrimitiveType::ShortStr | PrimitiveType::LongStr => "String",
+            PrimitiveType::DateTime => "DateTime",
+            PrimitiveType::Boolean => "Boolean",
+            PrimitiveType::Int32 | PrimitiveType::Int64 => "Integer",
+            PrimitiveType::Float64 => "Float",
         }
-    }
-
-    /// Converts this type into non-list type.
-    /// (i.e) duel operation to `Self::into_list_type()`
-    pub fn into_non_list_type(self) -> Self {
-        match self.base {
-            BaseType::List(boxed_type) => *boxed_type,
-            _ => self,
-        }
+        .to_string()
     }
 }
 
