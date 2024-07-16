@@ -3,12 +3,13 @@
 //! This module exposes necessary functions to generate GraphQL types for
 //! SDML models.
 //!
-pub mod error;
-pub mod open_crud;
+mod error;
+mod open_crud;
 
 use super::*;
-use error::ErrorGraphQLGen;
+pub use error::ErrorGraphQLGen;
 use graphql_ast::*;
+use open_crud::*;
 
 pub type GraphQLGenResult<T> = Result<T, ErrorGraphQLGen>;
 
@@ -247,11 +248,70 @@ fn input_filters_list_field_def<'src>(
     )
 }
 
-/*fn input_filters_relation_field_def<'src>(
+fn input_filters_relation_field_def<'src>(
     field_name: &sdml_ast::Token<'src>,
     target_relation: &sdml_ast::FieldType<'src>,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
-}*/
+    let field_name = field_name
+        .try_get_ident_name()
+        .map_err(ErrorGraphQLGen::new_sdml_error)?;
+    let related_model_name = target_relation
+        .r#type()
+        .token()
+        .try_get_ident_name()
+        .map_err(ErrorGraphQLGen::new_sdml_error)?;
+    let relation_where_filter = open_crud::FilterType::WhereInput.name(&related_model_name);
+    // Many side of the relation
+    if target_relation.is_array {
+        Ok(vec![
+            InputValueDefinition {
+                description: Some("condition must be true for all nodes".to_string()),
+                name: Name::new(format!("{field_name}_every")),
+                ty: Type::new(&relation_where_filter).unwrap(),
+                default_value: None,
+                directives: vec![],
+            },
+            InputValueDefinition {
+                description: Some("condition must be true for at least 1 node".to_string()),
+                name: Name::new(format!("{field_name}_some")),
+                ty: Type::new(&relation_where_filter).unwrap(),
+                default_value: None,
+                directives: vec![],
+            },
+            InputValueDefinition {
+                description: Some("condition must be false for all nodes".to_string()),
+                name: Name::new(format!("{field_name}_none")),
+                ty: Type::new(&relation_where_filter).unwrap(),
+                default_value: None,
+                directives: vec![],
+            },
+            InputValueDefinition {
+                description: Some("is the relation field empty".to_string()),
+                name: Name::new(format!("{field_name}_is_empty")),
+                ty: Type::new("Boolean").unwrap(),
+                default_value: None,
+                directives: vec![],
+            },
+        ])
+    } else {
+        Ok(vec![
+            InputValueDefinition {
+                description: Some("condition must be true for related node".to_string()),
+                name: Name::new(format!("{field_name}")),
+                ty: Type::new(&relation_where_filter).unwrap(),
+                default_value: None,
+                directives: vec![],
+            },
+            InputValueDefinition {
+                description: Some("is the relation field null".to_string()),
+                name: Name::new(format!("{field_name}_is_null")),
+                ty: Type::new("Boolean").unwrap(),
+                default_value: None,
+                directives: vec![],
+            },
+        ])
+    }
+}
 
 /*fn model_where_input_def<'src>(
     model: &sdml_ast::ModelDecl<'src>,
@@ -466,6 +526,54 @@ field_contains_some: [String]"#;
         )
         .expect("It should be a valid output");
         let actual_str = string_list_field_input_filters
+            .into_iter()
+            .fold("".to_string(), |acc, x| format!("{}{}", acc, x));
+        assert_eq!(expected_str, actual_str)
+    }
+
+    #[test]
+    fn test_input_filters_many_relation_field_def() {
+        let expected_str = r#"
+"""condition must be true for all nodes"""
+posts_every: PostWhereInput
+"""condition must be true for at least 1 node"""
+posts_some: PostWhereInput
+"""condition must be false for all nodes"""
+posts_none: PostWhereInput
+"""is the relation field empty"""
+posts_is_empty: Boolean"#;
+        let relation_field_input_filters = input_filters_relation_field_def(
+            &sdml_ast::Token::Ident("posts", Span::new(0, 0)),
+            &sdml_ast::FieldType::new(
+                sdml_ast::Type::Relation(sdml_ast::Token::Ident("Post", Span::new(0, 0))),
+                false,
+                true,
+            ),
+        )
+        .expect("It should be a valid output");
+        let actual_str = relation_field_input_filters
+            .into_iter()
+            .fold("".to_string(), |acc, x| format!("{}{}", acc, x));
+        assert_eq!(expected_str, actual_str)
+    }
+
+    #[test]
+    fn test_input_filters_one_relation_field_def() {
+        let expected_str = r#"
+"""condition must be true for related node"""
+profile: ProfileWhereInput
+"""is the relation field null"""
+profile_is_null: Boolean"#;
+        let relation_field_input_filters = input_filters_relation_field_def(
+            &sdml_ast::Token::Ident("profile", Span::new(0, 0)),
+            &sdml_ast::FieldType::new(
+                sdml_ast::Type::Relation(sdml_ast::Token::Ident("Profile", Span::new(0, 0))),
+                false,
+                false,
+            ),
+        )
+        .expect("It should be a valid output");
+        let actual_str = relation_field_input_filters
             .into_iter()
             .fold("".to_string(), |acc, x| format!("{}{}", acc, x));
         assert_eq!(expected_str, actual_str)
