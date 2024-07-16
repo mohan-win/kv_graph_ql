@@ -6,7 +6,16 @@
 //! Each application domain entity is represented as a model in SDML. And each model,
 //! will have auto-generated CRUD interface comforming to OpenCRUD.
 //! - Instance of a model entity is called object.
-//!
+
+use std::fmt::format;
+
+/// Trait exposing the name of the OpenCRUD abstraction.
+pub trait Named {
+    /// For the given model name return OpenCRUD abstraction name.
+    /// # Arguments
+    /// `model_name` - name of the sdml model.
+    fn name<'src>(&self, model_name: &'src str) -> String;
+}
 
 /// Identifies various input types in OpenCRUD interface.
 #[derive(Debug, Clone, PartialEq)]
@@ -14,6 +23,16 @@ pub enum InputType {
     Create(CreateInputType),
     Update(UpdateInputType),
     Filter(FilterType),
+}
+
+impl Named for InputType {
+    fn name<'src>(&self, model_name: &'src str) -> String {
+        match self {
+            InputType::Create(create_input_type) => create_input_type.name(model_name),
+            InputType::Update(update_input_type) => update_input_type.name(model_name),
+            InputType::Filter(filter_input_type) => filter_input_type.name(model_name),
+        }
+    }
 }
 
 /// Identifies input types used in create interfaces.
@@ -32,6 +51,16 @@ pub enum CreateInputType {
     /// Ex. ProfileCreateOneInlineInput will be used inside UserCreateInput
     /// to create user profile inline when creating a new user.
     CreateOneInlineInput,
+}
+
+impl Named for CreateInputType {
+    fn name<'src>(&self, model_name: &'src str) -> String {
+        match self {
+            CreateInputType::CreateInput => format!("{model_name}CreateInput"),
+            CreateInputType::CreateManyInlineInput => format!("{model_name}CreateManyInlineInput"),
+            CreateInputType::CreateOneInlineInput => format!("{model_name}CreateOneInlineInput"),
+        }
+    }
 }
 
 /// Identifies input types used in update or upsert interfaces.
@@ -67,7 +96,27 @@ pub enum UpdateInputType {
     /// Identifies the input type specifying the existing object to connect to a relation.
     /// Ex. UserConnectInput is used inside UserUpdateManyInlineInput to connect existing users
     /// in a many side of relation.
-    UserConnectInput,
+    ConnectInput,
+}
+
+impl Named for UpdateInputType {
+    fn name<'src>(&self, model_name: &'src str) -> String {
+        match self {
+            UpdateInputType::UpdateInput => format!("{model_name}UpdateInput"),
+            UpdateInputType::UpsertInput => format!("{model_name}UpsertInput"),
+            UpdateInputType::UpdateManyInlineInput => format!("{model_name}UpdateManyInlineInput"),
+            UpdateInputType::UpdateOneInlineInput => format!("{model_name}UpdateOneInlineInput"),
+            UpdateInputType::UpdateWithNestedWhereUniqueInput => {
+                format!("{model_name}UpdateWithNestedWhereUniqueInput")
+            }
+            UpdateInputType::UpsertWithNestedWhereUniqueInput => {
+                format!("{model_name}UpsertWithNestedWhereUniqueInput")
+            }
+            UpdateInputType::ConnectInput => {
+                format!("{model_name}ConnectInput")
+            }
+        }
+    }
 }
 
 /// Identifies the input types used in filters
@@ -77,4 +126,13 @@ pub enum FilterType {
     WhereInput,
     /// Idenifies the where critrial where it can match at most one object.
     WhereUniqueInput,
+}
+
+impl Named for FilterType {
+    fn name<'src>(&self, model_name: &'src str) -> String {
+        match self {
+            FilterType::WhereInput => format!("{model_name}WhereInput"),
+            FilterType::WhereUniqueInput => format!("{model_name}WhereUniqueInput"),
+        }
+    }
 }
