@@ -5,8 +5,8 @@ use super::*;
 pub fn where_input_type_def<'src>(
     model: &sdml_ast::ModelDecl<'src>,
 ) -> GraphQLGenResult<TypeDefinition> {
-    let logical_operation_filters = logical_operations_def(&model.name)?;
-    let mut model_field_filters =
+    let mut filters = logical_operations_def(&model.name)?;
+    let model_field_filters =
         model
             .fields
             .iter()
@@ -18,7 +18,7 @@ pub fn where_input_type_def<'src>(
                 }
                 Err(e) => Err(e),
             })?;
-    model_field_filters.extend(logical_operation_filters.into_iter());
+    filters.extend(model_field_filters.into_iter());
     let model_name = model
         .name
         .try_get_ident_name()
@@ -28,9 +28,7 @@ pub fn where_input_type_def<'src>(
         description: Some("The where filter which can match zero or more objects".to_string()),
         name: Name::new(FilterType::WhereInput.name(model_name)),
         directives: vec![],
-        kind: TypeKind::InputObject(InputObjectType {
-            fields: model_field_filters,
-        }),
+        kind: TypeKind::InputObject(InputObjectType { fields: filters }),
     })
 }
 
@@ -364,8 +362,117 @@ mod tests {
     #[test]
     fn test_where_input_type_def() {
         let expected_str = r#"
+"""The where filter which can match zero or more objects"""
+input UserWhereInput {
+"""Logical AND on all given filters."""
+AND: [UserWhereInput!]
+"""Logical OR on all given filters."""
+OR: [UserWhereInput!]
+"""Logical NOT on all given filters combined by AND."""
+NOT: [UserWhereInput!]
+"""equals"""
+id: String
+"""not equals"""
+id_not: String
+"""equals"""
+email: String
+"""not equals"""
+email_not: String
+"""contains substring"""
+email_contains: String
+"""doesn't contain substring"""
+email_not_contains: String
+email_starts_with: String
+email_not_starts_with: String
+email_ends_with: String
+email_not_ends_with: String
+"""less than"""
+email_lt: String
+"""less than or equals"""
+email_lte: String
+"""greater than"""
+email_gt: String
+"""greater than or equals"""
+email_gte: String
+"""in list"""
+email_in: [String]
+"""not in list"""
+email_not_in: [String]
+"""equals"""
+name: String
+"""not equals"""
+name_not: String
+"""contains substring"""
+name_contains: String
+"""doesn't contain substring"""
+name_not_contains: String
+name_starts_with: String
+name_not_starts_with: String
+name_ends_with: String
+name_not_ends_with: String
+"""less than"""
+name_lt: String
+"""less than or equals"""
+name_lte: String
+"""greater than"""
+name_gt: String
+"""greater than or equals"""
+name_gte: String
+"""in list"""
+name_in: [String]
+"""not in list"""
+name_not_in: [String]
+"""equals"""
+nickNames: String
+"""not equals"""
+nickNames_not: String
+"""contains substring"""
+nickNames_contains: String
+"""doesn't contain substring"""
+nickNames_not_contains: String
+nickNames_starts_with: String
+nickNames_not_starts_with: String
+nickNames_ends_with: String
+nickNames_not_ends_with: String
+"""less than"""
+nickNames_lt: String
+"""less than or equals"""
+nickNames_lte: String
+"""greater than"""
+nickNames_gt: String
+"""greater than or equals"""
+nickNames_gte: String
+"""in list"""
+nickNames_in: [String]
+"""not in list"""
+nickNames_not_in: [String]
+"""equals"""
+role: Role
+"""not equals"""
+role_not: Role
+"""in list"""
+role_in: [Role]
+"""not in list"""
+role_not_in: [Role]
+"""condition must be true for related node"""
+profile: ProfileWhereInput
+"""is the relation field null"""
+profile_is_null: Boolean
+"""condition must be true for all nodes"""
+posts_every: PostWhereInput
+"""condition must be true for at least 1 node"""
+posts_some: PostWhereInput
+"""condition must be false for all nodes"""
+posts_none: PostWhereInput
+"""is the relation field empty"""
+posts_is_empty: Boolean
+}
 "#;
-        let user_model_sdml = r#"
+        let sdml_str = r#"
+config db {
+    provider = "foundationDB"
+}
+
 model User {
     email       ShortStr      @unique
     name        ShortStr?     
@@ -374,11 +481,35 @@ model User {
     profile     Profile?
     posts       Post[]
 }
+
+model Profile {
+    bio        LongStr?
+    user       User
+}
+
+model Post {
+    createdAt   DateTime    @default(now())
+    updatedAt   DateTime
+    title       ShortStr
+    published   Boolean     @default(false)
+    author      User
+    category    Category[]
+}
+
+model Category {
+    name        ShortStr    @unique
+    posts       Post[]
+}
+
+enum Role {
+    USER
+    ADMIN
+}  
 "#;
         let sdml_declarations = parser::delcarations()
-            .parse(&user_model_sdml)
+            .parse(&sdml_str)
             .into_output()
-            .expect("It should be a valid SDML with user model.");
+            .expect("It should be a valid SDML.");
         let data_model = parser::semantic_analysis(sdml_declarations)
             .expect("A valid SDML file shouldn't fail in parsing.");
         let user_model_sdml_ast = data_model
@@ -387,7 +518,6 @@ model User {
             .expect("User model should exist in the SDML.");
         let user_where_input_grapql_ast =
             where_input_type_def(user_model_sdml_ast).expect("It should return UserWhereInput");
-        println!("{}", user_where_input_grapql_ast);
         assert_eq!(expected_str, user_where_input_grapql_ast.to_string())
     }
 
