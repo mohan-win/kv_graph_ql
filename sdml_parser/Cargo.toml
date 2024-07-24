@@ -4,5 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-chumsky = { version = "1.0.0-alpha.7" }
+chumsky.workspace = true
 graphql_value.workspace = true
+

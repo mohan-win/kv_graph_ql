@@ -7,14 +7,12 @@
 //! will have auto-generated CRUD interface comforming to OpenCRUD.
 //! - Instance of a model entity is called object.
 
-use std::fmt::format;
-
 /// Trait exposing the name of the OpenCRUD abstraction.
 pub trait Named {
     /// For the given model name return OpenCRUD abstraction name.
     /// # Arguments
     /// `model_name` - name of the sdml model.
-    fn name<'src>(&self, model_name: &'src str) -> String;
+    fn name(&self, model_name: &str) -> String;
 }
 
 /// Identifies various input types in OpenCRUD interface.
@@ -26,7 +24,7 @@ pub enum InputType {
 }
 
 impl Named for InputType {
-    fn name<'src>(&self, model_name: &'src str) -> String {
+    fn name(&self, model_name: &str) -> String {
         match self {
             InputType::Create(create_input_type) => create_input_type.name(model_name),
             InputType::Update(update_input_type) => update_input_type.name(model_name),
@@ -54,7 +52,7 @@ pub enum CreateInputType {
 }
 
 impl Named for CreateInputType {
-    fn name<'src>(&self, model_name: &'src str) -> String {
+    fn name(&self, model_name: &str) -> String {
         match self {
             CreateInputType::CreateInput => format!("{model_name}CreateInput"),
             CreateInputType::CreateManyInlineInput => format!("{model_name}CreateManyInlineInput"),
@@ -100,7 +98,7 @@ pub enum UpdateInputType {
 }
 
 impl Named for UpdateInputType {
-    fn name<'src>(&self, model_name: &'src str) -> String {
+    fn name(&self, model_name: &str) -> String {
         match self {
             UpdateInputType::UpdateInput => format!("{model_name}UpdateInput"),
             UpdateInputType::UpsertInput => format!("{model_name}UpsertInput"),
@@ -129,7 +127,7 @@ pub enum FilterType {
 }
 
 impl Named for FilterType {
-    fn name<'src>(&self, model_name: &'src str) -> String {
+    fn name(&self, model_name: &str) -> String {
         match self {
             FilterType::WhereInput => format!("{model_name}WhereInput"),
             FilterType::WhereUniqueInput => format!("{model_name}WhereUniqueInput"),
