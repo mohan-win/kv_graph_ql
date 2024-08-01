@@ -2,7 +2,7 @@ use std::ops::Div;
 
 use crate::ast::{
     AttribArg, Attribute, ConfigDecl, ConfigPair, DataModel, Declaration, EnumDecl, FieldDecl,
-    FieldType, ModelDecl, PrimitiveType, Token, Type,
+    FieldType, ModelDecl, NamedArg, PrimitiveType, Token, Type,
 };
 use chumsky::text::{self, ascii};
 use chumsky::{extra::Err, prelude::*};
@@ -198,16 +198,46 @@ fn field_type<'src>() -> impl Parser<'src, &'src str, FieldType<'src>, Err<Rich<
 }
 
 #[inline(always)]
+fn named_arg<'src>() -> impl Parser<'src, &'src str, NamedArg<'src>, Err<Rich<'src, char>>> {
+    let identifier = ascii::ident().map_with(|tok, e| Token::Ident(tok, e.span()));
+    identifier
+        .padded()
+        .then(just(":"))
+        .then(identifier.or(string()).padded())
+        .map_with(|((arg_name, _colon), arg_value), e| NamedArg {
+            arg_name,
+            arg_value,
+        })
+}
+
+#[inline(always)]
 fn attribute<'src>() -> impl Parser<'src, &'src str, Attribute<'src>, Err<Rich<'src, char>>> {
-    let attribute_arg = ascii::ident().then(just("()").or_not());
+    let arg_list = named_arg()
+        .then(
+            just(",")
+                .ignore_then(named_arg())
+                .repeated()
+                .collect::<Vec<NamedArg<'src>>>(),
+        )
+        .map(
+            |(first_arg, mut more_args): (NamedArg<'src>, Vec<NamedArg<'src>>)| {
+                more_args.insert(0, first_arg);
+                AttribArg::Args(more_args)
+            },
+        );
+    let function = ascii::ident()
+        .then(just("()"))
+        .map_with(|(func_name, _parans), e| AttribArg::Function(Token::Ident(func_name, e.span())));
+
+    let identifier =
+        ascii::ident().map_with(|tok, e| AttribArg::Ident(Token::Ident(tok, e.span())));
+
+    let attribute_arg = arg_list.or(function).or(identifier);
     just('@')
         .then(ascii::ident())
         .then(just('(').then(attribute_arg).then(just(')')).or_not())
         .map_with(|((_at, name), arg), e| {
-            let arg = arg.map(|((_open_paran, (arg, parans)), _close_paran)| AttribArg {
-                name: Token::Ident(arg, e.span()),
-                is_function: parans.is_some(),
-            });
+            let arg = arg.map(|((_open_paran, attrib_arg), _close_paran)| attrib_arg);
             Attribute {
                 name: Token::Ident(name, e.span()),
                 arg,
@@ -493,10 +523,7 @@ mod tests {
             attribute().parse("@default(now())").into_result(),
             Ok(Attribute {
                 name: Token::Ident("default", Span::new(0, 0)),
-                arg: Some(AttribArg {
-                    name: Token::Ident("now", Span::new(0, 0)),
-                    is_function: true
-                })
+                arg: Some(AttribArg::Function(Token::Ident("now", Span::new(0, 0))))
             })
         );
 
@@ -504,10 +531,7 @@ mod tests {
             attribute().parse("@default(USER)").into_result(),
             Ok(Attribute {
                 name: Token::Ident("default", Span::new(0, 0)),
-                arg: Some(AttribArg {
-                    name: Token::Ident("USER", Span::new(0, 0)),
-                    is_function: false
-                })
+                arg: Some(AttribArg::Ident(Token::Ident("USER", Span::new(0, 0))))
             })
         );
 
@@ -518,6 +542,11 @@ mod tests {
             .parse("@default(now(), now())")
             .into_result()
             .is_err());
+    }
+
+    #[test]
+    fn test_attribute_with_attrib_args() {
+        assert!(false)
     }
 
     #[test]
@@ -543,10 +572,10 @@ mod tests {
                     },
                     Attribute {
                         name: Token::Ident("default", Span::new(0, 0)),
-                        arg: Some(AttribArg {
-                            name: Token::Ident("auto_generate", Span::new(0, 0)),
-                            is_function: true
-                        })
+                        arg: Some(AttribArg::Function(Token::Ident(
+                            "auto_generate",
+                            Span::new(0, 0)
+                        )))
                     }
                 ]
             })
@@ -636,10 +665,7 @@ mod tests {
                         ),
                         attributes: vec![Attribute {
                             name: Token::Ident("default", Span::new(0, 0)),
-                            arg: Some(AttribArg {
-                                name: Token::Ident("USER", Span::new(0, 0)),
-                                is_function: false,
-                            })
+                            arg: Some(AttribArg::Ident(Token::Ident("USER", Span::new(0, 0))))
                         }]
                     }
                 ]
@@ -758,10 +784,7 @@ mod tests {
                         ),
                         attributes: vec![Attribute {
                             name: Token::Ident("default", Span::new(0, 0)),
-                            arg: Some(AttribArg {
-                                name: Token::Ident("USER", Span::new(0, 0)),
-                                is_function: false,
-                            }),
+                            arg: Some(AttribArg::Ident(Token::Ident("USER", Span::new(0, 0)))),
                         }],
                     },
                     FieldDecl {

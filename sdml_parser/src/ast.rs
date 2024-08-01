@@ -234,7 +234,14 @@ pub struct Attribute<'src> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct AttribArg<'src> {
-    pub name: Token<'src>,
-    pub is_function: bool,
+pub enum AttribArg<'src> {
+    Ident(Token<'src>),
+    Function(Token<'src>),
+    Args(Vec<NamedArg<'src>>),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct NamedArg<'src> {
+    pub arg_name: Token<'src>,
+    pub arg_value: Token<'src>,
 }
