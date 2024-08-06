@@ -695,10 +695,10 @@ mod tests {
 
         assert!(model_decl().parse(err_model_str).into_result().is_err());
     }
-
+    /*
     #[test]
     fn test_parse() {
-        let sdml_str = r#" 
+        let sdml_str = r#"
         model User {
             email       ShortStr      @unique
             name        ShortStr?
@@ -890,4 +890,5 @@ mod tests {
         let ast_result = semantic_analysis(decls);
         assert!(ast_result.is_ok());
     }
+    */
 }

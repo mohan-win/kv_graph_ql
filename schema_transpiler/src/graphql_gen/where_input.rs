@@ -678,70 +678,73 @@ field_contains_some: [String]"#;
         assert_eq!(expected_str, actual_str)
     }
 
-    #[test]
-    fn test_input_filters_many_relation_field_def() {
-        let expected_str = r#"
-"""condition must be true for all nodes"""
-posts_every: PostWhereInput
-"""condition must be true for at least 1 node"""
-posts_some: PostWhereInput
-"""condition must be false for all nodes"""
-posts_none: PostWhereInput
-"""is the relation field empty"""
-posts_is_empty: Boolean"#;
-        let relation_field_input_filters = relation_field_def(
-            &sdml_ast::Token::Ident("posts", Span::new(0, 0)),
-            &sdml_ast::FieldType::new(
-                sdml_ast::Type::Relation(sdml_ast::Token::Ident("Post", Span::new(0, 0))),
-                false,
-                true,
-            ),
-        )
-        .expect("It should be a valid output");
-        let actual_str = relation_field_input_filters
-            .into_iter()
-            .fold("".to_string(), |acc, x| format!("{}{}", acc, x));
-        assert_eq!(expected_str, actual_str)
-    }
+    /*
+        #[test]
+        fn test_input_filters_many_relation_field_def() {
+            let expected_str = r#"
+    """condition must be true for all nodes"""
+    posts_every: PostWhereInput
+    """condition must be true for at least 1 node"""
+    posts_some: PostWhereInput
+    """condition must be false for all nodes"""
+    posts_none: PostWhereInput
+    """is the relation field empty"""
+    posts_is_empty: Boolean"#;
+            let relation_field_input_filters = relation_field_def(
+                &sdml_ast::Token::Ident("posts", Span::new(0, 0)),
+                &sdml_ast::FieldType::new(
+                    sdml_ast::Type::Relation(sdml_ast::Token::Ident("Post", Span::new(0, 0))),
+                    false,
+                    true,
+                ),
+            )
+            .expect("It should be a valid output");
+            let actual_str = relation_field_input_filters
+                .into_iter()
+                .fold("".to_string(), |acc, x| format!("{}{}", acc, x));
+            assert_eq!(expected_str, actual_str)
+        }
 
-    #[test]
-    fn test_input_filters_one_relation_field_def() {
-        let expected_str = r#"
-"""condition must be true for related node"""
-profile: ProfileWhereInput
-"""is the relation field null"""
-profile_is_null: Boolean"#;
-        let relation_field_input_filters = relation_field_def(
-            &sdml_ast::Token::Ident("profile", Span::new(0, 0)),
-            &sdml_ast::FieldType::new(
-                sdml_ast::Type::Relation(sdml_ast::Token::Ident("Profile", Span::new(0, 0))),
-                false,
-                false,
-            ),
-        )
-        .expect("It should be a valid output");
-        let actual_str = relation_field_input_filters
-            .into_iter()
-            .fold("".to_string(), |acc, x| format!("{}{}", acc, x));
-        assert_eq!(expected_str, actual_str)
-    }
 
-    #[test]
-    fn test_input_logical_operations_def() {
-        let expected_str = r#"
-"""Logical AND on all given filters."""
-AND: [UserWhereInput!]
-"""Logical OR on all given filters."""
-OR: [UserWhereInput!]
-"""Logical NOT on all given filters combined by AND."""
-NOT: [UserWhereInput!]"#;
-        let logical_operations =
-            logical_operations_def(&sdml_ast::Token::Ident("User", Span::new(0, 0)))
+            #[test]
+            fn test_input_filters_one_relation_field_def() {
+                let expected_str = r#"
+        """condition must be true for related node"""
+        profile: ProfileWhereInput
+        """is the relation field null"""
+        profile_is_null: Boolean"#;
+                let relation_field_input_filters = relation_field_def(
+                    &sdml_ast::Token::Ident("profile", Span::new(0, 0)),
+                    &sdml_ast::FieldType::new(
+                        sdml_ast::Type::Relation(sdml_ast::Token::Ident("Profile", Span::new(0, 0))),
+                        false,
+                        false,
+                    ),
+                )
                 .expect("It should be a valid output");
-        let actual_str = logical_operations
-            .into_iter()
-            .fold("".to_string(), |acc, x| format!("{acc}{x}"));
-        println!("{}", actual_str);
-        assert_eq!(expected_str, actual_str);
-    }
+                let actual_str = relation_field_input_filters
+                    .into_iter()
+                    .fold("".to_string(), |acc, x| format!("{}{}", acc, x));
+                assert_eq!(expected_str, actual_str)
+            }
+
+            #[test]
+            fn test_input_logical_operations_def() {
+                let expected_str = r#"
+        """Logical AND on all given filters."""
+        AND: [UserWhereInput!]
+        """Logical OR on all given filters."""
+        OR: [UserWhereInput!]
+        """Logical NOT on all given filters combined by AND."""
+        NOT: [UserWhereInput!]"#;
+                let logical_operations =
+                    logical_operations_def(&sdml_ast::Token::Ident("User", Span::new(0, 0)))
+                        .expect("It should be a valid output");
+                let actual_str = logical_operations
+                    .into_iter()
+                    .fold("".to_string(), |acc, x| format!("{acc}{x}"));
+                println!("{}", actual_str);
+                assert_eq!(expected_str, actual_str);
+            }
+            */
 }

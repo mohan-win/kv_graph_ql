@@ -16,7 +16,7 @@ model Profile {
     id         ShortStr      @id @default(auto())
     bio        LongStr?
     user       User          @relation(name: "UserOnProfile", field: userEmail, references: email)
-    userEmail  ShortStr      @unique
+    userEmail  ShortStr      @unique 
 }
 
 model Post {
@@ -26,14 +26,17 @@ model Post {
     title       ShortStr
     published   Boolean     @default(false)
     author      User        @relation(name:"UserOnPost", field: authorId, references: id)
-    authorId    Int         @unique
-    category    Category[]  # ToDo:: Figure out if we want to support many-to-many relations like prisma in the initial release or not.
+    authorId    Int         
+    categoryIds String[]
+    category    Category[]  @relation(field: categoryIds, references: id)
+
 }
 
 model Category {
     id          ShortStr      @id @default(auto())
     name        ShortStr
-    posts       Post[]
+    postIDs     String[] 
+    posts       Post[]        @relation(field: postIDs, references: id)
 }
 
 enum Role {

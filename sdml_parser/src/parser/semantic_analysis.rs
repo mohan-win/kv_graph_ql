@@ -184,7 +184,8 @@ fn get_actual_type<'src>(
     models: &HashMap<&'src str, ModelDecl<'src>>,
     enums: &HashMap<&'src str, EnumDecl<'src>>,
 ) -> Result<Option<Type<'src>>, SemanticError<'src>> {
-    if let Type::Unknown(type_name_tok) = &*field.field_type.r#type() {
+    unimplemented!()
+    /*if let Type::Unknown(type_name_tok) = &*field.field_type.r#type() {
         let type_name = type_name_tok.ident_name().unwrap();
         match models.get(type_name) {
             Some(_) => Ok(Some(Type::Relation(type_name_tok.clone()))),
@@ -200,7 +201,7 @@ fn get_actual_type<'src>(
         }
     } else {
         Ok(None)
-    }
+    }*/
 }
 
 /// Validates the given attribute on the model fields, returns error if
@@ -213,7 +214,8 @@ fn validate_attribute<'src>(
     parent_model_ident: &Token<'src>,
     enums: &HashMap<&'src str, EnumDecl<'src>>,
 ) -> Result<(), SemanticError<'src>> {
-    let valid_attribs_with_no_args = ["unique"];
+    unimplemented!()
+    /*let valid_attribs_with_no_args = ["unique"];
     let valid_attributes_with_args = ["default"];
     let valid_attribute_arg_fns = ["now"];
     let valid_attribute_arg_values = ["true", "false"];
@@ -315,7 +317,7 @@ fn validate_attribute<'src>(
         } else {
             Ok(())
         }
-    }
+    }*/
 }
 
 #[cfg(test)]

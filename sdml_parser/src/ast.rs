@@ -199,7 +199,7 @@ pub enum Type<'src> {
     },
     Enum(Token<'src>),
     /// If field type is other model type, then its a `Relation`.
-    Relation(Token<'src>),
+    Relation(RelationEdge<'src>),
     /// If the field type is Enum or Relation, in the first pass it will be set to Unknown with identifier token.
     /// Then only during scemantic analysis its actual user defined type is determined.
     Unknown(Token<'src>),
@@ -210,8 +210,55 @@ impl<'src> Type<'src> {
         match self {
             Self::Primitive { token, .. } => token,
             Self::Enum(token) => token,
-            Self::Relation(token) => token,
+            Self::Relation(relation_edge) => relation_edge.referenced_model_name(),
             Self::Unknown(token) => token,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum RelationEdge<'src> {
+    /// One-side of the relation on the left in 1-to-1 relation.
+    OneSideRelationLeft {
+        relation_name: Token<'src>,
+        referenced_model_name: Token<'src>,
+    },
+    /// One-side of the relation on the right in 1-to-1 relation.
+    OneSideRelationRight {
+        relation_name: Token<'src>,
+        /// Name of the relational scalar field storing the foreign key values.
+        field_name: Token<'src>,
+        referenced_model_name: Token<'src>,
+        /// Name of the field (should be either @id or @unique) in the referenced model.
+        referenced_field_name: Token<'src>,
+    },
+    /// Many-side of the relation, capturing the required information for both
+    /// Many side of 1-to-many relation, and both sides fo the many-to-many relation.
+    ManySideRelation {
+        relation_name: Token<'src>,
+        /// Name of the relational scalar field storing the foreign key values.
+        field_name: Token<'src>,
+        referenced_model_name: Token<'src>,
+        /// Name of the field (should be either @id or @unique) in the referenced model.
+        referenced_field_name: Token<'src>,
+    },
+}
+
+impl<'src> RelationEdge<'src> {
+    fn referenced_model_name(&self) -> &Token<'src> {
+        match self {
+            Self::OneSideRelationLeft {
+                referenced_model_name,
+                ..
+            } => &referenced_model_name,
+            Self::OneSideRelationRight {
+                referenced_model_name,
+                ..
+            } => &referenced_model_name,
+            Self::ManySideRelation {
+                referenced_model_name,
+                ..
+            } => &referenced_model_name,
         }
     }
 }
@@ -235,9 +282,9 @@ pub struct Attribute<'src> {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum AttribArg<'src> {
-    Ident(Token<'src>),
-    Function(Token<'src>),
     Args(Vec<NamedArg<'src>>),
+    Function(Token<'src>),
+    Ident(Token<'src>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
