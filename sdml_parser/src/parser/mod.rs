@@ -546,7 +546,56 @@ mod tests {
 
     #[test]
     fn test_attribute_with_attrib_args() {
-        assert!(false)
+        assert_eq!(
+            attribute()
+                .parse(r#"@relation(name: "MyRelation")"#)
+                .into_result(),
+            Ok(Attribute {
+                name: Token::Ident("relation", Span::new(0, 0)),
+                arg: Some(AttribArg::Args(vec![NamedArg {
+                    arg_name: Token::Ident("name", Span::new(0, 0)),
+                    arg_value: Token::Str("\"MyRelation\"", Span::new(0, 0))
+                }]))
+            })
+        );
+
+        assert_eq!(
+            attribute()
+                .parse(r#"@relation(name: "MyRelation", field: field1, references: id1)"#)
+                .into_result(),
+            Ok(Attribute {
+                name: Token::Ident("relation", Span::new(0, 0)),
+                arg: Some(AttribArg::Args(vec![
+                    NamedArg {
+                        arg_name: Token::Ident("name", Span::new(0, 0)),
+                        arg_value: Token::Str("\"MyRelation\"", Span::new(0, 0))
+                    },
+                    NamedArg {
+                        arg_name: Token::Ident("field", Span::new(0, 0)),
+                        arg_value: Token::Ident("field1", Span::new(0, 0))
+                    },
+                    NamedArg {
+                        arg_name: Token::Ident("references", Span::new(0, 0)),
+                        arg_value: Token::Ident("id1", Span::new(0, 0))
+                    }
+                ]))
+            })
+        );
+
+        assert!(attribute()
+            .parse(r#"@attribute_with_out_arg_name("my_relation")"#)
+            .into_result()
+            .is_err());
+        assert!(attribute()
+            .parse(r#"@attribute_with_out_arg_name("my_relation", field: scalar_field1, references: references_id1)"#)
+            .into_result()
+            .is_err());
+        assert!(attribute()
+            .parse(
+                r#"@invalid_relation(now(), name:"my_relation", field: field1, references: id1)"#
+            )
+            .into_result()
+            .is_err());
     }
 
     #[test]
