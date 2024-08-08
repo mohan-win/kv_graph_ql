@@ -8,14 +8,14 @@ use chumsky::text::{self, ascii};
 use chumsky::{extra::Err, prelude::*};
 
 pub mod semantic_analysis;
-pub use semantic_analysis::SemanticError;
+use semantic_analysis::err::SemanticError;
 
-pub fn semantic_analysis<'src>(
+pub fn semantic_analysis<'src, 'rel>(
     decls: Vec<Declaration<'src>>,
-) -> Result<DataModel<'src>, Vec<SemanticError>> {
+) -> Result<DataModel<'src, 'rel>, Vec<SemanticError<'src>>> {
     semantic_analysis::to_data_model(decls, true).map_or_else(
         |errs| Err(errs),
-        |ast| match semantic_analysis::semantic_update(&ast) {
+        |mut ast| match semantic_analysis::semantic_update(&mut ast) {
             Err(errs) => Err(errs),
             Ok(()) => Ok(ast),
         },

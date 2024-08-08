@@ -72,10 +72,58 @@ impl<'src> Token<'src> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct DataModel<'src> {
-    pub configs: HashMap<&'src str, ConfigDecl<'src>>,
-    pub enums: HashMap<&'src str, EnumDecl<'src>>,
-    pub models: HashMap<&'src str, ModelDecl<'src>>,
+pub struct DataModel<'src, 'rel>
+where
+    'rel: 'src, // ToDo:: check if this conformance is necessary.
+{
+    /// Map of config name to its declarations.
+    configs: HashMap<&'src str, ConfigDecl<'src>>,
+    /// Map of enum name to its declarations.
+    enums: HashMap<&'src str, EnumDecl<'src>>,
+    /// Map of model name to its declarations.
+    models: HashMap<&'src str, ModelDecl<'src>>,
+    /// Map of valid relations with fully formed edges.
+    /// Available only after semantic_analysis phase.
+    relations: HashMap<&'src str, (&'rel RelationEdge<'src>, &'rel RelationEdge<'src>)>,
+}
+
+impl<'src, 'rel> DataModel<'src, 'rel> {
+    pub fn new() -> DataModel<'src, 'rel> {
+        DataModel {
+            configs: HashMap::new(),
+            enums: HashMap::new(),
+            models: HashMap::new(),
+            relations: HashMap::new(),
+        }
+    }
+    pub fn configs(&self) -> &HashMap<&'src str, ConfigDecl<'src>> {
+        &self.configs
+    }
+    pub fn enums(&self) -> &HashMap<&'src str, EnumDecl<'src>> {
+        &self.enums
+    }
+    pub fn models(&self) -> &HashMap<&'src str, ModelDecl<'src>> {
+        &self.models
+    }
+    pub fn relations(
+        &self,
+    ) -> &HashMap<&'src str, (&'rel RelationEdge<'src>, &'rel RelationEdge<'src>)> {
+        &self.relations
+    }
+    pub(crate) fn configs_mut(&mut self) -> &mut HashMap<&'src str, ConfigDecl<'src>> {
+        &mut self.configs
+    }
+    pub(crate) fn enums_mut(&mut self) -> &mut HashMap<&'src str, EnumDecl<'src>> {
+        &mut self.enums
+    }
+    pub(crate) fn models_mut(&mut self) -> &mut HashMap<&'src str, ModelDecl<'src>> {
+        &mut self.models
+    }
+    pub(crate) fn relations_mut(
+        &mut self,
+    ) -> &HashMap<&'src str, (&'rel RelationEdge<'src>, &'rel RelationEdge<'src>)> {
+        &mut self.relations
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -218,8 +266,10 @@ impl<'src> Type<'src> {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum RelationEdge<'src> {
-    /// One-side of the relation on the left in 1-to-1 relation.
-    OneSideRelationLeft {
+    /// One-side of the relation, for both
+    /// Left side of the 1-to-1 relation and
+    /// One side of the 1-to-many relation.
+    OneSideRelation {
         relation_name: Token<'src>,
         referenced_model_name: Token<'src>,
     },
@@ -227,7 +277,7 @@ pub enum RelationEdge<'src> {
     OneSideRelationRight {
         relation_name: Token<'src>,
         /// Name of the relational scalar field storing the foreign key values.
-        field_name: Token<'src>,
+        scalar_field_name: Token<'src>,
         referenced_model_name: Token<'src>,
         /// Name of the field (should be either @id or @unique) in the referenced model.
         referenced_field_name: Token<'src>,
@@ -237,7 +287,7 @@ pub enum RelationEdge<'src> {
     ManySideRelation {
         relation_name: Token<'src>,
         /// Name of the relational scalar field storing the foreign key values.
-        field_name: Token<'src>,
+        scalar_field_name: Token<'src>,
         referenced_model_name: Token<'src>,
         /// Name of the field (should be either @id or @unique) in the referenced model.
         referenced_field_name: Token<'src>,
@@ -245,9 +295,16 @@ pub enum RelationEdge<'src> {
 }
 
 impl<'src> RelationEdge<'src> {
+    pub fn relation_name(&self) -> &Token<'src> {
+        match self {
+            Self::OneSideRelation { relation_name, .. } => relation_name,
+            Self::OneSideRelationRight { relation_name, .. } => relation_name,
+            Self::ManySideRelation { relation_name, .. } => relation_name,
+        }
+    }
     fn referenced_model_name(&self) -> &Token<'src> {
         match self {
-            Self::OneSideRelationLeft {
+            Self::OneSideRelation {
                 referenced_model_name,
                 ..
             } => &referenced_model_name,

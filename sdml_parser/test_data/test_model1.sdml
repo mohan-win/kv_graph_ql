@@ -8,8 +8,8 @@ model User {
     name        ShortStr?     
     nickNames  ShortStr[]
     role        Role         @default(USER)
-    profile     Profile?     @relation(name: "UserOnProfile")
-    posts       Post[]
+    profile     Profile?     @relation(name: "UserOnProfile") # Relation attribute should have a name.
+    posts       Post[]       @relation(name:"UserOnPost")
 }
 
 model Profile {
@@ -28,7 +28,7 @@ model Post {
     author      User        @relation(name:"UserOnPost", field: authorId, references: id)
     authorId    Int         
     categoryIds String[]
-    category    Category[]  @relation(field: categoryIds, references: id)
+    category    Category[]  @relation(name:"CategoriesOnPost", field: categoryIds, references: id)
 
 }
 
@@ -36,7 +36,7 @@ model Category {
     id          ShortStr      @id @default(auto())
     name        ShortStr
     postIDs     String[] 
-    posts       Post[]        @relation(field: postIDs, references: id)
+    posts       Post[]        @relation(name:"CategoriesOnPost", field: postIDs, references: id)
 }
 
 enum Role {

@@ -1,79 +1,21 @@
-use chumsky::container::Seq;
-
 use crate::ast::{
-    Attribute, DataModel, Declaration, EnumDecl, FieldDecl, ModelDecl, PrimitiveType, Span, Token,
+    Attribute, DataModel, Declaration, EnumDecl, FieldDecl, ModelDecl, RelationEdge, Span, Token,
     Type,
 };
-use core::fmt;
 use std::{
     collections::{HashMap, HashSet},
     ops::ControlFlow,
 };
 
-/// Type of the semantic error
-#[derive(Debug, Clone, PartialEq)]
-pub enum SemanticError<'src> {
-    /// This error is returned when name of a user defined type clashes with already existing type.
-    DuplicateTypeDefinition { span: Span, type_name: &'src str },
-    /// This error is returned if type of a field is undefined.
-    UndefinedType {
-        span: Span,
-        type_name: &'src str,
-        field_name: &'src str,
-        model_name: &'src str,
-    },
-    /// This error is returned enum type used is undefined.
-    UndefinedEnum {
-        span: Span,
-        r#enum: &'src str,
-        field_name: &'src str,
-        model_name: &'src str,
-    },
-    /// This error is returned if undefined enum value is used.
-    UndefinedEnumValue {
-        span: Span,
-        enum_value: &'src str,
-        attrib_name: &'src str,
-        field_name: &'src str,
-        model_name: &'src str,
-    },
-    /// This error is thrown if the attribute is invalid
-    InvalidAttribute {
-        span: Span,
-        attrib_name: &'src str,
-        field_name: &'src str,
-        model_name: &'src str,
-    },
-    /// This error is thrown if the argment passed to attribute is invalid
-    InvalidAttributeArg {
-        span: Span,
-        attrib_arg_name: &'src str,
-        attrib_name: &'src str,
-        field_name: &'src str,
-        model_name: &'src str,
-    },
-    /// This error is returned for unknown attribute usage in models.
-    UnknownAttribute {
-        span: Span,
-        attrib_name: &'src str,
-        field_name: &'src str,
-        model_name: &'src str,
-    },
-    /// This error is returned for unknown functions usage in the model attributes.
-    UnknownFunction {
-        span: Span,
-        fn_name: &'src str,
-        attrib_name: &'src str,
-        field_name: &'src str,
-        model_name: &'src str,
-    },
-}
+/// Error Module
+pub mod err;
+use err::SemanticError;
 
-impl<'src> fmt::Display for SemanticError<'src> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Semantic Error: {self:#?}")
-    }
-}
+/// Module for attribute related semantic analysis and validation.
+mod attribute;
+
+/// Module for relation related semantic analysis and validation.
+mod relation;
 
 /// This function segregates the declartions into configs, enums & models
 /// # params
@@ -81,37 +23,37 @@ impl<'src> fmt::Display for SemanticError<'src> {
 /// # returns
 /// - segregated data_model
 /// - (or) SemanticError::DuplicateTypeDefinition if duplicate types types found.
-pub(crate) fn to_data_model<'src>(
+pub(crate) fn to_data_model<'src, 'rel>(
     delcarations: Vec<Declaration<'src>>,
     check_duplicate_types: bool,
-) -> Result<DataModel<'src>, Vec<SemanticError<'src>>> {
+) -> Result<DataModel<'src, 'rel>, Vec<SemanticError<'src>>> {
     let mut errs: Vec<SemanticError<'src>> = Vec::new();
     let mut type_set: HashSet<(&'src str, Span)> = HashSet::new();
 
-    let mut data_model = DataModel {
-        configs: HashMap::new(),
-        enums: HashMap::new(),
-        models: HashMap::new(),
-    };
+    let mut data_model = DataModel::new();
 
     for decl in delcarations.into_iter() {
         let (type_name, span) = match decl {
             Declaration::Config(c) => {
                 let type_name = c.name.ident_name().unwrap();
                 let span = c.name.span();
-                data_model.configs.insert(type_name, c);
+                data_model.configs_mut().insert(type_name, c);
                 (type_name, span)
             }
             Declaration::Enum(e) => {
                 let type_name = e.name.ident_name().unwrap();
                 let span = e.name.span();
-                data_model.enums.insert(e.name.ident_name().unwrap(), e);
+                data_model
+                    .enums_mut()
+                    .insert(e.name.ident_name().unwrap(), e);
                 (type_name, span)
             }
             Declaration::Model(m) => {
                 let type_name = m.name.ident_name().unwrap();
                 let span = m.name.span();
-                data_model.models.insert(m.name.ident_name().unwrap(), m);
+                data_model
+                    .models_mut()
+                    .insert(m.name.ident_name().unwrap(), m);
                 (type_name, span)
             }
         };
@@ -147,24 +89,29 @@ pub(crate) fn to_data_model<'src>(
 /// # Returns
 /// - () if there are no errors during update.
 /// - or array of errors if known semantic errors found.
-pub(crate) fn semantic_update<'src>(
-    input_ast: &DataModel<'src>,
+pub(crate) fn semantic_update<'src, 'rel>(
+    input_ast: &mut DataModel<'src, 'rel>,
 ) -> Result<(), Vec<SemanticError<'src>>> {
+    let mut relations: HashMap<
+        &'src str,
+        (
+            Option<&'rel RelationEdge<'src>>,
+            Option<&'rel RelationEdge<'src>>,
+        ),
+    > = HashMap::new();
     let mut errs: Vec<SemanticError<'src>> = Vec::new();
-    input_ast.models.values().for_each(|model| {
+    input_ast.models().values().for_each(|model| {
         model.fields.iter().for_each(|field| {
-            get_actual_type(field, &model.name, &input_ast.models, &input_ast.enums).map_or_else(
+            get_actual_type(model, field, input_ast.models(), input_ast.enums()).map_or_else(
                 |err| errs.push(err),
                 |actual_type| {
-                    actual_type.map(|actual_type| field.field_type.set_type(actual_type));
+                    actual_type.map(|actual_type| {
+                        field.field_type.set_type(actual_type);
+                        
+                    });
                 },
             );
-            field.attributes.iter().for_each(|attribute| {
-                let _ = validate_attribute(attribute, field, &model.name, &input_ast.enums)
-                    .map_err(|attrib_err| {
-                        errs.push(attrib_err);
-                    });
-            });
+            attribute::validate_attributes(field, model).map_err(|err| errs.push(err));
         });
     });
 
@@ -179,29 +126,32 @@ pub(crate) fn semantic_update<'src>(
 /// If the field type is already known, it returns `None`.
 /// But if its unable to locate the Uknown type, then it returns SemanticError::UndefinedType.
 fn get_actual_type<'src>(
+    model: &ModelDecl<'src>,
     field: &FieldDecl<'src>,
-    parent_model_ident: &Token<'src>,
     models: &HashMap<&'src str, ModelDecl<'src>>,
     enums: &HashMap<&'src str, EnumDecl<'src>>,
 ) -> Result<Option<Type<'src>>, SemanticError<'src>> {
-    unimplemented!()
-    /*if let Type::Unknown(type_name_tok) = &*field.field_type.r#type() {
+    if let Type::Unknown(type_name_tok) = &*field.field_type.r#type() {
         let type_name = type_name_tok.ident_name().unwrap();
         match models.get(type_name) {
-            Some(_) => Ok(Some(Type::Relation(type_name_tok.clone()))),
+            Some(referenced_model) => Ok(Some(Type::Relation(relation::get_relation_edge(
+                model,
+                field,
+                referenced_model,
+            )?))),
             None => match enums.get(type_name) {
                 Some(_) => Ok(Some(Type::Enum(type_name_tok.clone()))),
                 None => Err(SemanticError::UndefinedType {
                     span: type_name_tok.span(),
                     type_name: type_name_tok.ident_name().unwrap(),
                     field_name: field.name.ident_name().unwrap(),
-                    model_name: parent_model_ident.ident_name().unwrap(),
+                    model_name: model.name.ident_name().unwrap(),
                 }),
             },
         }
     } else {
         Ok(None)
-    }*/
+    }
 }
 
 /// Validates the given attribute on the model fields, returns error if
@@ -375,8 +325,8 @@ mod tests {
             .parse(&semantic_errs_sdml)
             .into_result()
             .unwrap();
-        let ast = to_data_model(decls, true).unwrap();
-        match semantic_update(&ast) {
+        let mut ast = to_data_model(decls, true).unwrap();
+        match semantic_update(&mut ast) {
             Ok(_) => assert!(false, "Expecting attribute errors to surface"),
             Err(errs) => {
                 let expected_errs = vec![
