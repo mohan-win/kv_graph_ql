@@ -35,12 +35,26 @@ impl<'src, 'rel> RelationMap<'src, 'rel> {
     /// If partially formed relations or invalid relations are present,
     /// then error is returned.
     pub fn get_valid_relations(
-        &self,
+        &'src self,
     ) -> Result<
         HashMap<&'src str, (&'rel RelationEdge<'src>, &'rel RelationEdge<'src>)>,
-        SemanticError<'src>,
+        Vec<SemanticError<'src>>,
     > {
-        unimplemented!()
+        let mut valid_relations = HashMap::new();
+        let mut errs = Vec::new();
+        self.relations.iter().for_each(|(key, (left, right))| {
+            RelationMap::is_relation_valid(left.as_deref(), right.as_deref()).map_or_else(
+                |e| errs.push(e),
+                |_| {
+                    valid_relations.insert(*key, (left.unwrap(), right.unwrap()));
+                },
+            );
+        });
+        if errs.len() > 0 {
+            Err(errs)
+        } else {
+            Ok(valid_relations)
+        }
     }
 
     pub fn add_relation_edge(
@@ -53,7 +67,9 @@ impl<'src, 'rel> RelationMap<'src, 'rel> {
         let relation_name_str = relation_name.ident_name().unwrap();
         let updated_relation = self.relations.get_mut(relation_name_str).map_or_else(
             || match edge {
-                RelationEdge::OneSideRelationRight { .. } => Ok((None, Some(edge))),
+                RelationEdge::OneSideRelationRight { .. }
+                | RelationEdge::ManySideRelation { .. } => Ok((None, Some(edge))),
+
                 _ => Ok((Some(edge), None)),
             },
             |existing_relation| match existing_relation {
@@ -75,22 +91,54 @@ impl<'src, 'rel> RelationMap<'src, 'rel> {
     /// Checks if the relation edges are valid and the relation is fully formed
     /// with the given 2 edges.
     fn is_relation_valid(
-        left: &'rel RelationEdge<'src>,
-        right: &'rel RelationEdge<'src>,
-        parent_field_ident: &Token<'src>,
-        parent_model_ident: &Token<'src>,
+        left: Option<&'rel RelationEdge<'src>>,
+        right: Option<&'rel RelationEdge<'src>>,
     ) -> Result<(), SemanticError<'src>> {
-        assert!(left.relation_name() == right.relation_name());
-
         match (left, right) {
-            (RelationEdge::OneSideRelation { .. }, RelationEdge::OneSideRelation { .. }) => {
-                Err(SemanticError::RelationInvalidAttributeArg {
-                    span: right.relation_name().span(),
-                    field_name: parent_field_ident.ident_name().unwrap(),
-                    model_name: parent_model_ident.ident_name().unwrap(),
-                })
-            },
-            (RelationEdge::OneSideRelationRight { .. }, _) => 
+            (None, None) => {
+                panic!("Empty relations are not allowed!")
+            }
+            (Some(..), None) => Err(SemanticError::RelationPartial {
+                span: left.unwrap().relation_name().span(),
+                relation_name: left.unwrap().relation_name().ident_name().unwrap(),
+                field_name: None,
+                model_name: None,
+            }),
+            (None, Some(..)) => Err(SemanticError::RelationPartial {
+                span: right.unwrap().relation_name().span(),
+                relation_name: right.unwrap().relation_name().ident_name().unwrap(),
+                field_name: None,
+                model_name: None,
+            }),
+            (
+                Some(RelationEdge::OneSideRelation { .. }),
+                Some(RelationEdge::OneSideRelation { .. }),
+            ) => Err(SemanticError::RelationInvalidAttributeArg {
+                span: right.unwrap().relation_name().span(),
+                field_name: None,
+                model_name: None,
+            }),
+            (Some(RelationEdge::OneSideRelationRight { .. }), _)
+            | (
+                Some(RelationEdge::ManySideRelation { .. }),
+                Some(RelationEdge::OneSideRelationRight { .. }),
+            )
+            | (
+                Some(RelationEdge::ManySideRelation { .. }),
+                Some(RelationEdge::OneSideRelation { .. }),
+            ) => Err(SemanticError::RelationInvalidAttributeArg {
+                span: left.unwrap().relation_name().span(),
+                field_name: None,
+                model_name: None,
+            }),
+            (Some(..), Some(..)) => {
+                assert!(
+                    left.unwrap().relation_name() == right.unwrap().relation_name(),
+                    "Relation name should match for the edges in a relation"
+                );
+                eprintln!("Valid relations left:{:#?} right:{:#?}", left, right); // ToDo:: remove!
+                Ok(())
+            }
         }
     }
 }
@@ -135,8 +183,8 @@ pub fn get_relation_edge<'src>(
         } else {
             Err(SemanticError::RelationInvalidAttributeArg {
                 span: relation_attribute.name.span(),
-                field_name: field.name.ident_name().unwrap(),
-                model_name: model.name.ident_name().unwrap(),
+                field_name: Some(field.name.ident_name().unwrap()),
+                model_name: Some(model.name.ident_name().unwrap()),
             })
         }
     }
@@ -154,8 +202,8 @@ fn new_relation_edge<'src>(
     for arg in relation_args.iter() {
         let invalid_arg_err = Err(SemanticError::RelationInvalidAttributeArg {
             span: arg.arg_value.span(),
-            field_name: field.name.ident_name().unwrap(),
-            model_name: model.name.ident_name().unwrap(),
+            field_name: Some(field.name.ident_name().unwrap()),
+            model_name: Some(model.name.ident_name().unwrap()),
         });
         match arg.arg_name {
             Token::Ident(ATTRIB_NAMED_ARG_NAME, _) => {
@@ -196,7 +244,7 @@ fn new_relation_edge<'src>(
                 }
             }
             Token::Ident(ATTRIB_NAMED_ARG_REFERENCES, _) => {
-                // Make sure referenced field
+                // Make sure referenced field, exists in the referenced model.
                 if let Token::Ident(_, _) = arg.arg_value {
                     referenced_model_field = referenced_model
                         .fields
@@ -310,8 +358,4 @@ fn new_relation_edge<'src>(
         field_name: field.name.ident_name().unwrap(),
         model_name: model.name.ident_name().unwrap(),
     })
-}
-
-fn validate_relations() {
-    unimplemented!()
 }

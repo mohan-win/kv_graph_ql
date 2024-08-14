@@ -36,14 +36,27 @@ pub enum SemanticError<'src> {
         field_name: &'src str,
         model_name: &'src str,
     },
-    /// This error is thrown for invalid relation
+    /// Invalid Relation - This error is thrown for invalid relation.
     RelationInvalid {
         span: Span,
         relation_name: &'src str,
         field_name: &'src str,
         model_name: &'src str,
     },
-
+    /// Partial Relation - This error is thrown if only one edge is present for a relation.
+    RelationPartial {
+        span: Span,
+        relation_name: &'src str,
+        field_name: Option<&'src str>,
+        model_name: Option<&'src str>,
+    },
+    /// This error is thrown if relation attribute is not there
+    /// on either side of the relation.
+    RelationNoAttribute {
+        span: Span,
+        field_name: &'src str,
+        model_name: &'src str,
+    },
     /// This error is thrown if the relation scalar field is not found.
     RelationScalarFieldNotFound {
         span: Span,
@@ -97,18 +110,11 @@ pub enum SemanticError<'src> {
         field_name: &'src str,
         model_name: &'src str,
     },
-    /// This error is thrown if relation attribute is not there
-    /// on either side of the relation.
-    RelationNoAttribute {
-        span: Span,
-        field_name: &'src str,
-        model_name: &'src str,
-    },
     /// This error is thrown if arguments to relation attribute is invalid.
     RelationInvalidAttributeArg {
         span: Span,
-        field_name: &'src str,
-        model_name: &'src str,
+        field_name: Option<&'src str>,
+        model_name: Option<&'src str>,
     },
 
     /// This error is thrown if the argment passed to attribute is invalid
