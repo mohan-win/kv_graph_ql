@@ -72,10 +72,7 @@ impl<'src> Token<'src> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct DataModel<'src, 'rel>
-where
-    'rel: 'src, // ToDo:: check if this conformance is necessary.
-{
+pub struct DataModel<'src> {
     /// Map of config name to its declarations.
     configs: HashMap<&'src str, ConfigDecl<'src>>,
     /// Map of enum name to its declarations.
@@ -84,11 +81,11 @@ where
     models: HashMap<&'src str, ModelDecl<'src>>,
     /// Map of valid relations with fully formed edges.
     /// Available only after semantic_analysis phase.
-    relations: HashMap<&'src str, (&'rel RelationEdge<'src>, &'rel RelationEdge<'src>)>,
+    relations: HashMap<&'src str, (RelationEdge<'src>, RelationEdge<'src>)>,
 }
 
-impl<'src, 'rel> DataModel<'src, 'rel> {
-    pub fn new() -> DataModel<'src, 'rel> {
+impl<'src> DataModel<'src> {
+    pub fn new() -> DataModel<'src> {
         DataModel {
             configs: HashMap::new(),
             enums: HashMap::new(),
@@ -105,9 +102,7 @@ impl<'src, 'rel> DataModel<'src, 'rel> {
     pub fn models(&self) -> &HashMap<&'src str, ModelDecl<'src>> {
         &self.models
     }
-    pub fn relations(
-        &self,
-    ) -> &HashMap<&'src str, (&'rel RelationEdge<'src>, &'rel RelationEdge<'src>)> {
+    pub fn relations(&self) -> &HashMap<&'src str, (RelationEdge<'src>, RelationEdge<'src>)> {
         &self.relations
     }
     pub(crate) fn configs_mut(&mut self) -> &mut HashMap<&'src str, ConfigDecl<'src>> {
@@ -121,7 +116,7 @@ impl<'src, 'rel> DataModel<'src, 'rel> {
     }
     pub(crate) fn relations_mut(
         &mut self,
-    ) -> &HashMap<&'src str, (&'rel RelationEdge<'src>, &'rel RelationEdge<'src>)> {
+    ) -> &mut HashMap<&'src str, (RelationEdge<'src>, RelationEdge<'src>)> {
         &mut self.relations
     }
 }

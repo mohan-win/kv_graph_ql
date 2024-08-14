@@ -3,13 +3,15 @@ use crate::ast::{
     Type,
 };
 use std::{
+    borrow::Borrow,
     collections::{HashMap, HashSet},
-    ops::ControlFlow,
+    ops::{ControlFlow, Deref},
 };
 
 /// Error Module
 pub mod err;
 use err::SemanticError;
+use relation::RelationMap;
 
 /// Module for attribute related semantic analysis and validation.
 mod attribute;
@@ -23,10 +25,10 @@ mod relation;
 /// # returns
 /// - segregated data_model
 /// - (or) SemanticError::DuplicateTypeDefinition if duplicate types types found.
-pub(crate) fn to_data_model<'src, 'rel>(
+pub(crate) fn to_data_model<'src>(
     delcarations: Vec<Declaration<'src>>,
     check_duplicate_types: bool,
-) -> Result<DataModel<'src, 'rel>, Vec<SemanticError<'src>>> {
+) -> Result<DataModel<'src>, Vec<SemanticError<'src>>> {
     let mut errs: Vec<SemanticError<'src>> = Vec::new();
     let mut type_set: HashSet<(&'src str, Span)> = HashSet::new();
 
@@ -89,32 +91,37 @@ pub(crate) fn to_data_model<'src, 'rel>(
 /// # Returns
 /// - () if there are no errors during update.
 /// - or array of errors if known semantic errors found.
-pub(crate) fn semantic_update<'src, 'rel>(
-    input_ast: &mut DataModel<'src, 'rel>,
+pub(crate) fn semantic_update<'src>(
+    input_ast: &mut DataModel<'src>,
 ) -> Result<(), Vec<SemanticError<'src>>> {
-    let mut relations: HashMap<
-        &'src str,
-        (
-            Option<&'rel RelationEdge<'src>>,
-            Option<&'rel RelationEdge<'src>>,
-        ),
-    > = HashMap::new();
+    let mut relations = RelationMap::new();
     let mut errs: Vec<SemanticError<'src>> = Vec::new();
     input_ast.models().values().for_each(|model| {
         model.fields.iter().for_each(|field| {
-            get_actual_type(model, field, input_ast.models(), input_ast.enums()).map_or_else(
-                |err| errs.push(err),
-                |actual_type| {
+            match get_actual_type(model, field, input_ast.models(), input_ast.enums()) {
+                Ok(actual_type) => {
                     actual_type.map(|actual_type| {
                         field.field_type.set_type(actual_type);
-                        
+                        if let Type::Relation(edge) = field.field_type.r#type().deref() {
+                            let _ = relations
+                                .add_relation_edge(edge.clone(), &field.name, &model.name) // Clone!
+                                .map_err(|err| errs.push(err));
+                        }
                     });
-                },
-            );
-            attribute::validate_attributes(field, model).map_err(|err| errs.push(err));
+                }
+                Err(err) => errs.push(err),
+            };
+            let _ = attribute::validate_attributes(field, model).map_err(|err| errs.push(err));
         });
     });
-
+    relations.get_valid_relations().map_or_else(
+        |rel_errs| errs.extend(rel_errs.into_iter()),
+        |valid_relations| {
+            input_ast
+                .relations_mut()
+                .extend(valid_relations.into_iter())
+        },
+    );
     if errs.len() > 0 {
         Err(errs)
     } else {
@@ -140,7 +147,7 @@ fn get_actual_type<'src>(
                 referenced_model,
             )?))),
             None => match enums.get(type_name) {
-                Some(_) => Ok(Some(Type::Enum(type_name_tok.clone()))),
+                Some(_) => Ok(Some(Type::Enum(type_name_tok.clone()))), // Clone
                 None => Err(SemanticError::UndefinedType {
                     span: type_name_tok.span(),
                     type_name: type_name_tok.ident_name().unwrap(),

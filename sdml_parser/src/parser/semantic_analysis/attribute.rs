@@ -35,6 +35,7 @@ pub fn validate_attributes<'src>(
     field: &FieldDecl<'src>,
     model: &ModelDecl<'src>,
 ) -> Result<(), SemanticError<'src>> {
+    unimplemented!()
 }
 
 /// Type to capture details of an attribute.

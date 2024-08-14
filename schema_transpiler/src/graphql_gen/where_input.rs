@@ -513,7 +513,7 @@ enum Role {
         let data_model = parser::semantic_analysis(sdml_declarations)
             .expect("A valid SDML file shouldn't fail in parsing.");
         let user_model_sdml_ast = data_model
-            .models
+            .models()
             .get("User")
             .expect("User model should exist in the SDML.");
         let user_where_input_grapql_ast =

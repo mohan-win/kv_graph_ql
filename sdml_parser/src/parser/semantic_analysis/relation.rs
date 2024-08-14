@@ -11,20 +11,11 @@ use super::{
 };
 
 #[derive(Debug)]
-pub(crate) struct RelationMap<'src, 'rel>
-where
-    'rel: 'src,
-{
-    relations: HashMap<
-        &'src str,
-        (
-            Option<&'rel RelationEdge<'src>>,
-            Option<&'rel RelationEdge<'src>>,
-        ),
-    >,
+pub(crate) struct RelationMap<'src> {
+    relations: HashMap<&'src str, (Option<RelationEdge<'src>>, Option<RelationEdge<'src>>)>,
 }
 
-impl<'src, 'rel> RelationMap<'src, 'rel> {
+impl<'src> RelationMap<'src> {
     pub fn new() -> Self {
         RelationMap {
             relations: HashMap::new(),
@@ -35,18 +26,18 @@ impl<'src, 'rel> RelationMap<'src, 'rel> {
     /// If partially formed relations or invalid relations are present,
     /// then error is returned.
     pub fn get_valid_relations(
-        &'src self,
+        self,
     ) -> Result<
-        HashMap<&'src str, (&'rel RelationEdge<'src>, &'rel RelationEdge<'src>)>,
+        HashMap<&'src str, (RelationEdge<'src>, RelationEdge<'src>)>,
         Vec<SemanticError<'src>>,
     > {
         let mut valid_relations = HashMap::new();
         let mut errs = Vec::new();
-        self.relations.iter().for_each(|(key, (left, right))| {
-            RelationMap::is_relation_valid(left.as_deref(), right.as_deref()).map_or_else(
+        self.relations.into_iter().for_each(|(key, (left, right))| {
+            RelationMap::is_relation_valid(left.as_ref(), right.as_ref()).map_or_else(
                 |e| errs.push(e),
                 |_| {
-                    valid_relations.insert(*key, (left.unwrap(), right.unwrap()));
+                    valid_relations.insert(key, (left.unwrap(), right.unwrap()));
                 },
             );
         });
@@ -59,22 +50,22 @@ impl<'src, 'rel> RelationMap<'src, 'rel> {
 
     pub fn add_relation_edge(
         &mut self,
-        edge: &'rel RelationEdge<'src>,
+        edge: RelationEdge<'src>,
         parent_field_ident: &Token<'src>,
         parent_model_ident: &Token<'src>,
     ) -> Result<(), SemanticError<'src>> {
         let relation_name = edge.relation_name();
         let relation_name_str = relation_name.ident_name().unwrap();
-        let updated_relation = self.relations.get_mut(relation_name_str).map_or_else(
-            || match edge {
-                RelationEdge::OneSideRelationRight { .. }
-                | RelationEdge::ManySideRelation { .. } => Ok((None, Some(edge))),
-
-                _ => Ok((Some(edge), None)),
-            },
-            |existing_relation| match existing_relation {
-                (None, Some(right)) => Ok((Some(edge), Some(right))),
-                (Some(left), None) => Ok((Some(left), Some(edge))),
+        if let Some(existing_relation) = self.relations.get_mut(relation_name_str) {
+            match existing_relation {
+                (None, Some(_)) => {
+                    existing_relation.0 = Some(edge);
+                    Ok(())
+                }
+                (Some(_), None) => {
+                    existing_relation.1 = Some(edge);
+                    Ok(())
+                }
                 (Some(_), Some(_)) => Err(SemanticError::RelationInvalid {
                     span: relation_name.span(),
                     relation_name: relation_name_str,
@@ -82,17 +73,24 @@ impl<'src, 'rel> RelationMap<'src, 'rel> {
                     model_name: parent_model_ident.ident_name().unwrap(),
                 }),
                 (None, None) => panic!("This can't happen"),
-            },
-        )?;
-        self.relations.insert(relation_name_str, updated_relation);
+            }?;
+        } else {
+            let new_relation = match edge {
+                RelationEdge::OneSideRelationRight { .. }
+                | RelationEdge::ManySideRelation { .. } => (None, Some(edge)),
+
+                _ => (Some(edge), None),
+            };
+            self.relations.insert(relation_name_str, new_relation);
+        }
         Ok(())
     }
 
     /// Checks if the relation edges are valid and the relation is fully formed
     /// with the given 2 edges.
     fn is_relation_valid(
-        left: Option<&'rel RelationEdge<'src>>,
-        right: Option<&'rel RelationEdge<'src>>,
+        left: Option<&RelationEdge<'src>>,
+        right: Option<&RelationEdge<'src>>,
     ) -> Result<(), SemanticError<'src>> {
         match (left, right) {
             (None, None) => {

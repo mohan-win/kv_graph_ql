@@ -10,9 +10,9 @@ use chumsky::{extra::Err, prelude::*};
 pub mod semantic_analysis;
 use semantic_analysis::err::SemanticError;
 
-pub fn semantic_analysis<'src, 'rel>(
+pub fn semantic_analysis<'src>(
     decls: Vec<Declaration<'src>>,
-) -> Result<DataModel<'src, 'rel>, Vec<SemanticError<'src>>> {
+) -> Result<DataModel<'src>, Vec<SemanticError<'src>>> {
     semantic_analysis::to_data_model(decls, true).map_or_else(
         |errs| Err(errs),
         |mut ast| match semantic_analysis::semantic_update(&mut ast) {
