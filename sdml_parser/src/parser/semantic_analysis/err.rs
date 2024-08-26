@@ -29,13 +29,6 @@ pub enum SemanticError<'src> {
         field_name: &'src str,
         model_name: &'src str,
     },
-    /// This error is thrown if the attribute is invalid.
-    InvalidAttribute {
-        span: Span,
-        attrib_name: &'src str,
-        field_name: &'src str,
-        model_name: &'src str,
-    },
     /// Invalid Relation - This error is thrown for invalid relation.
     RelationInvalid {
         span: Span,
@@ -117,25 +110,33 @@ pub enum SemanticError<'src> {
         model_name: Option<&'src str>,
     },
 
-    /// This error is thrown if the argment passed to attribute is invalid
-    InvalidAttributeArg {
-        span: Span,
-        attrib_arg_name: &'src str,
-        attrib_name: &'src str,
-        field_name: &'src str,
-        model_name: &'src str,
-    },
-    /// This error is returned for unknown attribute usage in models.
-    UnknownAttribute {
+    /// This error is thrown if the attribute is invalid.
+    AttributeInvalid {
         span: Span,
         attrib_name: &'src str,
         field_name: &'src str,
         model_name: &'src str,
     },
-    /// This error is returned for unknown functions usage in the model attributes.
-    UnknownFunction {
+    /// This error is thrown if a model field has more than 1 attribute, and they are incompatible with each other
+    AttributeIncompatible {
         span: Span,
-        fn_name: &'src str,
+        attrib_name: &'src str,
+        /// First attribute present in the field.
+        first_attrib_name: &'src str,
+        field_name: &'src str,
+        model_name: &'src str,
+    },
+    /// This error is returned for unknown attribute usage in model's fields.
+    AttributeUnknown {
+        span: Span,
+        attrib_name: &'src str,
+        field_name: &'src str,
+        model_name: &'src str,
+    },
+    /// This error is thrown if the argment passed to attribute is invalid.
+    AttributeArgInvalid {
+        span: Span,
+        attrib_arg_name: Option<&'src str>,
         attrib_name: &'src str,
         field_name: &'src str,
         model_name: &'src str,

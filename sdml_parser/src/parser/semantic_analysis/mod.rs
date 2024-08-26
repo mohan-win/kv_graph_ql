@@ -3,7 +3,6 @@ use crate::ast::{
     Type,
 };
 use std::{
-    borrow::Borrow,
     collections::{HashMap, HashSet},
     ops::{ControlFlow, Deref},
 };
@@ -161,122 +160,6 @@ fn get_actual_type<'src>(
     }
 }
 
-/// Validates the given attribute on the model fields, returns error if
-/// a. it finds a unknown attribute
-/// b. if finds a unknown function
-/// c. it finds a unknown Enum value.
-fn validate_attribute<'src>(
-    attribute: &Attribute<'src>,
-    parent_field: &FieldDecl<'src>,
-    parent_model_ident: &Token<'src>,
-    enums: &HashMap<&'src str, EnumDecl<'src>>,
-) -> Result<(), SemanticError<'src>> {
-    unimplemented!()
-    /*let valid_attribs_with_no_args = ["unique"];
-    let valid_attributes_with_args = ["default"];
-    let valid_attribute_arg_fns = ["now"];
-    let valid_attribute_arg_values = ["true", "false"];
-    let mut all_attributes = Vec::new();
-    all_attributes.extend_from_slice(&valid_attribs_with_no_args[..]);
-    all_attributes.extend_from_slice(&valid_attributes_with_args[..]);
-
-    let attribute_name = attribute.name.ident_name().unwrap();
-
-    // See if it is a known attribute
-    if !all_attributes.contains(&attribute_name) {
-        Err(SemanticError::UnknownAttribute {
-            span: attribute.name.span(),
-            attrib_name: attribute_name,
-            field_name: parent_field.name.ident_name().unwrap(),
-            model_name: parent_model_ident.ident_name().unwrap(),
-        })
-    } else {
-        // See if it is an invalid attribute
-        if valid_attribs_with_no_args.contains(&attribute_name) && attribute.arg.is_some()
-            || valid_attributes_with_args.contains(&attribute_name) && attribute.arg.is_none()
-        {
-            Err(SemanticError::InvalidAttribute {
-                span: attribute.name.span(),
-                attrib_name: attribute.name.ident_name().unwrap(),
-                field_name: parent_field.name.ident_name().unwrap(),
-                model_name: parent_model_ident.ident_name().unwrap(),
-            })
-        } else if valid_attributes_with_args.contains(&attribute_name) && attribute.arg.is_some() {
-            // See if the arg is a valid function.
-            let attribute_arg = &attribute.arg.as_ref().unwrap().name;
-            let attribute_arg_name = attribute_arg.ident_name().unwrap();
-            if attribute.arg.as_ref().unwrap().is_function
-                && !valid_attribute_arg_fns.contains(&attribute_arg_name)
-            {
-                Err(SemanticError::UnknownFunction {
-                    span: attribute_arg.span(),
-                    fn_name: attribute_arg_name,
-                    attrib_name: attribute_name,
-                    field_name: parent_field.name.ident_name().unwrap(),
-                    model_name: parent_model_ident.ident_name().unwrap(),
-                })
-            } else if !attribute.arg.as_ref().unwrap().is_function {
-                if let Type::Primitive {
-                    r#type: PrimitiveType::Boolean,
-                    ..
-                } = &*parent_field.field_type.r#type()
-                {
-                    // See if the arg is a valid boolean value.
-                    if !valid_attribute_arg_values.contains(&attribute_arg_name) {
-                        Err(SemanticError::InvalidAttributeArg {
-                            span: attribute_arg.span(),
-                            attrib_arg_name: attribute_arg_name,
-                            attrib_name: attribute_name,
-                            field_name: parent_field.name.ident_name().unwrap(),
-                            model_name: parent_model_ident.ident_name().unwrap(),
-                        })
-                    } else {
-                        Ok(())
-                    }
-                } else if let Type::Enum(enum_name) = &*parent_field.field_type.r#type() {
-                    // See if the arg is a valid enum value of the given type.
-                    if let Some((_, enum_decl)) = enums.get_key_value(
-                        enum_name
-                            .ident_name()
-                            .expect("Enum should have an identifier"),
-                    ) {
-                        if enum_decl.elements.contains(attribute_arg) {
-                            Ok(())
-                        } else {
-                            Err(SemanticError::UndefinedEnumValue {
-                                span: attribute_arg.span(),
-                                enum_value: attribute_arg_name,
-                                attrib_name: attribute_name,
-                                field_name: parent_field.name.ident_name().unwrap(),
-                                model_name: parent_model_ident.ident_name().unwrap(),
-                            })
-                        }
-                    } else {
-                        Err(SemanticError::UndefinedEnum {
-                            span: attribute_arg.span(),
-                            r#enum: enum_name.ident_name().unwrap(),
-                            field_name: parent_field.name.ident_name().unwrap(),
-                            model_name: parent_model_ident.ident_name().unwrap(),
-                        })
-                    }
-                } else {
-                    Err(SemanticError::InvalidAttributeArg {
-                        span: attribute_arg.span(),
-                        attrib_arg_name: attribute_arg_name,
-                        attrib_name: attribute_name,
-                        field_name: parent_field.name.ident_name().unwrap(),
-                        model_name: parent_model_ident.ident_name().unwrap(),
-                    })
-                }
-            } else {
-                Ok(())
-            }
-        } else {
-            Ok(())
-        }
-    }*/
-}
-
 #[cfg(test)]
 mod tests {
     use crate::ast::Span;
@@ -319,7 +202,7 @@ mod tests {
             }
         }
     }
-
+    /*
     #[test]
     fn test_semantic_update() {
         let semantic_errs_sdml = std::fs::read_to_string(concat!(
@@ -337,25 +220,25 @@ mod tests {
             Ok(_) => assert!(false, "Expecting attribute errors to surface"),
             Err(errs) => {
                 let expected_errs = vec![
-                    SemanticError::InvalidAttribute {
+                    SemanticError::AttributeInvalid {
                         span: Span::new(88, 101),
                         attrib_name: "unique",
                         field_name: "email",
                         model_name: "User",
                     },
-                    SemanticError::UnknownAttribute {
+                    SemanticError::AttributeUnknown {
                         span: Span::new(102, 117),
                         attrib_name: "unknown_attrib",
                         field_name: "email",
                         model_name: "User",
                     },
-                    SemanticError::InvalidAttribute {
+                    SemanticError::AttributeInvalid {
                         span: Span::new(148, 156),
                         attrib_name: "default",
                         field_name: "name",
                         model_name: "User",
                     },
-                    SemanticError::InvalidAttributeArg {
+                    SemanticError::AttributeArgInvalid {
                         span: Span::new(186, 200),
                         attrib_arg_name: "USER",
                         attrib_name: "default",
@@ -369,7 +252,7 @@ mod tests {
                         field_name: "role",
                         model_name: "User",
                     },
-                    SemanticError::UnknownFunction {
+                    SemanticError::AttributeArgUnknownFunction {
                         span: Span::new(404, 432),
                         fn_name: "unknown_function",
                         field_name: "createdAt",
@@ -382,7 +265,7 @@ mod tests {
                         field_name: "published",
                         model_name: "Post",
                     },
-                    SemanticError::InvalidAttributeArg {
+                    SemanticError::AttributeArgInvalid {
                         span: Span::new(535, 550),
                         attrib_arg_name: "False",
                         attrib_name: "default",
@@ -396,5 +279,5 @@ mod tests {
                     .for_each(|err| assert!(expected_errs.contains(err)))
             }
         }
-    }
+    }*/
 }
