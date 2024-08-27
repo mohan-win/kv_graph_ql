@@ -36,6 +36,13 @@ pub enum SemanticError<'src> {
         field_name: &'src str,
         model_name: &'src str,
     },
+    /// Duplicate Relation - This error is thrown when *same* relation name represent more than one relation.
+    RelationDuplicate {
+        span: Span,
+        relation_name: &'src str,
+        field_name: &'src str,
+        model_name: &'src str,
+    },
     /// Partial Relation - This error is thrown if only one edge is present for a relation.
     RelationPartial {
         span: Span,
@@ -59,6 +66,13 @@ pub enum SemanticError<'src> {
     /// This error is thrown if the relation scalar field referenced in relation
     /// attribute is invalid.
     RelationScalarFieldIsNotScalar {
+        span: Span,
+        field_name: &'src str,
+        model_name: &'src str,
+    },
+    /// This error is thrown if the relation scalar field of array type is marked with
+    /// UNIQUE attribute.
+    RelationScalarFieldArrayCanNotBeUnique {
         span: Span,
         field_name: &'src str,
         model_name: &'src str,

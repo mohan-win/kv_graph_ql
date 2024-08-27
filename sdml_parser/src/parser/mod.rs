@@ -247,7 +247,7 @@ fn attribute<'src>() -> impl Parser<'src, &'src str, Attribute<'src>, Err<Rich<'
 
 #[cfg(test)]
 mod tests {
-    use std::{collections::HashMap, vec};
+    use std::vec;
 
     use super::*;
     use crate::ast::{ConfigValue, Span};
@@ -376,7 +376,7 @@ mod tests {
 
     #[test]
     fn test_config_decl() {
-        let config_str = r#" 
+        let config_str = r#"
             config db {
                 provider = "foundationDB"
                 port = 1233
@@ -408,7 +408,7 @@ mod tests {
 
     #[test]
     fn test_enum_decl() {
-        let enum_str = r#" 
+        let enum_str = r#"
         enum Role {
             USER
             ADMIN
@@ -428,7 +428,7 @@ mod tests {
             }))
         );
 
-        let enum_str_err = r#" 
+        let enum_str_err = r#"
         enum Role {
             USER,
             ADMIN,
@@ -438,9 +438,9 @@ mod tests {
 
         assert!(enum_decl().parse(enum_str_err).into_result().is_err());
 
-        let empty_enum_str = r#" 
+        let empty_enum_str = r#"
         enum Role {
-            
+
         }
         "#;
 
@@ -653,7 +653,7 @@ mod tests {
 
     #[test]
     fn test_model_dec() {
-        let model_str = r#" 
+        let model_str = r#"
         model User {
             email       ShortStr      @unique
             name        ShortStr?
@@ -734,7 +734,7 @@ mod tests {
             }))
         );
 
-        let err_model_str = r#" 
+        let err_model_str = r#"
         model User {
             email       ShortStr      @unique
             name        ShortStrnickNames  ShortStr[]
@@ -749,11 +749,14 @@ mod tests {
     fn test_parse() {
         let sdml_str = r#"
         model User {
-            email       ShortStr      @unique
-            name        ShortStr?
-            nickNames  ShortStr[]
-            role        Role          @default(USER)
-            mentor      User
+            id           ShortStr      @id @default(auto())
+            email        ShortStr      @unique
+            name         ShortStr?
+            nickNames    ShortStr[]
+            role         Role          @default(USER)
+            mentor       User?         @relation(name: "UsersMentor", field: mentorEmail, references: email)
+            mentorEmail  ShortStr?
+            mentees      User[]        @relation(name: "UserMentor")
         }
 
         model EmptyModel {
@@ -923,7 +926,7 @@ mod tests {
         let ast_result = semantic_analysis(decls);
         assert_eq!(ast_result, Ok(ast));
     }
-
+    */
     #[test]
     fn test_happy_path_parse() {
         let test_model1_sdml = std::fs::read_to_string(concat!(
@@ -939,5 +942,4 @@ mod tests {
         let ast_result = semantic_analysis(decls);
         assert!(ast_result.is_ok());
     }
-    */
 }

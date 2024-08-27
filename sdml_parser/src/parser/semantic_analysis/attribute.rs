@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::ast::{AttribArg, Attribute, FieldDecl, ModelDecl};
+use crate::ast::{AttribArg, Attribute, FieldDecl, ModelDecl, NamedArg, Span, Token, Type};
 
 use super::err::SemanticError;
 
@@ -24,8 +24,198 @@ pub const ATTRIB_NAMED_ARG_NAME: &str = "name";
 pub const ATTRIB_NAMED_ARG_FIELD: &str = "field";
 pub const ATTRIB_NAMED_ARG_REFERENCES: &str = "references";
 
+pub(crate) struct RelationAttributeDetails<'src, 'b> {
+    pub relation_name: Option<Token<'src>>,
+    pub relation_scalar_field: Option<&'b FieldDecl<'src>>,
+    pub referenced_model_field: Option<&'b FieldDecl<'src>>,
+}
+/// Validates arguments passed to @relation attribute
+pub(crate) fn validate_relation_attribute_args<'src, 'b>(
+    relation_args: &'b Vec<NamedArg<'src>>,
+    field: &'b FieldDecl<'src>,
+    model: &'b ModelDecl<'src>,
+    referenced_model: &'b ModelDecl<'src>,
+) -> Result<RelationAttributeDetails<'src, 'b>, SemanticError<'src>> {
+    let mut relation_name = None;
+    let mut relation_scalar_field: Option<&'b FieldDecl<'src>> = None;
+    let mut referenced_model_field: Option<&'b FieldDecl<'src>> = None;
+    for arg in relation_args.iter() {
+        match arg.arg_name {
+            Token::Ident(ATTRIB_NAMED_ARG_NAME, _) => {
+                if let Token::Str(..) = arg.arg_value {
+                    relation_name = Some(arg.arg_value.clone())
+                } else {
+                    return Err(SemanticError::RelationInvalidAttributeArg {
+                        span: arg.arg_value.span(),
+                        field_name: Some(field.name.ident_name().unwrap()),
+                        model_name: Some(model.name.ident_name().unwrap()),
+                    });
+                }
+            }
+            Token::Ident(ATTRIB_NAMED_ARG_FIELD, _) => {
+                relation_scalar_field = Some(get_relation_scalar_field(arg, field, model)?);
+            }
+            Token::Ident(ATTRIB_NAMED_ARG_REFERENCES, _) => {
+                referenced_model_field = Some(get_referenced_model_field(
+                    arg,
+                    field,
+                    model,
+                    referenced_model,
+                )?);
+            }
+            _ => {
+                return Err(SemanticError::RelationInvalidAttributeArg {
+                    span: arg.arg_value.span(),
+                    field_name: Some(field.name.ident_name().unwrap()),
+                    model_name: Some(model.name.ident_name().unwrap()),
+                })
+            }
+        }
+    }
+    Ok(RelationAttributeDetails {
+        relation_name,
+        relation_scalar_field,
+        referenced_model_field,
+    })
+}
+
+fn get_relation_scalar_field<'src, 'b>(
+    relation_arg_field: &'b NamedArg<'src>,
+    field: &'b FieldDecl<'src>,
+    model: &'b ModelDecl<'src>,
+) -> Result<&'b FieldDecl<'src>, SemanticError<'src>> {
+    debug_assert!(
+        Token::Ident(ATTRIB_NAMED_ARG_FIELD, Span::new(0, 0)) == relation_arg_field.arg_name,
+        "Invalid argument passed for relation_arg_field"
+    );
+
+    let relation_scalar_field: Option<&'b FieldDecl<'src>>;
+    // Validate relation scalar field.
+    // Make sure relation scalar field exists in the parent model.
+    if let Token::Ident(..) = relation_arg_field.arg_value {
+        relation_scalar_field = model
+            .fields
+            .iter()
+            .find(|field| field.name == relation_arg_field.arg_value);
+        if relation_scalar_field.is_none() {
+            Err(SemanticError::RelationScalarFieldNotFound {
+                span: relation_arg_field.arg_value.span(),
+                field_name: field.name.ident_name().unwrap(),
+                model_name: model.name.ident_name().unwrap(),
+            })
+        } else if relation_scalar_field.is_some_and(|relation_scalar_field| {
+            // If relation_scalar_field is not a scalar, then throw error.
+            match &*relation_scalar_field.field_type.r#type() {
+                Type::Primitive { .. } => false,
+                _ => true,
+            }
+        }) {
+            Err(SemanticError::RelationScalarFieldIsNotScalar {
+                span: relation_scalar_field.unwrap().name.span(),
+                field_name: relation_scalar_field.unwrap().name.ident_name().unwrap(),
+                model_name: model.name.ident_name().unwrap(),
+            })
+        } else if relation_scalar_field.is_some_and(|relation_scalar_field| {
+            relation_scalar_field.field_type.is_array
+                && relation_scalar_field
+                    .attributes
+                    .iter()
+                    .find(|attrib| match attrib.name {
+                        Token::Ident(ATTRIB_NAME_UNIQUE, ..) => true,
+                        _ => false,
+                    })
+                    .is_some()
+        }) {
+            Err(SemanticError::RelationScalarFieldArrayCanNotBeUnique {
+                span: relation_scalar_field.unwrap().name.span(),
+                field_name: relation_scalar_field.unwrap().name.ident_name().unwrap(),
+                model_name: model.name.ident_name().unwrap(),
+            })
+        } else {
+            Ok(relation_scalar_field.unwrap())
+        }
+    } else {
+        Err(SemanticError::RelationInvalidAttributeArg {
+            span: relation_arg_field.arg_value.span(),
+            field_name: Some(field.name.ident_name().unwrap()),
+            model_name: Some(model.name.ident_name().unwrap()),
+        })
+    }
+}
+
+fn get_referenced_model_field<'src, 'b>(
+    relation_arg_references: &'b NamedArg<'src>,
+    field: &'b FieldDecl<'src>,
+    model: &'b ModelDecl<'src>,
+    referenced_model: &'b ModelDecl<'src>,
+) -> Result<&'b FieldDecl<'src>, SemanticError<'src>> {
+    debug_assert!(
+        Token::Ident(ATTRIB_NAMED_ARG_REFERENCES, Span::new(0, 0))
+            == relation_arg_references.arg_name,
+        "Invalid arg is passed for relation_arg_references"
+    );
+    let referenced_model_field: Option<&'b FieldDecl<'src>>;
+    // Validate referenced field.
+    // Make sure referenced field, exists in the referenced model.
+    if let Token::Ident(_, _) = relation_arg_references.arg_value {
+        referenced_model_field = referenced_model
+            .fields
+            .iter()
+            .find(|field| relation_arg_references.arg_value == field.name);
+        if referenced_model_field.is_none() {
+            Err(SemanticError::RelationReferencedFieldNotFound {
+                span: relation_arg_references.arg_value.span(),
+                field_name: field.name.ident_name().unwrap(),
+                model_name: model.name.ident_name().unwrap(),
+                referenced_field_name: relation_arg_references.arg_value.ident_name().unwrap(),
+                referenced_model_name: referenced_model.name.ident_name().unwrap(),
+            })
+        } else if referenced_model_field.is_some_and(|referenced_model_field| {
+            match &*referenced_model_field.field_type.r#type() {
+                Type::Primitive { .. } => false,
+                _ => true,
+            }
+        }) {
+            // If referenced field is not scalar throw an error
+            Err(SemanticError::RelationReferencedFieldNotScalar {
+                span: relation_arg_references.arg_value.span(),
+                field_name: field.name.ident_name().unwrap(),
+                model_name: model.name.ident_name().unwrap(),
+                referenced_field_name: referenced_model_field.unwrap().name.ident_name().unwrap(),
+                referenced_model_name: referenced_model.name.ident_name().unwrap(),
+            })
+        } else if referenced_model_field.is_some_and(|referenced_model_field| {
+            referenced_model_field
+                .attributes
+                .iter()
+                .find(|attrib| match attrib.name {
+                    Token::Ident(ATTRIB_NAME_UNIQUE, ..) | Token::Ident(ATTRIB_NAME_ID, ..) => true,
+                    _ => false,
+                })
+                .is_none()
+        }) {
+            // if the referenced field is not attributed with @id or @unique then throw error.
+            Err(SemanticError::RelationReferencedFieldNotUnique {
+                span: relation_arg_references.arg_value.span(),
+                field_name: field.name.ident_name().unwrap(),
+                model_name: model.name.ident_name().unwrap(),
+                referenced_field_name: referenced_model_field.unwrap().name.ident_name().unwrap(),
+                referenced_model_name: referenced_model.name.ident_name().unwrap(),
+            })
+        } else {
+            Ok(referenced_model_field.unwrap())
+        }
+    } else {
+        Err(SemanticError::RelationInvalidAttributeArg {
+            span: relation_arg_references.arg_value.span(),
+            field_name: Some(field.name.ident_name().unwrap()),
+            model_name: Some(model.name.ident_name().unwrap()),
+        })
+    }
+}
+
 /// Validates the attributes of the given field in the model.
-pub fn validate_attributes<'src>(
+pub(crate) fn validate_attributes<'src>(
     field: &FieldDecl<'src>,
     model: &ModelDecl<'src>,
 ) -> Result<(), SemanticError<'src>> {
@@ -252,4 +442,16 @@ impl AttributeDetails {
             allowed_named_args: vec![],
         }
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::parser;
+
+    #[test]
+    fn test_relations() {}
+
+    #[test]
+    fn test_validate_attributes() {}
 }

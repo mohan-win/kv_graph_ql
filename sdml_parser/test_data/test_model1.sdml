@@ -3,13 +3,18 @@ config db {
 }
 
 model User {
-    id          ShortStr     @id @default(auto()) # ToDo:: Make sure a model has only  one @id field, with the name "id".
-    email       ShortStr     @unique              # Unique field. Relationship can reference an @id field or @unique field.
+    id          ShortStr     @id @default(auto()) 
+    email       ShortStr     @unique
     name        ShortStr?     
     nickNames  ShortStr[]
     role        Role         @default(USER)
+    mentees     User[]       @relation(name: "UserMentor")
+    mentor      User?        @relation(name: "UsersMentor", field: mentorEmail, references: email)
+    mentorEmail ShortStr?    
+    spouse      User?        @relation(name: "UsersSpouse", field: spouseUserId, references: id)
+    spouseUserId ShortStr?   @unique
     profile     Profile?     @relation(name: "UserOnProfile") # Relation attribute should have a name.
-    posts       Post[]       @relation(name:"UserOnPost")
+    posts       Post[]       @relation(name: "UserOnPost")
 }
 
 model Profile {
@@ -25,10 +30,10 @@ model Post {
     updatedAt   DateTime
     title       ShortStr
     published   Boolean     @default(false)
-    author      User        @relation(name:"UserOnPost", field: authorId, references: id)
+    author      User        @relation(name: "UserOnPost", field: authorId, references: id)
     authorId    Int         
     categoryIds String[]
-    category    Category[]  @relation(name:"CategoriesOnPost", field: categoryIds, references: id)
+    category    Category[]  @relation(name: "CategoriesOnPost", field: categoryIds, references: id)
 
 }
 
@@ -36,7 +41,7 @@ model Category {
     id          ShortStr      @id @default(auto())
     name        ShortStr
     postIDs     String[] 
-    posts       Post[]        @relation(name:"CategoriesOnPost", field: postIDs, references: id)
+    posts       Post[]        @relation(name: "CategoriesOnPost", field: postIDs, references: id)
 }
 
 enum Role {

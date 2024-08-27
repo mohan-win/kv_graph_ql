@@ -81,7 +81,7 @@ pub struct DataModel<'src> {
     models: HashMap<&'src str, ModelDecl<'src>>,
     /// Map of valid relations with fully formed edges.
     /// Available only after semantic_analysis phase.
-    relations: HashMap<&'src str, (RelationEdge<'src>, RelationEdge<'src>)>,
+    relations: HashMap<&'src str, (RelationEdge<'src>, Option<RelationEdge<'src>>)>,
 }
 
 impl<'src> DataModel<'src> {
@@ -102,7 +102,9 @@ impl<'src> DataModel<'src> {
     pub fn models(&self) -> &HashMap<&'src str, ModelDecl<'src>> {
         &self.models
     }
-    pub fn relations(&self) -> &HashMap<&'src str, (RelationEdge<'src>, RelationEdge<'src>)> {
+    pub fn relations(
+        &self,
+    ) -> &HashMap<&'src str, (RelationEdge<'src>, Option<RelationEdge<'src>>)> {
         &self.relations
     }
     pub(crate) fn configs_mut(&mut self) -> &mut HashMap<&'src str, ConfigDecl<'src>> {
@@ -116,7 +118,7 @@ impl<'src> DataModel<'src> {
     }
     pub(crate) fn relations_mut(
         &mut self,
-    ) -> &mut HashMap<&'src str, (RelationEdge<'src>, RelationEdge<'src>)> {
+    ) -> &mut HashMap<&'src str, (RelationEdge<'src>, Option<RelationEdge<'src>>)> {
         &mut self.relations
     }
 }
@@ -272,19 +274,31 @@ pub enum RelationEdge<'src> {
     OneSideRelationRight {
         relation_name: Token<'src>,
         /// Name of the relational scalar field storing the foreign key values.
+        /// It should be marked with @unique attribute, to make (1-to-1) explicit in the schema.
         scalar_field_name: Token<'src>,
         referenced_model_name: Token<'src>,
         /// Name of the field (should be either @id or @unique) in the referenced model.
         referenced_field_name: Token<'src>,
     },
-    /// Many-side of the relation, capturing the required information for both
-    /// Many side of 1-to-many relation, and both sides fo the many-to-many relation.
+    /// Many-side of the relation, capturing the required information for
+    /// a. Many side of 1-to-many relation,
+    /// b. Both sides fo the many-to-many relation.
+    /// c. Many side of the self-to-many relation,
     ManySideRelation {
         relation_name: Token<'src>,
         /// Name of the relational scalar field storing the foreign key values.
         scalar_field_name: Token<'src>,
         referenced_model_name: Token<'src>,
         /// Name of the field (should be either @id or @unique) in the referenced model.
+        referenced_field_name: Token<'src>,
+    },
+    /// Self relation of type 1-to-1
+    SelfOneToOneRelation {
+        relation_name: Token<'src>,
+        /// Name of the scalar field name. It should be marked with @unique attribute, to make (1-to-1) explicit in the schema.
+        scalar_field_name: Token<'src>,
+        referenced_model_name: Token<'src>,
+        /// Name of the referened field (should be either @id or @unique) in the model.
         referenced_field_name: Token<'src>,
     },
 }
@@ -295,22 +309,28 @@ impl<'src> RelationEdge<'src> {
             Self::OneSideRelation { relation_name, .. } => relation_name,
             Self::OneSideRelationRight { relation_name, .. } => relation_name,
             Self::ManySideRelation { relation_name, .. } => relation_name,
+            Self::SelfOneToOneRelation { relation_name, .. } => relation_name,
         }
     }
+
     fn referenced_model_name(&self) -> &Token<'src> {
         match self {
             Self::OneSideRelation {
                 referenced_model_name,
                 ..
-            } => &referenced_model_name,
+            } => referenced_model_name,
             Self::OneSideRelationRight {
                 referenced_model_name,
                 ..
-            } => &referenced_model_name,
+            } => referenced_model_name,
             Self::ManySideRelation {
                 referenced_model_name,
                 ..
-            } => &referenced_model_name,
+            } => referenced_model_name,
+            Self::SelfOneToOneRelation {
+                referenced_model_name,
+                ..
+            } => referenced_model_name,
         }
     }
 }

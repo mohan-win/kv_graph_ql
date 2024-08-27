@@ -4,8 +4,9 @@ use crate::ast::{AttribArg, FieldDecl, ModelDecl, NamedArg, RelationEdge, Token,
 
 use super::{
     attribute::{
-        ATTRIB_NAMED_ARG_FIELD, ATTRIB_NAMED_ARG_NAME, ATTRIB_NAMED_ARG_REFERENCES, ATTRIB_NAME_ID,
-        ATTRIB_NAME_RELATION, ATTRIB_NAME_UNIQUE,
+        validate_relation_attribute_args, RelationAttributeDetails, ATTRIB_NAMED_ARG_FIELD,
+        ATTRIB_NAMED_ARG_NAME, ATTRIB_NAMED_ARG_REFERENCES, ATTRIB_NAME_ID, ATTRIB_NAME_RELATION,
+        ATTRIB_NAME_UNIQUE,
     },
     err::SemanticError,
 };
@@ -28,7 +29,7 @@ impl<'src> RelationMap<'src> {
     pub fn get_valid_relations(
         self,
     ) -> Result<
-        HashMap<&'src str, (RelationEdge<'src>, RelationEdge<'src>)>,
+        HashMap<&'src str, (RelationEdge<'src>, Option<RelationEdge<'src>>)>,
         Vec<SemanticError<'src>>,
     > {
         let mut valid_relations = HashMap::new();
@@ -37,7 +38,7 @@ impl<'src> RelationMap<'src> {
             RelationMap::is_relation_valid(left.as_ref(), right.as_ref()).map_or_else(
                 |e| errs.push(e),
                 |_| {
-                    valid_relations.insert(key, (left.unwrap(), right.unwrap()));
+                    valid_relations.insert(key, (left.unwrap(), right));
                 },
             );
         });
@@ -58,6 +59,15 @@ impl<'src> RelationMap<'src> {
         let relation_name_str = relation_name.ident_name().unwrap();
         if let Some(existing_relation) = self.relations.get_mut(relation_name_str) {
             match existing_relation {
+                (Some(_), Some(_)) | (Some(RelationEdge::SelfOneToOneRelation { .. }), None) => {
+                    Err(SemanticError::RelationDuplicate {
+                        span: relation_name.span(),
+                        relation_name: relation_name_str,
+                        field_name: parent_field_ident.ident_name().unwrap(),
+                        model_name: parent_model_ident.ident_name().unwrap(),
+                    })
+                }
+
                 (None, Some(_)) => {
                     existing_relation.0 = Some(edge);
                     Ok(())
@@ -66,12 +76,6 @@ impl<'src> RelationMap<'src> {
                     existing_relation.1 = Some(edge);
                     Ok(())
                 }
-                (Some(_), Some(_)) => Err(SemanticError::RelationInvalid {
-                    span: relation_name.span(),
-                    relation_name: relation_name_str,
-                    field_name: parent_field_ident.ident_name().unwrap(),
-                    model_name: parent_model_ident.ident_name().unwrap(),
-                }),
                 (None, None) => panic!("This can't happen"),
             }?;
         } else {
@@ -95,6 +99,10 @@ impl<'src> RelationMap<'src> {
         match (left, right) {
             (None, None) => {
                 panic!("Empty relations are not allowed!")
+            }
+            (Some(RelationEdge::SelfOneToOneRelation { .. }), None) => {
+                // For self one-to-one relation, we only need one edge.
+                Ok(())
             }
             (Some(..), None) => Err(SemanticError::RelationPartial {
                 span: left.unwrap().relation_name().span(),
@@ -194,117 +202,11 @@ fn new_relation_edge<'src>(
     field: &FieldDecl<'src>,
     referenced_model: &ModelDecl<'src>,
 ) -> Result<RelationEdge<'src>, SemanticError<'src>> {
-    let mut relation_name = None;
-    let mut relation_scalar_field = None;
-    let mut referenced_model_field = None;
-    for arg in relation_args.iter() {
-        let invalid_arg_err = Err(SemanticError::RelationInvalidAttributeArg {
-            span: arg.arg_value.span(),
-            field_name: Some(field.name.ident_name().unwrap()),
-            model_name: Some(model.name.ident_name().unwrap()),
-        });
-        match arg.arg_name {
-            Token::Ident(ATTRIB_NAMED_ARG_NAME, _) => {
-                if let Token::Str(..) = arg.arg_value {
-                    relation_name = Some(arg.arg_value.clone())
-                } else {
-                    return invalid_arg_err;
-                }
-            }
-            Token::Ident(ATTRIB_NAMED_ARG_FIELD, _) => {
-                // Make sure relation scalar field exists in the parent model.
-                if let Token::Ident(..) = arg.arg_value {
-                    relation_scalar_field = model
-                        .fields
-                        .iter()
-                        .find(|field| field.name == arg.arg_value);
-                    if relation_scalar_field.is_none() {
-                        return Err(SemanticError::RelationScalarFieldNotFound {
-                            span: arg.arg_value.span(),
-                            field_name: field.name.ident_name().unwrap(),
-                            model_name: model.name.ident_name().unwrap(),
-                        });
-                    } else if relation_scalar_field.is_some_and(|relation_scalar_field| {
-                        // If relation_scalar_field is not a scalar, then throw error.
-                        match &*relation_scalar_field.field_type.r#type() {
-                            Type::Primitive { .. } => false,
-                            _ => true,
-                        }
-                    }) {
-                        return Err(SemanticError::RelationScalarFieldIsNotScalar {
-                            span: relation_scalar_field.unwrap().name.span(),
-                            field_name: relation_scalar_field.unwrap().name.ident_name().unwrap(),
-                            model_name: model.name.ident_name().unwrap(),
-                        });
-                    }
-                } else {
-                    return invalid_arg_err;
-                }
-            }
-            Token::Ident(ATTRIB_NAMED_ARG_REFERENCES, _) => {
-                // Make sure referenced field, exists in the referenced model.
-                if let Token::Ident(_, _) = arg.arg_value {
-                    referenced_model_field = referenced_model
-                        .fields
-                        .iter()
-                        .find(|field| arg.arg_value == field.name);
-                    if referenced_model_field.is_none() {
-                        return Err(SemanticError::RelationReferencedFieldNotFound {
-                            span: arg.arg_value.span(),
-                            field_name: field.name.ident_name().unwrap(),
-                            model_name: model.name.ident_name().unwrap(),
-                            referenced_field_name: arg.arg_value.ident_name().unwrap(),
-                            referenced_model_name: referenced_model.name.ident_name().unwrap(),
-                        });
-                    } else if referenced_model_field.is_some_and(|referenced_model_field| {
-                        match &*referenced_model_field.field_type.r#type() {
-                            Type::Primitive { .. } => false,
-                            _ => true,
-                        }
-                    }) {
-                        // If referenced field is not scalar throw an error
-                        return Err(SemanticError::RelationReferencedFieldNotScalar {
-                            span: arg.arg_value.span(),
-                            field_name: field.name.ident_name().unwrap(),
-                            model_name: model.name.ident_name().unwrap(),
-                            referenced_field_name: referenced_model_field
-                                .unwrap()
-                                .name
-                                .ident_name()
-                                .unwrap(),
-                            referenced_model_name: referenced_model.name.ident_name().unwrap(),
-                        });
-                    } else if referenced_model_field.is_some_and(|referenced_model_field| {
-                        referenced_model_field
-                            .attributes
-                            .iter()
-                            .find(|attrib| match attrib.name {
-                                Token::Ident(ATTRIB_NAME_UNIQUE, ..)
-                                | Token::Ident(ATTRIB_NAME_ID, ..) => true,
-                                _ => false,
-                            })
-                            .is_none()
-                    }) {
-                        // if the referenced field is not attributed with @id or @unique then throw error.
-                        return Err(SemanticError::RelationReferencedFieldNotUnique {
-                            span: arg.arg_value.span(),
-                            field_name: field.name.ident_name().unwrap(),
-                            model_name: model.name.ident_name().unwrap(),
-                            referenced_field_name: referenced_model_field
-                                .unwrap()
-                                .name
-                                .ident_name()
-                                .unwrap(),
-                            referenced_model_name: referenced_model.name.ident_name().unwrap(),
-                        });
-                    }
-                } else {
-                    return invalid_arg_err;
-                }
-            }
-            _ => return invalid_arg_err,
-        }
-    }
+    let RelationAttributeDetails {
+        relation_name,
+        relation_scalar_field,
+        referenced_model_field,
+    } = validate_relation_attribute_args(relation_args, field, model, referenced_model)?;
 
     if relation_name.is_none() {
         // Name is mandatory for relation attribute, if not present throw error.
@@ -324,24 +226,38 @@ fn new_relation_edge<'src>(
         });
     }
 
-    // Is this OneSideRelationRight ?
-    if relation_scalar_field.is_some()
-        && referenced_model_field
-            .is_some_and(|referenced_model_field| !referenced_model_field.field_type.is_array)
-    {
-        return Ok(RelationEdge::OneSideRelationRight {
-            relation_name: relation_name.clone(),
-            scalar_field_name: relation_scalar_field.unwrap().name.clone(),
-            referenced_model_name: referenced_model.name.clone(),
-            referenced_field_name: referenced_model_field.unwrap().name.clone(),
+    let relation_scalar_field_is_unique =
+        relation_scalar_field.is_some_and(|relation_scalar_field| {
+            relation_scalar_field
+                .attributes
+                .iter()
+                .find(|attrib| match attrib.name {
+                    Token::Ident(ATTRIB_NAME_UNIQUE, ..) => true,
+                    _ => false,
+                })
+                .is_some()
         });
-    }
 
-    // Is this ManySideRelation ?
-    if relation_scalar_field.is_some()
-        && referenced_model_field
-            .is_some_and(|referenced_model_field| referenced_model_field.field_type.is_array)
-    {
+    // Is this OneSideRelationRight ?
+    if relation_scalar_field_is_unique {
+        // See if this is a self relation
+        if model.name == referenced_model.name {
+            return Ok(RelationEdge::SelfOneToOneRelation {
+                relation_name: relation_name.clone(),
+                scalar_field_name: relation_scalar_field.unwrap().name.clone(),
+                referenced_model_name: referenced_model.name.clone(),
+                referenced_field_name: referenced_model_field.unwrap().name.clone(),
+            });
+        } else {
+            return Ok(RelationEdge::OneSideRelationRight {
+                relation_name: relation_name.clone(),
+                scalar_field_name: relation_scalar_field.unwrap().name.clone(),
+                referenced_model_name: referenced_model.name.clone(),
+                referenced_field_name: referenced_model_field.unwrap().name.clone(),
+            });
+        }
+    } else if referenced_model_field.is_some() && !relation_scalar_field_is_unique {
+        // Is this ManySideRelation ?
         return Ok(RelationEdge::ManySideRelation {
             relation_name: relation_name.clone(),
             scalar_field_name: relation_scalar_field.unwrap().name.clone(),
