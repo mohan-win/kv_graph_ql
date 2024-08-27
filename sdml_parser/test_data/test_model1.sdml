@@ -8,7 +8,7 @@ model User {
     name        ShortStr?     
     nickNames  ShortStr[]
     role        Role         @default(USER)
-    mentees     User[]       @relation(name: "UserMentor")
+    mentees     User[]       @relation(name: "UsersMentor")
     mentor      User?        @relation(name: "UsersMentor", field: mentorEmail, references: email)
     mentorEmail ShortStr?    
     spouse      User?        @relation(name: "UsersSpouse", field: spouseUserId, references: id)

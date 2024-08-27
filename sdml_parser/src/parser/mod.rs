@@ -754,7 +754,7 @@ mod tests {
             name         ShortStr?
             nickNames    ShortStr[]
             role         Role          @default(USER)
-            mentor       User?         @relation(name: "UsersMentor", field: mentorEmail, references: email)
+            mentor       User?         @relation(name: "UserMentor", field: mentorEmail, references: email)
             mentorEmail  ShortStr?
             mentees      User[]        @relation(name: "UserMentor")
         }
@@ -975,8 +975,8 @@ mod tests {
 
         let decls = delcarations().parse(sdml_str).into_result().unwrap();
         let ast_result = semantic_analysis(decls);
+        eprintln!("{:#?}", ast_result);
         assert_eq!(ast_result, Ok(ast));
-        print!("{:?}", ast_result);
     }
 
     /*
