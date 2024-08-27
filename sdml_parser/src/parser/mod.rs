@@ -250,7 +250,7 @@ mod tests {
     use std::vec;
 
     use super::*;
-    use crate::ast::{ConfigValue, Span};
+    use crate::ast::{ConfigValue, RelationEdge, Span};
 
     #[test]
     fn test_string() {
@@ -744,7 +744,7 @@ mod tests {
 
         assert!(model_decl().parse(err_model_str).into_result().is_err());
     }
-    /*
+
     #[test]
     fn test_parse() {
         let sdml_str = r#"
@@ -783,9 +783,10 @@ mod tests {
             time_out_in_secs = 12.10
         }
         "#;
-
-        let declarations = vec![
-            Declaration::Model(ModelDecl {
+        let mut ast: DataModel = DataModel::new();
+        ast.models_mut().insert(
+            "User",
+            ModelDecl {
                 name: Token::Ident("User", Span::new(0, 0)),
                 fields: vec![
                     FieldDecl {
@@ -842,35 +843,98 @@ mod tests {
                     FieldDecl {
                         name: Token::Ident("mentor", Span::new(0, 0)),
                         field_type: FieldType::new(
-                            Type::Relation(Token::Ident("User", Span::new(0, 0))),
+                            Type::Relation(RelationEdge::ManySideRelation {
+                                relation_name: Token::Str("UsersMentor", Span::new(0, 0)),
+                                scalar_field_name: Token::Ident("mentorEmail", Span::new(0, 0)),
+                                referenced_model_name: Token::Ident("User", Span::new(0, 0)),
+                                referenced_field_name: Token::Ident("email", Span::new(0, 0)),
+                            }),
+                            true,
                             false,
+                        ),
+                        attributes: vec![Attribute {
+                            name: Token::Ident("relation", Span::new(0, 0)),
+                            arg: Some(AttribArg::Args(vec![
+                                NamedArg {
+                                    arg_name: Token::Ident("name", Span::new(0, 0)),
+                                    arg_value: Token::Str("\"UsersMentor\"", Span::new(0, 0)),
+                                },
+                                NamedArg {
+                                    arg_name: Token::Ident("field", Span::new(0, 0)),
+                                    arg_value: Token::Ident("mentorEmail", Span::new(0, 0)),
+                                },
+                                NamedArg {
+                                    arg_name: Token::Ident("references", Span::new(0, 0)),
+                                    arg_value: Token::Ident("email", Span::new(0, 0)),
+                                },
+                            ])),
+                        }],
+                    },
+                    FieldDecl {
+                        name: Token::Ident("mentorEmail", Span::new(0, 0)),
+                        field_type: FieldType::new(
+                            Type::Primitive {
+                                r#type: PrimitiveType::ShortStr,
+                                token: Token::Ident("ShortStr", Span::new(0, 0)),
+                            },
+                            true,
                             false,
                         ),
                         attributes: vec![],
                     },
+                    FieldDecl {
+                        name: Token::Ident("mentees", Span::new(0, 0)),
+                        field_type: FieldType::new(
+                            Type::Relation(RelationEdge::OneSideRelation {
+                                relation_name: Token::Str("\"UserMentor\"", Span::new(0, 0)),
+                                referenced_model_name: Token::Ident("User", Span::new(0, 0)),
+                            }),
+                            false,
+                            true,
+                        ),
+                        attributes: vec![Attribute {
+                            name: Token::Ident("relation", Span::new(0, 0)),
+                            arg: Some(AttribArg::Args(vec![NamedArg {
+                                arg_name: Token::Ident("name", Span::new(0, 0)),
+                                arg_value: Token::Str("\"UsersMentor\"", Span::new(0, 0)),
+                            }])),
+                        }],
+                    },
                 ],
-            }),
-            Declaration::Model(ModelDecl {
+            },
+        );
+        ast.models_mut().insert(
+            "EmptyModel",
+            ModelDecl {
                 name: Token::Ident("EmptyModel", Span::new(0, 0)),
                 fields: vec![],
-            }),
-            Declaration::Enum(EnumDecl {
+            },
+        );
+        ast.enums_mut().insert(
+            "Role",
+            EnumDecl {
                 name: Token::Ident("Role", Span::new(0, 0)),
                 elements: vec![
                     Token::Ident("USER", Span::new(0, 0)),
                     Token::Ident("ADMIN", Span::new(0, 0)),
                     Token::Ident("GUEST", Span::new(0, 0)),
                 ],
-            }),
-            Declaration::Enum(EnumDecl {
+            },
+        );
+        ast.enums_mut().insert(
+            "Role1",
+            EnumDecl {
                 name: Token::Ident("Role1", Span::new(0, 0)),
                 elements: vec![
                     Token::Ident("USER1", Span::new(0, 0)),
                     Token::Ident("ADMIN1", Span::new(0, 0)),
                     Token::Ident("GUEST1", Span::new(0, 0)),
                 ],
-            }),
-            Declaration::Config(ConfigDecl {
+            },
+        );
+        ast.configs_mut().insert(
+            "db",
+            ConfigDecl {
                 name: Token::Ident("db", Span::new(0, 0)),
                 config_pairs: vec![
                     ConfigPair {
@@ -886,8 +950,11 @@ mod tests {
                         value: ConfigValue::Float(12.10, Span::new(0, 0)),
                     },
                 ],
-            }),
-            Declaration::Config(ConfigDecl {
+            },
+        );
+        ast.configs_mut().insert(
+            "db1",
+            ConfigDecl {
                 name: Token::Ident("db1", Span::new(0, 0)),
                 config_pairs: vec![
                     ConfigPair {
@@ -903,30 +970,14 @@ mod tests {
                         value: ConfigValue::Float(12.10, Span::new(0, 0)),
                     },
                 ],
-            }),
-        ];
+            },
+        );
 
-        let mut ast: DataModel = DataModel {
-            configs: HashMap::new(),
-            enums: HashMap::new(),
-            models: HashMap::new(),
-        };
-        declarations.into_iter().for_each(|decl| match decl {
-            Declaration::Config(c) => {
-                ast.configs.insert(c.name.ident_name().unwrap(), c);
-            }
-            Declaration::Enum(e) => {
-                ast.enums.insert(e.name.ident_name().unwrap(), e);
-            }
-            Declaration::Model(m) => {
-                ast.models.insert(m.name.ident_name().unwrap(), m);
-            }
-        });
         let decls = delcarations().parse(sdml_str).into_result().unwrap();
         let ast_result = semantic_analysis(decls);
         assert_eq!(ast_result, Ok(ast));
     }
-    */
+
     #[test]
     fn test_happy_path_parse() {
         let test_model1_sdml = std::fs::read_to_string(concat!(
