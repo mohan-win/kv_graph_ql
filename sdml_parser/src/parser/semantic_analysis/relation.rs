@@ -55,13 +55,12 @@ impl<'src> RelationMap<'src> {
         parent_field_ident: &Token<'src>,
         parent_model_ident: &Token<'src>,
     ) -> Result<(), SemanticError<'src>> {
-        let relation_name = edge.relation_name();
-        let relation_name_str = relation_name.ident_name().unwrap();
+        let relation_name_str = edge.relation_name().str().unwrap();
         if let Some(existing_relation) = self.relations.get_mut(relation_name_str) {
             match existing_relation {
                 (Some(_), Some(_)) | (Some(RelationEdge::SelfOneToOneRelation { .. }), None) => {
                     Err(SemanticError::RelationDuplicate {
-                        span: relation_name.span(),
+                        span: edge.relation_name().span(),
                         relation_name: relation_name_str,
                         field_name: parent_field_ident.ident_name().unwrap(),
                         model_name: parent_model_ident.ident_name().unwrap(),
@@ -106,13 +105,13 @@ impl<'src> RelationMap<'src> {
             }
             (Some(..), None) => Err(SemanticError::RelationPartial {
                 span: left.unwrap().relation_name().span(),
-                relation_name: left.unwrap().relation_name().ident_name().unwrap(),
+                relation_name: left.unwrap().relation_name().str().unwrap(),
                 field_name: None,
                 model_name: None,
             }),
             (None, Some(..)) => Err(SemanticError::RelationPartial {
                 span: right.unwrap().relation_name().span(),
-                relation_name: right.unwrap().relation_name().ident_name().unwrap(),
+                relation_name: right.unwrap().relation_name().str().unwrap(),
                 field_name: None,
                 model_name: None,
             }),
@@ -121,6 +120,7 @@ impl<'src> RelationMap<'src> {
                 Some(RelationEdge::OneSideRelation { .. }),
             ) => Err(SemanticError::RelationInvalidAttributeArg {
                 span: right.unwrap().relation_name().span(),
+                relation_name: right.unwrap().relation_name().str(),
                 field_name: None,
                 model_name: None,
             }),
@@ -134,6 +134,7 @@ impl<'src> RelationMap<'src> {
                 Some(RelationEdge::OneSideRelation { .. }),
             ) => Err(SemanticError::RelationInvalidAttributeArg {
                 span: left.unwrap().relation_name().span(),
+                relation_name: left.unwrap().relation_name().str(),
                 field_name: None,
                 model_name: None,
             }),
@@ -189,6 +190,7 @@ pub fn get_relation_edge<'src>(
         } else {
             Err(SemanticError::RelationInvalidAttributeArg {
                 span: relation_attribute.name.span(),
+                relation_name: None,
                 field_name: Some(field.name.ident_name().unwrap()),
                 model_name: Some(model.name.ident_name().unwrap()),
             })
@@ -268,7 +270,7 @@ fn new_relation_edge<'src>(
 
     Err(SemanticError::RelationInvalid {
         span: relation_name.span(),
-        relation_name: relation_name.ident_name().unwrap(),
+        relation_name: relation_name.str().unwrap(),
         field_name: field.name.ident_name().unwrap(),
         model_name: model.name.ident_name().unwrap(),
     })

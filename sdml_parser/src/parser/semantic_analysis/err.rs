@@ -120,6 +120,7 @@ pub enum SemanticError<'src> {
     /// This error is thrown if arguments to relation attribute is invalid.
     RelationInvalidAttributeArg {
         span: Span,
+        relation_name: Option<&'src str>,
         field_name: Option<&'src str>,
         model_name: Option<&'src str>,
     },

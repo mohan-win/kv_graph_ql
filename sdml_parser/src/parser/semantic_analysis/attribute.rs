@@ -47,6 +47,7 @@ pub(crate) fn validate_relation_attribute_args<'src, 'b>(
                 } else {
                     return Err(SemanticError::RelationInvalidAttributeArg {
                         span: arg.arg_value.span(),
+                        relation_name: None,
                         field_name: Some(field.name.ident_name().unwrap()),
                         model_name: Some(model.name.ident_name().unwrap()),
                     });
@@ -66,6 +67,7 @@ pub(crate) fn validate_relation_attribute_args<'src, 'b>(
             _ => {
                 return Err(SemanticError::RelationInvalidAttributeArg {
                     span: arg.arg_value.span(),
+                    relation_name: None,
                     field_name: Some(field.name.ident_name().unwrap()),
                     model_name: Some(model.name.ident_name().unwrap()),
                 })
@@ -137,6 +139,7 @@ fn get_relation_scalar_field<'src, 'b>(
     } else {
         Err(SemanticError::RelationInvalidAttributeArg {
             span: relation_arg_field.arg_value.span(),
+            relation_name: None,
             field_name: Some(field.name.ident_name().unwrap()),
             model_name: Some(model.name.ident_name().unwrap()),
         })
@@ -208,6 +211,7 @@ fn get_referenced_model_field<'src, 'b>(
     } else {
         Err(SemanticError::RelationInvalidAttributeArg {
             span: relation_arg_references.arg_value.span(),
+            relation_name: None,
             field_name: Some(field.name.ident_name().unwrap()),
             model_name: Some(model.name.ident_name().unwrap()),
         })

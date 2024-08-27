@@ -44,6 +44,13 @@ impl<'src> Token<'src> {
             None
         }
     }
+    pub fn str(&self) -> Option<&'src str> {
+        if let Token::Str(str, _) = self {
+            Some(str)
+        } else {
+            None
+        }
+    }
     pub fn span(&self) -> Span {
         match self {
             Token::Ident(_, sp) => *sp,

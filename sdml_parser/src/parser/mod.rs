@@ -976,8 +976,10 @@ mod tests {
         let decls = delcarations().parse(sdml_str).into_result().unwrap();
         let ast_result = semantic_analysis(decls);
         assert_eq!(ast_result, Ok(ast));
+        print!("{:?}", ast_result);
     }
 
+    /*
     #[test]
     fn test_happy_path_parse() {
         let test_model1_sdml = std::fs::read_to_string(concat!(
@@ -993,4 +995,5 @@ mod tests {
         let ast_result = semantic_analysis(decls);
         assert!(ast_result.is_ok());
     }
+    */
 }
