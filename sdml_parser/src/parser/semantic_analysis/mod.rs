@@ -110,7 +110,8 @@ pub(crate) fn semantic_update<'src>(
                 }
                 Err(err) => errs.push(err),
             };
-            let _ = attribute::validate_attributes(field, model).map_err(|err| errs.push(err));
+            let _ = attribute::validate_attributes(field, model, input_ast.enums())
+                .map_err(|err| errs.push(err));
         });
     });
     relations.get_valid_relations().map_or_else(

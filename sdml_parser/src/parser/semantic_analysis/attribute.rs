@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-use crate::ast::{AttribArg, Attribute, FieldDecl, ModelDecl, NamedArg, Span, Token, Type};
+use crate::ast::{
+    AttribArg, Attribute, EnumDecl, FieldDecl, ModelDecl, NamedArg, Span, Token, Type,
+};
 
 use super::err::SemanticError;
 
@@ -222,12 +224,13 @@ fn get_referenced_model_field<'src, 'b>(
 pub(crate) fn validate_attributes<'src>(
     field: &FieldDecl<'src>,
     model: &ModelDecl<'src>,
+    enums: &HashMap<&'src str, EnumDecl<'src>>,
 ) -> Result<(), SemanticError<'src>> {
     #[allow(non_snake_case)]
     let ATTRIBUTES_DETAIL_MAP = AttributeDetails::attributes_detail_map();
     is_attributes_compatible(field, model, &ATTRIBUTES_DETAIL_MAP)?;
     field.attributes.iter().try_for_each(|attribute| {
-        validate_attribute_args(attribute, field, model, &ATTRIBUTES_DETAIL_MAP)
+        validate_attribute_args(attribute, field, model, enums, &ATTRIBUTES_DETAIL_MAP)
     })
 }
 
@@ -280,6 +283,7 @@ fn validate_attribute_args<'src>(
     attrib: &Attribute<'src>,
     field: &FieldDecl<'src>,
     model: &ModelDecl<'src>,
+    enums: &HashMap<&'src str, EnumDecl<'src>>,
     attribute_details_map: &HashMap<&'static str, AttributeDetails>,
 ) -> Result<(), SemanticError<'src>> {
     match attribute_details_map.get(attrib.name.ident_name().unwrap()) {
@@ -322,7 +326,41 @@ fn validate_attribute_args<'src>(
                         }
                     }
                     AttribArg::Ident(arg_value) => {
-                        if !attrib_detail
+                        if let Type::Enum(enum_ty_name) = &*field.field_type.r#type() {
+                            // Is enum values are allowed as arg values ?
+                            if !attrib_detail
+                                .allowed_arg_values
+                                .contains(&ATTRIB_ARG_VALUE_ENUM)
+                            {
+                                Err(SemanticError::AttributeArgInvalid {
+                                    span: arg_value.span(),
+                                    attrib_arg_name: Some(arg_value.ident_name().unwrap()),
+                                    attrib_name: attrib.name.ident_name().unwrap(),
+                                    field_name: field.name.ident_name().unwrap(),
+                                    model_name: model.name.ident_name().unwrap(),
+                                })
+                            } else {
+                                let enum_decl = enums
+                                    .get(enum_ty_name.ident_name().unwrap())
+                                    .ok_or_else(|| SemanticError::UndefinedEnum {
+                                        span: enum_ty_name.span(),
+                                        r#enum: enum_ty_name.ident_name().unwrap(),
+                                        field_name: field.name.ident_name().unwrap(),
+                                        model_name: model.name.ident_name().unwrap(),
+                                    })?;
+                                if enum_decl.elements.contains(arg_value) {
+                                    Ok(())
+                                } else {
+                                    Err(SemanticError::UndefinedEnumValue {
+                                        span: arg_value.span(),
+                                        enum_value: arg_value.ident_name().unwrap(),
+                                        attrib_name: attrib.name.ident_name().unwrap(),
+                                        field_name: field.name.ident_name().unwrap(),
+                                        model_name: model.name.ident_name().unwrap(),
+                                    })
+                                }
+                            }
+                        } else if !attrib_detail
                             .allowed_arg_values
                             .contains(&arg_value.ident_name().unwrap())
                         {
