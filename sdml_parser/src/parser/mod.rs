@@ -790,6 +790,30 @@ mod tests {
                 name: Token::Ident("User", Span::new(0, 0)),
                 fields: vec![
                     FieldDecl {
+                        name: Token::Ident("id", Span::new(0, 0)),
+                        field_type: FieldType::new(
+                            Type::Primitive {
+                                r#type: PrimitiveType::ShortStr,
+                                token: Token::Ident("ShortStr", Span::new(0, 0)),
+                            },
+                            false,
+                            false,
+                        ),
+                        attributes: vec![
+                            Attribute {
+                                name: Token::Ident("id", Span::new(0, 0)),
+                                arg: None,
+                            },
+                            Attribute {
+                                name: Token::Ident("default", Span::new(0, 0)),
+                                arg: Some(AttribArg::Function(Token::Ident(
+                                    "auto",
+                                    Span::new(0, 0),
+                                ))),
+                            },
+                        ],
+                    },
+                    FieldDecl {
                         name: Token::Ident("email", Span::new(0, 0)),
                         field_type: FieldType::new(
                             Type::Primitive {
@@ -844,7 +868,7 @@ mod tests {
                         name: Token::Ident("mentor", Span::new(0, 0)),
                         field_type: FieldType::new(
                             Type::Relation(RelationEdge::ManySideRelation {
-                                relation_name: Token::Str("UsersMentor", Span::new(0, 0)),
+                                relation_name: Token::Str(r#""UserMentor""#, Span::new(0, 0)),
                                 scalar_field_name: Token::Ident("mentorEmail", Span::new(0, 0)),
                                 referenced_model_name: Token::Ident("User", Span::new(0, 0)),
                                 referenced_field_name: Token::Ident("email", Span::new(0, 0)),
@@ -857,7 +881,7 @@ mod tests {
                             arg: Some(AttribArg::Args(vec![
                                 NamedArg {
                                     arg_name: Token::Ident("name", Span::new(0, 0)),
-                                    arg_value: Token::Str("\"UsersMentor\"", Span::new(0, 0)),
+                                    arg_value: Token::Str("\"UserMentor\"", Span::new(0, 0)),
                                 },
                                 NamedArg {
                                     arg_name: Token::Ident("field", Span::new(0, 0)),
@@ -896,7 +920,7 @@ mod tests {
                             name: Token::Ident("relation", Span::new(0, 0)),
                             arg: Some(AttribArg::Args(vec![NamedArg {
                                 arg_name: Token::Ident("name", Span::new(0, 0)),
-                                arg_value: Token::Str("\"UsersMentor\"", Span::new(0, 0)),
+                                arg_value: Token::Str("\"UserMentor\"", Span::new(0, 0)),
                             }])),
                         }],
                     },
@@ -909,6 +933,21 @@ mod tests {
                 name: Token::Ident("EmptyModel", Span::new(0, 0)),
                 fields: vec![],
             },
+        );
+        ast.relations_mut().insert(
+            "UserMentor",
+            (
+                RelationEdge::OneSideRelation {
+                    relation_name: Token::Str(r#""UserMentor""#, Span::new(0, 0)),
+                    referenced_model_name: Token::Ident("User", Span::new(0, 0)),
+                },
+                Some(RelationEdge::ManySideRelation {
+                    relation_name: Token::Str(r#""UserMentor""#, Span::new(0, 0)),
+                    scalar_field_name: Token::Ident("mentorEmail", Span::new(0, 0)),
+                    referenced_model_name: Token::Ident("User", Span::new(0, 0)),
+                    referenced_field_name: Token::Ident("email", Span::new(0, 0)),
+                }),
+            ),
         );
         ast.enums_mut().insert(
             "Role",
@@ -974,9 +1013,12 @@ mod tests {
         );
 
         let decls = delcarations().parse(sdml_str).into_result().unwrap();
-        let ast_result = semantic_analysis(decls);
-        eprintln!("{:#?}", ast_result);
-        assert_eq!(ast_result, Ok(ast));
+        let actual_ast = semantic_analysis(decls).unwrap();
+        assert_eq!(ast.enums(), actual_ast.enums());
+        assert_eq!(ast.relations(), actual_ast.relations());
+        assert_eq!(ast.configs(), actual_ast.configs());
+        assert_eq!(ast.models(), actual_ast.models());
+        assert_eq!(ast, actual_ast);
     }
 
     /*

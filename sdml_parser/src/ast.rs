@@ -46,7 +46,7 @@ impl<'src> Token<'src> {
     }
     pub fn str(&self) -> Option<&'src str> {
         if let Token::Str(str, _) = self {
-            Some(str)
+            Some(str.trim_matches('"'))
         } else {
             None
         }
