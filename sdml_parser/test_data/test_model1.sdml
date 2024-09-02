@@ -31,7 +31,7 @@ model Post {
     title       ShortStr
     published   Boolean     @default(false)
     author      User        @relation(name: "UserOnPost", field: authorId, references: id)
-    authorId    Int64
+    authorId    ShortStr
     categoryIds ShortStr[]
     category    Category[]  @relation(name: "CategoriesOnPost", field: categoryIds, references: id)
 

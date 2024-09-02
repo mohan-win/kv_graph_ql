@@ -77,12 +77,28 @@ pub(crate) fn validate_relation_attribute_args<'src, 'b>(
         }
     }
 
-    // Make sure
-    Ok(RelationAttributeDetails {
-        relation_name,
-        relation_scalar_field,
-        referenced_model_field,
-    })
+    // Make sure relation scalar field and referenced field are of the `same primitive type`
+    if relation_scalar_field.is_some()
+        && referenced_model_field.is_some()
+        && *relation_scalar_field.unwrap().field_type.r#type()
+            != *referenced_model_field.unwrap().field_type.r#type()
+    {
+        Err(
+            SemanticError::RelationScalarAndReferencedFieldsTypeMismatch {
+                span: relation_scalar_field.unwrap().name.span(),
+                field_name: relation_scalar_field.unwrap().name.ident_name().unwrap(),
+                model_name: model.name.ident_name().unwrap(),
+                referenced_field_name: referenced_model_field.unwrap().name.ident_name().unwrap(),
+                referenced_model_name: referenced_model.name.ident_name().unwrap(),
+            },
+        )
+    } else {
+        Ok(RelationAttributeDetails {
+            relation_name,
+            relation_scalar_field,
+            referenced_model_field,
+        })
+    }
 }
 
 fn get_relation_scalar_field<'src, 'b>(
