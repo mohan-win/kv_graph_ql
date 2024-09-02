@@ -760,7 +760,7 @@ mod tests {
         }
 
         model EmptyModel {
-
+            id  Int32   @id
         }
         enum Role {
             USER
@@ -931,7 +931,21 @@ mod tests {
             "EmptyModel",
             ModelDecl {
                 name: Token::Ident("EmptyModel", Span::new(0, 0)),
-                fields: vec![],
+                fields: vec![FieldDecl {
+                    name: Token::Ident("id", Span::new(0, 0)),
+                    field_type: FieldType::new(
+                        Type::Primitive {
+                            r#type: PrimitiveType::Int32,
+                            token: Token::Ident("Int32", Span::new(0, 0)),
+                        },
+                        false,
+                        false,
+                    ),
+                    attributes: vec![Attribute {
+                        name: Token::Ident("id", Span::new(0, 0)),
+                        arg: None,
+                    }],
+                }],
             },
         );
         ast.relations_mut().insert(
