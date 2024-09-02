@@ -9,6 +9,7 @@ use std::{
 
 /// Error Module
 pub mod err;
+use attribute::ATTRIB_NAME_ID;
 use err::SemanticError;
 use relation::RelationMap;
 
@@ -96,6 +97,10 @@ pub(crate) fn semantic_update<'src>(
     let mut relations = RelationMap::new();
     let mut errs: Vec<SemanticError<'src>> = Vec::new();
     input_ast.models().values().for_each(|model| {
+        // Make sure each model has a valid Id field.
+        if let Err(err) = validate_model_id_field(model) {
+            errs.push(err)
+        }
         model.fields.iter().for_each(|field| {
             match get_actual_type(model, field, input_ast.models(), input_ast.enums()) {
                 Ok(actual_type) => {
@@ -158,6 +163,49 @@ fn get_actual_type<'src>(
         }
     } else {
         Ok(None)
+    }
+}
+
+/// Make sure model has ONLY one field marked with @id
+fn validate_model_id_field<'src>(model: &ModelDecl<'src>) -> Result<(), SemanticError<'src>> {
+    let mut id_fields = model.fields.iter().filter(|field| {
+        field
+            .attributes
+            .iter()
+            .find(|attrib| {
+                if let Token::Ident(ATTRIB_NAME_ID, _) = attrib.name {
+                    true
+                } else {
+                    false
+                }
+            })
+            .is_some()
+    });
+
+    let id_field = id_fields.next();
+    if id_field.is_none() {
+        return Err(SemanticError::ModelIdFieldMissing {
+            span: model.name.span(),
+            model_name: model.name.ident_name().unwrap(),
+        });
+    } else if let Some(second_id_field) = id_fields.next() {
+        // Is there more than one Id field in a Model ?
+        return Err(SemanticError::ModelIdFieldDuplicate {
+            span: second_id_field.name.span(),
+            field_name: second_id_field.name.ident_name().unwrap(),
+            model_name: model.name.ident_name().unwrap(),
+        });
+    }
+
+    if id_field.is_some_and(|id_field| id_field.field_type.is_optional) {
+        // Is id field is an optional one ?
+        Err(SemanticError::ModelIdFieldOptional {
+            span: id_field.unwrap().name.span(),
+            field_name: id_field.unwrap().name.ident_name().unwrap(),
+            model_name: model.name.ident_name().unwrap(),
+        })
+    } else {
+        Ok(())
     }
 }
 
