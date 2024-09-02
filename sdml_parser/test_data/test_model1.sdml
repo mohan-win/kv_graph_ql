@@ -13,7 +13,7 @@ model User {
     mentorEmail ShortStr?    
     spouse      User?        @relation(name: "UsersSpouse", field: spouseUserId, references: id)
     spouseUserId ShortStr?   @unique
-    profile     Profile?     @relation(name: "UserOnProfile") # Relation attribute should have a name.
+    profile     Profile?     @relation(name: "UserOnProfile")
     posts       Post[]       @relation(name: "UserOnPost")
 }
 
@@ -31,8 +31,8 @@ model Post {
     title       ShortStr
     published   Boolean     @default(false)
     author      User        @relation(name: "UserOnPost", field: authorId, references: id)
-    authorId    Int         
-    categoryIds String[]
+    authorId    Int64
+    categoryIds ShortStr[]
     category    Category[]  @relation(name: "CategoriesOnPost", field: categoryIds, references: id)
 
 }
@@ -40,7 +40,7 @@ model Post {
 model Category {
     id          ShortStr      @id @default(auto())
     name        ShortStr
-    postIDs     String[] 
+    postIDs     ShortStr[] 
     posts       Post[]        @relation(name: "CategoriesOnPost", field: postIDs, references: id)
 }
 

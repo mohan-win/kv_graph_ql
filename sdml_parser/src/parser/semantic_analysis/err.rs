@@ -5,24 +5,32 @@ use crate::ast::Span;
 /// Type of the semantic error
 #[derive(Debug, Clone, PartialEq)]
 pub enum SemanticError<'src> {
+    /// This error is returned when a Model is missing an Id field (a.k.a field marked with @id attribute).
+    ModelIdFieldMissing { span: Span, model_name: &'src str },
+    /// This error is thrown when a Model has more than one field marked with @id attribute.
+    ModelIdFieldDuplicate {
+        span: Span,
+        field_name: &'src str,
+        model_name: &'src str,
+    },
     /// This error is returned when name of a user defined type clashes with already existing type.
-    DuplicateTypeDefinition { span: Span, type_name: &'src str },
+    TypeDuplicateDefinition { span: Span, type_name: &'src str },
     /// This error is returned if type of a field is undefined.
-    UndefinedType {
+    TypeUndefined {
         span: Span,
         type_name: &'src str,
         field_name: &'src str,
         model_name: &'src str,
     },
     /// This error is returned enum type used is undefined.
-    UndefinedEnum {
+    EnumUndefined {
         span: Span,
         r#enum: &'src str,
         field_name: &'src str,
         model_name: &'src str,
     },
     /// This error is returned if undefined enum value is used.
-    UndefinedEnumValue {
+    EnumValueUndefined {
         span: Span,
         enum_value: &'src str,
         attrib_name: &'src str,
@@ -98,6 +106,15 @@ pub enum SemanticError<'src> {
     /// This error is thrown if the referenced field in a relation attribute is not
     /// unique or id field in the referenced model.
     RelationReferencedFieldNotUnique {
+        span: Span,
+        field_name: &'src str,
+        model_name: &'src str,
+        referenced_field_name: &'src str,
+        referenced_model_name: &'src str,
+    },
+    /// This error is thrown when relation scalar and
+    /// referenced fields in a relation, has mismatching types.
+    RelationScalarAndReferencedFieldsTypeMismatch {
         span: Span,
         field_name: &'src str,
         model_name: &'src str,

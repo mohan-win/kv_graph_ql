@@ -70,7 +70,7 @@ pub(crate) fn to_data_model<'src>(
             });
 
             if let ControlFlow::Break(true) = type_exists {
-                errs.push(SemanticError::DuplicateTypeDefinition { span, type_name });
+                errs.push(SemanticError::TypeDuplicateDefinition { span, type_name });
             } else {
                 type_set.insert((type_name, span));
             }
@@ -148,7 +148,7 @@ fn get_actual_type<'src>(
             )?))),
             None => match enums.get(type_name) {
                 Some(_) => Ok(Some(Type::Enum(type_name_tok.clone()))), // Clone
-                None => Err(SemanticError::UndefinedType {
+                None => Err(SemanticError::TypeUndefined {
                     span: type_name_tok.span(),
                     type_name: type_name_tok.ident_name().unwrap(),
                     field_name: field.name.ident_name().unwrap(),
@@ -186,15 +186,15 @@ mod tests {
                 assert_eq!(
                     errs,
                     vec![
-                        SemanticError::DuplicateTypeDefinition {
+                        SemanticError::TypeDuplicateDefinition {
                             span: Span::new(52, 54),
                             type_name: "db"
                         },
-                        SemanticError::DuplicateTypeDefinition {
+                        SemanticError::TypeDuplicateDefinition {
                             span: Span::new(294, 311),
                             type_name: "User"
                         },
-                        SemanticError::DuplicateTypeDefinition {
+                        SemanticError::TypeDuplicateDefinition {
                             span: Span::new(666, 670),
                             type_name: "Role"
                         }

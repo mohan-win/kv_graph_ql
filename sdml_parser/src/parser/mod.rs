@@ -1021,7 +1021,6 @@ mod tests {
         assert_eq!(ast, actual_ast);
     }
 
-    /*
     #[test]
     fn test_happy_path_parse() {
         let test_model1_sdml = std::fs::read_to_string(concat!(
@@ -1035,7 +1034,7 @@ mod tests {
             .into_result()
             .unwrap();
         let ast_result = semantic_analysis(decls);
+        eprintln!("{:#?}", ast_result);
         assert!(ast_result.is_ok());
     }
-    */
 }

@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 
-use crate::ast::{AttribArg, FieldDecl, ModelDecl, NamedArg, RelationEdge, Token, Type};
+use crate::ast::{AttribArg, FieldDecl, ModelDecl, NamedArg, RelationEdge, Token};
 
 use super::{
     attribute::{
-        validate_relation_attribute_args, RelationAttributeDetails, ATTRIB_NAMED_ARG_FIELD,
-        ATTRIB_NAMED_ARG_NAME, ATTRIB_NAMED_ARG_REFERENCES, ATTRIB_NAME_ID, ATTRIB_NAME_RELATION,
+        validate_relation_attribute_args, RelationAttributeDetails, ATTRIB_NAME_RELATION,
         ATTRIB_NAME_UNIQUE,
     },
     err::SemanticError,

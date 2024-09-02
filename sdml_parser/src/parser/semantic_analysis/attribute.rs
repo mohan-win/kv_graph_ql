@@ -76,6 +76,8 @@ pub(crate) fn validate_relation_attribute_args<'src, 'b>(
             }
         }
     }
+
+    // Make sure
     Ok(RelationAttributeDetails {
         relation_name,
         relation_scalar_field,
@@ -342,7 +344,7 @@ fn validate_attribute_args<'src>(
                             } else {
                                 let enum_decl = enums
                                     .get(enum_ty_name.ident_name().unwrap())
-                                    .ok_or_else(|| SemanticError::UndefinedEnum {
+                                    .ok_or_else(|| SemanticError::EnumUndefined {
                                         span: enum_ty_name.span(),
                                         r#enum: enum_ty_name.ident_name().unwrap(),
                                         field_name: field.name.ident_name().unwrap(),
@@ -351,7 +353,7 @@ fn validate_attribute_args<'src>(
                                 if enum_decl.elements.contains(arg_value) {
                                     Ok(())
                                 } else {
-                                    Err(SemanticError::UndefinedEnumValue {
+                                    Err(SemanticError::EnumValueUndefined {
                                         span: arg_value.span(),
                                         enum_value: arg_value.ident_name().unwrap(),
                                         attrib_name: attrib.name.ident_name().unwrap(),
