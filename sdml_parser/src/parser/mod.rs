@@ -1037,14 +1037,14 @@ mod tests {
 
     #[test]
     fn test_happy_path_parse() {
-        let test_model1_sdml = std::fs::read_to_string(concat!(
+        let happy_path_model_sdml = std::fs::read_to_string(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/test_data/test_model1.sdml"
+            "/test_data/happy_path_model.sdml"
         ))
         .unwrap();
 
         let decls = delcarations()
-            .parse(&test_model1_sdml)
+            .parse(&happy_path_model_sdml)
             .into_result()
             .unwrap();
         let ast_result = semantic_analysis(decls);
