@@ -1,7 +1,4 @@
-use crate::ast::{
-    Attribute, DataModel, Declaration, EnumDecl, FieldDecl, ModelDecl, RelationEdge, Span, Token,
-    Type,
-};
+use crate::ast::{DataModel, Declaration, EnumDecl, FieldDecl, ModelDecl, Span, Token, Type};
 use std::{
     collections::{HashMap, HashSet},
     ops::{ControlFlow, Deref},
@@ -251,7 +248,7 @@ mod tests {
             }
         }
     }
-    /*
+
     #[test]
     fn test_semantic_update() {
         let semantic_errs_sdml = std::fs::read_to_string(concat!(
@@ -259,6 +256,95 @@ mod tests {
             "/test_data/semantic_analysis/semantic_errs.sdml"
         ))
         .unwrap();
+        let expected_semantic_errs = vec![
+            SemanticError::ModelIdFieldMissing {
+                span: Span::new(45, 298),
+                model_name: "User",
+            },
+            SemanticError::AttributeIncompatible {
+                span: Span::new(102, 117),
+                attrib_name: "unknown_attrib",
+                first_attrib_name: "unique",
+                field_name: "email",
+                model_name: "User",
+            },
+            SemanticError::AttributeArgInvalid {
+                span: Span::new(196, 200),
+                attrib_arg_name: Some("USER"),
+                attrib_name: "default",
+                field_name: "nickNames",
+                model_name: "User",
+            },
+            SemanticError::EnumValueUndefined {
+                span: Span::new(241, 245),
+                enum_value: "Role",
+                attrib_name: "default",
+                field_name: "role",
+                model_name: "User",
+            },
+            SemanticError::RelationNoAttribute {
+                span: Span::new(251, 263),
+                field_name: "profile",
+                model_name: "User",
+            },
+            SemanticError::RelationNoAttribute {
+                span: Span::new(276, 288),
+                field_name: "posts",
+                model_name: "User",
+            },
+            SemanticError::ModelIdFieldMissing {
+                span: Span::new(361, 604),
+                model_name: "Post",
+            },
+            SemanticError::AttributeArgInvalid {
+                span: Span::new(414, 432),
+                attrib_arg_name: Some("unknown_function"),
+                attrib_name: "default",
+                field_name: "createdAt",
+                model_name: "Post",
+            },
+            SemanticError::TypeUndefined {
+                span: Span::new(500, 504),
+                type_name: "Bool",
+                field_name: "published",
+                model_name: "Post",
+            },
+            SemanticError::AttributeArgInvalid {
+                span: Span::new(545, 550),
+                attrib_arg_name: Some("False"),
+                attrib_name: "default",
+                field_name: "deleted",
+                model_name: "Post",
+            },
+            SemanticError::RelationNoAttribute {
+                span: Span::new(557, 569),
+                field_name: "author",
+                model_name: "Post",
+            },
+            SemanticError::RelationNoAttribute {
+                span: Span::new(578, 590),
+                field_name: "category",
+                model_name: "Post",
+            },
+            SemanticError::ModelIdFieldMissing {
+                span: Span::new(298, 361),
+                model_name: "Profile",
+            },
+            SemanticError::RelationNoAttribute {
+                span: Span::new(342, 353),
+                field_name: "user",
+                model_name: "Profile",
+            },
+            SemanticError::ModelIdFieldMissing {
+                span: Span::new(604, 672),
+                model_name: "Category",
+            },
+            SemanticError::RelationNoAttribute {
+                span: Span::new(650, 662),
+                field_name: "posts",
+                model_name: "Category",
+            },
+        ];
 
         let decls = crate::parser::delcarations()
             .parse(&semantic_errs_sdml)
@@ -267,66 +353,9 @@ mod tests {
         let mut ast = to_data_model(decls, true).unwrap();
         match semantic_update(&mut ast) {
             Ok(_) => assert!(false, "Expecting attribute errors to surface"),
-            Err(errs) => {
-                let expected_errs = vec![
-                    SemanticError::AttributeInvalid {
-                        span: Span::new(88, 101),
-                        attrib_name: "unique",
-                        field_name: "email",
-                        model_name: "User",
-                    },
-                    SemanticError::AttributeUnknown {
-                        span: Span::new(102, 117),
-                        attrib_name: "unknown_attrib",
-                        field_name: "email",
-                        model_name: "User",
-                    },
-                    SemanticError::AttributeInvalid {
-                        span: Span::new(148, 156),
-                        attrib_name: "default",
-                        field_name: "name",
-                        model_name: "User",
-                    },
-                    SemanticError::AttributeArgInvalid {
-                        span: Span::new(186, 200),
-                        attrib_arg_name: "USER",
-                        attrib_name: "default",
-                        field_name: "nickNames",
-                        model_name: "User",
-                    },
-                    SemanticError::UndefinedEnumValue {
-                        span: Span::new(231, 245),
-                        enum_value: "Role",
-                        attrib_name: "default",
-                        field_name: "role",
-                        model_name: "User",
-                    },
-                    SemanticError::AttributeArgUnknownFunction {
-                        span: Span::new(404, 432),
-                        fn_name: "unknown_function",
-                        field_name: "createdAt",
-                        attrib_name: "default",
-                        model_name: "Post",
-                    },
-                    SemanticError::UndefinedType {
-                        span: Span::new(499, 503),
-                        type_name: "Bool",
-                        field_name: "published",
-                        model_name: "Post",
-                    },
-                    SemanticError::AttributeArgInvalid {
-                        span: Span::new(535, 550),
-                        attrib_arg_name: "False",
-                        attrib_name: "default",
-                        field_name: "deleted",
-                        model_name: "Post",
-                    },
-                ];
-
-                assert_eq!(expected_errs.len(), errs.len());
-                errs.iter()
-                    .for_each(|err| assert!(expected_errs.contains(err)))
-            }
+            Err(errs) => errs
+                .into_iter()
+                .for_each(|e| assert!(expected_semantic_errs.contains(&e))),
         }
-    }*/
+    }
 }
