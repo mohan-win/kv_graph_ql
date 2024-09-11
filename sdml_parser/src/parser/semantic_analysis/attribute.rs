@@ -314,7 +314,7 @@ fn is_valid_field_type<'src>(
             model_name: model.name.ident_name().unwrap(),
         }),
         Some(attrib_detail) => {
-            let is_scalar_field = field.field_type.r#type().is_scalar_type();
+            let is_scalar_field = field.field_type.is_scalar_field();
             let is_optional_field = field.field_type.is_optional;
 
             let invalid_attribute_err = Err(SemanticError::AttributeInvalid {
