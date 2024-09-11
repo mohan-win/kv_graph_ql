@@ -316,24 +316,30 @@ fn is_valid_field_type<'src>(
         Some(attrib_detail) => {
             let is_scalar_field = field.field_type.r#type().is_scalar_type();
             let is_optional_field = field.field_type.is_optional;
+
+            let invalid_attribute_err = Err(SemanticError::AttributeInvalid {
+                span: attrib.name.span(),
+                reason: attrib_detail.allowed_field_type.to_string(),
+                attrib_name: attrib.name.ident_name().unwrap(),
+                field_name: field.name.ident_name().unwrap(),
+                model_name: model.name.ident_name().unwrap(),
+            });
             match attrib_detail.allowed_field_type {
-                AllowedFieldType::ScalarField { can_be_optional }
-                    if is_scalar_field && (can_be_optional == is_optional_field) =>
-                {
-                    Ok(())
+                AllowedFieldType::ScalarField { can_be_optional } if is_scalar_field => {
+                    if !can_be_optional && is_optional_field {
+                        invalid_attribute_err
+                    } else {
+                        Ok(())
+                    }
                 }
-                AllowedFieldType::NonScalarField { can_be_optional }
-                    if !is_scalar_field && (can_be_optional == is_optional_field) =>
-                {
-                    Ok(())
+                AllowedFieldType::NonScalarField { can_be_optional } if !is_scalar_field => {
+                    if !can_be_optional && is_optional_field {
+                        invalid_attribute_err
+                    } else {
+                        Ok(())
+                    }
                 }
-                _ => Err(SemanticError::AttributeInvalid {
-                    span: attrib.name.span(),
-                    reason: attrib_detail.allowed_field_type.to_string(),
-                    attrib_name: attrib.name.ident_name().unwrap(),
-                    field_name: field.name.ident_name().unwrap(),
-                    model_name: model.name.ident_name().unwrap(),
-                }),
+                _ => invalid_attribute_err,
             }
         }
     }
