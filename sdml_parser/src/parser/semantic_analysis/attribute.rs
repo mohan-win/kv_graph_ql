@@ -138,22 +138,6 @@ fn get_relation_scalar_field<'src, 'b>(
                 field_name: relation_scalar_field.unwrap().name.ident_name().unwrap(),
                 model_name: model.name.ident_name().unwrap(),
             })
-        } else if relation_scalar_field.is_some_and(|relation_scalar_field| {
-            relation_scalar_field.field_type.is_array
-                && relation_scalar_field
-                    .attributes
-                    .iter()
-                    .find(|attrib| match attrib.name {
-                        Token::Ident(ATTRIB_NAME_UNIQUE, ..) => true,
-                        _ => false,
-                    })
-                    .is_some()
-        }) {
-            Err(SemanticError::RelationScalarFieldArrayCanNotBeUnique {
-                span: relation_scalar_field.unwrap().name.span(),
-                field_name: relation_scalar_field.unwrap().name.ident_name().unwrap(),
-                model_name: model.name.ident_name().unwrap(),
-            })
         } else {
             Ok(relation_scalar_field.unwrap())
         }

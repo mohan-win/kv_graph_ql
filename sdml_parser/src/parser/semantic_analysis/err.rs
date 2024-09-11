@@ -122,13 +122,6 @@ pub enum SemanticError<'src> {
         field_name: &'src str,
         model_name: &'src str,
     },
-    /// This error is thrown if the relation scalar field of array type is marked with
-    /// UNIQUE attribute.
-    RelationScalarFieldArrayCanNotBeUnique {
-        span: Span,
-        field_name: &'src str,
-        model_name: &'src str,
-    },
     /// This error is thrown if the referenced field in the relation
     /// attribute is not found in the referenced model.
     RelationReferencedFieldNotFound {
