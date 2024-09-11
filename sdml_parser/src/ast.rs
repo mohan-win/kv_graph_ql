@@ -249,7 +249,9 @@ pub enum Type<'src> {
         r#type: PrimitiveType,
         token: Token<'src>,
     },
-    Enum(Token<'src>),
+    Enum {
+        enum_ty_name: Token<'src>,
+    },
     /// If field type is other model type, then its a `Relation`.
     Relation(RelationEdge<'src>),
     /// If the field type is Enum or Relation, in the first pass it will be set to Unknown with identifier token.
@@ -261,9 +263,17 @@ impl<'src> Type<'src> {
     pub fn token(&self) -> &Token<'src> {
         match self {
             Self::Primitive { token, .. } => token,
-            Self::Enum(token) => token,
+            Self::Enum { enum_ty_name } => enum_ty_name,
             Self::Relation(relation_edge) => relation_edge.referenced_model_name(),
             Self::Unknown(token) => token,
+        }
+    }
+
+    /// Is this a scalar type
+    pub fn is_scalar_type(&self) -> bool {
+        match self {
+            Self::Primitive { .. } | Self::Enum { .. } => true,
+            _ => false,
         }
     }
 }

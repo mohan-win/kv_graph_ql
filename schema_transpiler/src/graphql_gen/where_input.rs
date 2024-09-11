@@ -49,7 +49,7 @@ fn field_to_filters<'src>(
             })
         }
         sdml_ast::Type::Relation(_) => relation_field_def(&field.name, &field.field_type),
-        sdml_ast::Type::Enum(_) => enum_field_def(&field.name, field_type),
+        sdml_ast::Type::Enum { .. } => enum_field_def(&field.name, field_type),
         sdml_ast::Type::Primitive {
             r#type: primitive_type,
             ..
@@ -156,8 +156,8 @@ fn enum_field_def<'src>(
     field_name: &sdml_ast::Token<'src>,
     r#type: &sdml_ast::Type<'src>,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
-    let enum_type_name = if let sdml_ast::Type::Enum(enum_type_token) = r#type {
-        enum_type_token
+    let enum_type_name = if let sdml_ast::Type::Enum { enum_ty_name } = r#type {
+        enum_ty_name
             .try_get_ident_name()
             .map_err(ErrorGraphQLGen::new_sdml_error)
     } else {
@@ -184,7 +184,7 @@ fn list_field_def<'src>(
         sdml_ast::Type::Primitive { r#type, .. } => {
             Ok(Type::map_primitive_type_to_graphql_ty_name(r#type))
         },
-        sdml_ast::Type::Enum(enum_type_token) => enum_type_token.try_get_ident_name().map_or_else(
+        sdml_ast::Type::Enum{enum_ty_name} => enum_ty_name.try_get_ident_name().map_or_else(
             |e| Err(ErrorGraphQLGen::new_sdml_error(e)),
             |ident| Ok(ident.to_string()),
         ),
@@ -646,7 +646,9 @@ userRole_in: [Role]
 userRole_not_in: [Role]"#;
         let enum_field_input_filters = enum_field_def(
             &sdml_ast::Token::Ident("userRole", Span::new(0, 0)),
-            &sdml_ast::Type::Enum(sdml_ast::Token::Ident("Role", Span::new(0, 0))),
+            &sdml_ast::Type::Enum {
+                enum_ty_name: sdml_ast::Token::Ident("Role", Span::new(0, 0)),
+            },
         )
         .expect("It should be a valid output");
         let actual_str = enum_field_input_filters

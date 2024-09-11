@@ -149,7 +149,9 @@ fn get_actual_type<'src>(
                 referenced_model,
             )?))),
             None => match enums.get(type_name) {
-                Some(_) => Ok(Some(Type::Enum(type_name_tok.clone()))), // Clone
+                Some(_) => Ok(Some(Type::Enum {
+                    enum_ty_name: type_name_tok.clone(), // Clone
+                })),
                 None => Err(SemanticError::TypeUndefined {
                     span: type_name_tok.span(),
                     type_name: type_name_tok.ident_name().unwrap(),

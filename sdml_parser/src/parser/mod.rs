@@ -855,7 +855,9 @@ mod tests {
                     FieldDecl {
                         name: Token::Ident("role", Span::new(0, 0)),
                         field_type: FieldType::new(
-                            Type::Enum(Token::Ident("Role", Span::new(0, 0))),
+                            Type::Enum {
+                                enum_ty_name: Token::Ident("Role", Span::new(0, 0)),
+                            },
                             false,
                             false,
                         ),

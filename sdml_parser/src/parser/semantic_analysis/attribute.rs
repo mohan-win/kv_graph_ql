@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt;
 
 use crate::ast::{
     AttribArg, Attribute, EnumDecl, FieldDecl, ModelDecl, NamedArg, Span, Token, Type,
@@ -248,7 +249,9 @@ pub(crate) fn validate_attributes<'src>(
     let ATTRIBUTES_DETAIL_MAP = AttributeDetails::attributes_detail_map();
     is_attributes_compatible(field, model, &ATTRIBUTES_DETAIL_MAP)?;
     field.attributes.iter().try_for_each(|attribute| {
-        validate_attribute_args(attribute, field, model, enums, &ATTRIBUTES_DETAIL_MAP)
+        is_valid_field_type(attribute, field, model, &ATTRIBUTES_DETAIL_MAP).and_then(|()| {
+            validate_attribute_args(attribute, field, model, enums, &ATTRIBUTES_DETAIL_MAP)
+        })
     })
 }
 
@@ -292,6 +295,46 @@ fn is_attributes_compatible<'src>(
                 field_name: field.name.ident_name().unwrap(),
                 model_name: model.name.ident_name().unwrap(),
             }),
+        }
+    }
+}
+
+/// Is the field_type valid for the given attribute ?
+fn is_valid_field_type<'src>(
+    attrib: &Attribute<'src>,
+    field: &FieldDecl<'src>,
+    model: &ModelDecl<'src>,
+    attribute_details_map: &HashMap<&'static str, AttributeDetails>,
+) -> Result<(), SemanticError<'src>> {
+    match attribute_details_map.get(attrib.name.ident_name().unwrap()) {
+        None => Err(SemanticError::AttributeUnknown {
+            span: attrib.name.span(),
+            attrib_name: attrib.name.ident_name().unwrap(),
+            field_name: field.name.ident_name().unwrap(),
+            model_name: model.name.ident_name().unwrap(),
+        }),
+        Some(attrib_detail) => {
+            let is_scalar_field = field.field_type.r#type().is_scalar_type();
+            let is_optional_field = field.field_type.is_optional;
+            match attrib_detail.allowed_field_type {
+                AllowedFieldType::ScalarField { can_be_optional }
+                    if is_scalar_field && (can_be_optional == is_optional_field) =>
+                {
+                    Ok(())
+                }
+                AllowedFieldType::NonScalarField { can_be_optional }
+                    if !is_scalar_field && (can_be_optional == is_optional_field) =>
+                {
+                    Ok(())
+                }
+                _ => Err(SemanticError::AttributeInvalid {
+                    span: attrib.name.span(),
+                    reason: attrib_detail.allowed_field_type.to_string(),
+                    attrib_name: attrib.name.ident_name().unwrap(),
+                    field_name: field.name.ident_name().unwrap(),
+                    model_name: model.name.ident_name().unwrap(),
+                }),
+            }
         }
     }
 }
@@ -344,7 +387,7 @@ fn validate_attribute_args<'src>(
                         }
                     }
                     AttribArg::Ident(arg_value) => {
-                        if let Type::Enum(enum_ty_name) = &*field.field_type.r#type() {
+                        if let Type::Enum { enum_ty_name } = &*field.field_type.r#type() {
                             // Is enum values are allowed as arg values ?
                             if !attrib_detail
                                 .allowed_arg_values
@@ -424,6 +467,50 @@ fn validate_attribute_args<'src>(
     }
 }
 
+#[derive(Debug, PartialEq)]
+enum AllowedFieldType {
+    /// Attribute is allowed on only scalar field.
+    ScalarField { can_be_optional: bool },
+    /// Attribute is allowed only on non-scalar field.
+    NonScalarField { can_be_optional: bool },
+    /// Attribute is allowed on both scalar and non-scalar field
+    AnyField { can_be_optional: bool },
+}
+
+impl fmt::Display for AllowedFieldType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let optionality_prefix = |can_be_optional: bool| {
+            if can_be_optional {
+                "Only Optional"
+            } else {
+                "Only Non-Optional"
+            }
+        };
+        // ToDo:: internationalization.
+        match self {
+            AllowedFieldType::ScalarField { can_be_optional } => write!(
+                f,
+                "{} Scalar field is allowed",
+                optionality_prefix(*can_be_optional)
+            ),
+            AllowedFieldType::NonScalarField { can_be_optional } => {
+                write!(
+                    f,
+                    "{} Non-Scalar field is allowed",
+                    optionality_prefix(*can_be_optional)
+                )
+            }
+            AllowedFieldType::AnyField { can_be_optional } => {
+                write!(
+                    f,
+                    "{} field is allowed",
+                    optionality_prefix(*can_be_optional)
+                )
+            }
+        }
+    }
+}
+
 /// Type to capture details of an attribute.
 #[derive(Debug)]
 struct AttributeDetails {
@@ -437,6 +524,8 @@ struct AttributeDetails {
     allowed_arg_values: Vec<&'static str>,
     /// Allowed named args for this attribute.
     allowed_named_args: Vec<&'static str>,
+    /// Can this attribute present on a non-scalar attribute.
+    allowed_field_type: AllowedFieldType,
 }
 
 impl AttributeDetails {
@@ -466,6 +555,9 @@ impl AttributeDetails {
                 ATTRIB_ARG_VALUE_ENUM,
             ],
             allowed_named_args: vec![],
+            allowed_field_type: AllowedFieldType::ScalarField {
+                can_be_optional: false,
+            },
         }
     }
     #[inline]
@@ -476,6 +568,9 @@ impl AttributeDetails {
             allowed_arg_fns: vec![],
             allowed_arg_values: vec![],
             allowed_named_args: vec![],
+            allowed_field_type: AllowedFieldType::ScalarField {
+                can_be_optional: false,
+            },
         }
     }
     #[inline]
@@ -490,6 +585,9 @@ impl AttributeDetails {
                 ATTRIB_NAMED_ARG_FIELD,
                 ATTRIB_NAMED_ARG_REFERENCES,
             ],
+            allowed_field_type: AllowedFieldType::NonScalarField {
+                can_be_optional: true,
+            },
         }
     }
     #[inline]
@@ -500,14 +598,15 @@ impl AttributeDetails {
             allowed_arg_fns: vec![],
             allowed_arg_values: vec![],
             allowed_named_args: vec![],
+            allowed_field_type: AllowedFieldType::ScalarField {
+                can_be_optional: true,
+            },
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::parser;
 
     #[test]
     fn test_relations() {}
