@@ -74,7 +74,7 @@ pub(crate) fn to_data_model<'src>(
             }
         }
     }
-    if errs.len() > 1 {
+    if errs.len() > 0 {
         Err(errs)
     } else {
         Ok(data_model)
@@ -252,6 +252,57 @@ mod tests {
     }
 
     #[test]
+    fn test_model_errs() {
+        let model_errs_sdml = std::fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/semantic_analysis/model_errs.sdml"
+        ))
+        .unwrap();
+        let expected_semantic_errs: Vec<SemanticError> = vec![
+            SemanticError::ModelIdFieldDuplicate {
+                span: Span::new(750, 762),
+                field_name: "name",
+                model_name: "Category",
+            },
+            SemanticError::ModelIdFieldOptional {
+                span: Span::new(306, 322),
+                field_name: "profileId",
+                model_name: "Profile",
+            },
+            SemanticError::AttributeInvalid {
+                span: Span::new(337, 340),
+                reason: String::from("Only Non-Optional Scalar field is allowed"),
+                attrib_name: "id",
+                field_name: "profileId",
+                model_name: "Profile",
+            },
+            SemanticError::ModelIdFieldMissing {
+                span: Span::new(45, 291),
+                model_name: "User",
+            },
+            SemanticError::AttributeInvalid {
+                span: Span::new(464, 467),
+                reason: String::from("Only Non-Optional Scalar field is allowed"),
+                attrib_name: "id",
+                field_name: "postId",
+                model_name: "Post",
+            },
+        ];
+
+        let decls = crate::parser::delcarations()
+            .parse(&model_errs_sdml)
+            .into_result()
+            .unwrap();
+        let mut ast = to_data_model(decls, true).unwrap();
+        match semantic_update(&mut ast) {
+            Ok(_) => assert!(false, "Expecting attribute errors to surface"),
+            Err(errs) => errs
+                .into_iter()
+                .for_each(|e| assert!(expected_semantic_errs.contains(&e))),
+        }
+    }
+
+    #[test]
     fn test_semantic_update() {
         let semantic_errs_sdml = std::fs::read_to_string(concat!(
             env!("CARGO_MANIFEST_DIR"),
@@ -284,12 +335,12 @@ mod tests {
                 field_name: "role",
                 model_name: "User",
             },
-            SemanticError::RelationNoAttribute {
+            SemanticError::RelationAttributeMissing {
                 span: Span::new(251, 263),
                 field_name: "profile",
                 model_name: "User",
             },
-            SemanticError::RelationNoAttribute {
+            SemanticError::RelationAttributeMissing {
                 span: Span::new(276, 288),
                 field_name: "posts",
                 model_name: "User",
@@ -318,12 +369,12 @@ mod tests {
                 field_name: "deleted",
                 model_name: "Post",
             },
-            SemanticError::RelationNoAttribute {
+            SemanticError::RelationAttributeMissing {
                 span: Span::new(557, 569),
                 field_name: "author",
                 model_name: "Post",
             },
-            SemanticError::RelationNoAttribute {
+            SemanticError::RelationAttributeMissing {
                 span: Span::new(578, 590),
                 field_name: "category",
                 model_name: "Post",
@@ -332,7 +383,7 @@ mod tests {
                 span: Span::new(298, 361),
                 model_name: "Profile",
             },
-            SemanticError::RelationNoAttribute {
+            SemanticError::RelationAttributeMissing {
                 span: Span::new(342, 353),
                 field_name: "user",
                 model_name: "Profile",
@@ -341,7 +392,7 @@ mod tests {
                 span: Span::new(604, 672),
                 model_name: "Category",
             },
-            SemanticError::RelationNoAttribute {
+            SemanticError::RelationAttributeMissing {
                 span: Span::new(650, 662),
                 field_name: "posts",
                 model_name: "Category",

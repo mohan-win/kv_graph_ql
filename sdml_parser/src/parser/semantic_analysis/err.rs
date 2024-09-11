@@ -104,7 +104,7 @@ pub enum SemanticError<'src> {
     },
     /// This error is thrown if relation attribute is not there
     /// on either side of the relation.
-    RelationNoAttribute {
+    RelationAttributeMissing {
         span: Span,
         field_name: &'src str,
         model_name: &'src str,

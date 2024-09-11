@@ -165,7 +165,7 @@ pub fn get_relation_edge<'src>(
     });
     if relation_attributes.len() == 0 {
         // Throw error if there is no relation attribute.
-        Err(SemanticError::RelationNoAttribute {
+        Err(SemanticError::RelationAttributeMissing {
             span: field.name.span(),
             field_name: field.name.ident_name().unwrap(),
             model_name: model.name.ident_name().unwrap(),

@@ -1,0 +1,40 @@
+config db {
+    provider = "foundationDB"
+}
+
+model User {
+    userId      ShortStr
+    email       ShortStr     @unique
+    name        ShortStr?     
+    nickNames  ShortStr[]
+    role        Role         @default(USER)
+    mentorEmail ShortStr?    
+    spouseUserId ShortStr?   @unique
+}
+
+model Profile {
+    profileId  ShortStr?      @id @default(auto())
+    bio        LongStr?
+    userEmail  ShortStr      @unique 
+}
+
+model Post {
+    postId      ShortStr[]  @id @default(auto())
+    createdAt   DateTime    @default(now())
+    updatedAt   DateTime
+    title       ShortStr
+    published   Boolean     @default(false)
+    authorId    ShortStr
+    categoryIds ShortStr[]
+}
+
+model Category {
+    categoryId  ShortStr      @id @default(auto())
+    name        ShortStr      @id
+    postIDs     ShortStr[]     
+}
+
+enum Role {
+    USER
+    ADMIN
+}
