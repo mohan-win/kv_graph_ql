@@ -28,13 +28,6 @@ pub enum SemanticError<'src> {
         field_name: &'src str,
         model_name: &'src str,
     },
-    /// This error is returned enum type used is undefined.
-    EnumUndefined {
-        span: Span,
-        r#enum: &'src str,
-        field_name: &'src str,
-        model_name: &'src str,
-    },
     /// This error is returned if undefined enum value is used.
     EnumValueUndefined {
         span: Span,

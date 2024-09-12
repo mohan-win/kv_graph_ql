@@ -393,9 +393,9 @@ fn validate_attribute_args<'src>(
                             } else {
                                 let enum_decl = enums
                                     .get(enum_ty_name.ident_name().unwrap())
-                                    .ok_or_else(|| SemanticError::EnumUndefined {
+                                    .ok_or_else(|| SemanticError::TypeUndefined {
                                         span: enum_ty_name.span(),
-                                        r#enum: enum_ty_name.ident_name().unwrap(),
+                                        type_name: enum_ty_name.ident_name().unwrap(),
                                         field_name: field.name.ident_name().unwrap(),
                                         model_name: model.name.ident_name().unwrap(),
                                     })?;

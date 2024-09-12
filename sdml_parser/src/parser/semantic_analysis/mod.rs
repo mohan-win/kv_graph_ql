@@ -282,9 +282,62 @@ mod tests {
         let mut ast = to_data_model(decls, true).unwrap();
         match semantic_update(&mut ast) {
             Ok(_) => assert!(false, "Expecting attribute errors to surface"),
-            Err(errs) => errs
-                .into_iter()
-                .for_each(|e| assert!(expected_semantic_errs.contains(&e))),
+            Err(errs) => {
+                assert_eq!(expected_semantic_errs.len(), errs.len());
+                errs.into_iter()
+                    .for_each(|e| assert!(expected_semantic_errs.contains(&e)))
+            }
+        }
+    }
+
+    #[test]
+    fn test_field_errs() {
+        let model_errs_sdml = std::fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/semantic_analysis/field_errs.sdml"
+        ))
+        .unwrap();
+        let expected_semantic_errs: Vec<SemanticError> = vec![
+            SemanticError::TypeUndefined {
+                span: Span::new(625, 629),
+                type_name: "bool",
+                field_name: "published",
+                model_name: "Post",
+            },
+            SemanticError::AttributeInvalid {
+                span: Span::new(637, 652),
+                reason: String::from("Only Non-Optional Scalar field is allowed"),
+                attrib_name: "default",
+                field_name: "published",
+                model_name: "Post",
+            },
+            SemanticError::EnumValueUndefined {
+                span: Span::new(223, 228),
+                enum_value: "GUEST",
+                attrib_name: "default",
+                field_name: "role",
+                model_name: "User",
+            },
+            SemanticError::TypeUndefined {
+                span: Span::new(246, 251),
+                type_name: "Role1",
+                field_name: "role1",
+                model_name: "User",
+            },
+        ];
+
+        let decls = crate::parser::delcarations()
+            .parse(&model_errs_sdml)
+            .into_result()
+            .unwrap();
+        let mut ast = to_data_model(decls, true).unwrap();
+        match semantic_update(&mut ast) {
+            Ok(_) => assert!(false, "Expecting attribute errors to surface"),
+            Err(errs) => {
+                assert_eq!(expected_semantic_errs.len(), errs.len());
+                errs.into_iter()
+                    .for_each(|e| assert!(expected_semantic_errs.contains(&e)));
+            }
         }
     }
 
