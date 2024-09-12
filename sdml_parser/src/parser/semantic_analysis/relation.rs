@@ -224,7 +224,7 @@ fn new_relation_edge<'src>(
     if referenced_model_relation_field.is_none() {
         return Err(SemanticError::RelationPartial {
             span: field.name.span(),
-            relation_name: relation_name.ident_name().unwrap(),
+            relation_name: relation_name.str().unwrap(),
             field_name: Some(field.name.ident_name().unwrap()),
             model_name: Some(model.name.ident_name().unwrap()),
         });
@@ -260,7 +260,7 @@ fn new_relation_edge<'src>(
         // it is not a valid relation, so point it out!!
         return Err(SemanticError::RelationInvalid {
             span: referenced_model_relation_field.name.span(),
-            relation_name: relation_name.ident_name().unwrap(),
+            relation_name: relation_name.str().unwrap(),
             field_name: referenced_model_relation_field.name.ident_name().unwrap(),
             model_name: model.name.ident_name().unwrap(),
         });
