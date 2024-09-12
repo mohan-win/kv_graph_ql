@@ -183,24 +183,15 @@ fn validate_model_id_field<'src>(model: &ModelDecl<'src>) -> Result<(), Semantic
 
     let id_field = id_fields.next();
     if id_field.is_none() {
-        return Err(SemanticError::ModelIdFieldMissing {
+        Err(SemanticError::ModelIdFieldMissing {
             span: model.name.span(),
             model_name: model.name.ident_name().unwrap(),
-        });
+        })
     } else if let Some(second_id_field) = id_fields.next() {
         // Is there more than one Id field in a Model ?
-        return Err(SemanticError::ModelIdFieldDuplicate {
+        Err(SemanticError::ModelIdFieldDuplicate {
             span: second_id_field.name.span(),
             field_name: second_id_field.name.ident_name().unwrap(),
-            model_name: model.name.ident_name().unwrap(),
-        });
-    }
-
-    if id_field.is_some_and(|id_field| id_field.field_type.is_optional) {
-        // Is id field is an optional one ?
-        Err(SemanticError::ModelIdFieldOptional {
-            span: id_field.unwrap().name.span(),
-            field_name: id_field.unwrap().name.ident_name().unwrap(),
             model_name: model.name.ident_name().unwrap(),
         })
     } else {
@@ -263,11 +254,6 @@ mod tests {
                 span: Span::new(750, 762),
                 field_name: "name",
                 model_name: "Category",
-            },
-            SemanticError::ModelIdFieldOptional {
-                span: Span::new(306, 322),
-                field_name: "profileId",
-                model_name: "Profile",
             },
             SemanticError::AttributeInvalid {
                 span: Span::new(337, 340),
