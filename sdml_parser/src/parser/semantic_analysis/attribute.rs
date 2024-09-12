@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::fmt;
 
+use chumsky::container::Seq;
+
 use crate::ast::{
     AttribArg, Attribute, EnumDecl, FieldDecl, ModelDecl, NamedArg, Span, Token, Type,
 };
@@ -28,9 +30,10 @@ pub const ATTRIB_NAMED_ARG_FIELD: &str = "field";
 pub const ATTRIB_NAMED_ARG_REFERENCES: &str = "references";
 
 pub(crate) struct RelationAttributeDetails<'src, 'b> {
-    pub relation_name: Option<Token<'src>>,
+    pub relation_name: Option<&'b Token<'src>>,
     pub relation_scalar_field: Option<&'b FieldDecl<'src>>,
     pub referenced_model_field: Option<&'b FieldDecl<'src>>,
+    pub referenced_model_relation_field: Option<&'b FieldDecl<'src>>,
 }
 /// Validates arguments passed to @relation attribute
 pub(crate) fn validate_relation_attribute_args<'src, 'b>(
@@ -39,14 +42,15 @@ pub(crate) fn validate_relation_attribute_args<'src, 'b>(
     model: &'b ModelDecl<'src>,
     referenced_model: &'b ModelDecl<'src>,
 ) -> Result<RelationAttributeDetails<'src, 'b>, SemanticError<'src>> {
-    let mut relation_name = None;
+    let mut relation_name: Option<&'b Token<'src>> = None;
     let mut relation_scalar_field: Option<&'b FieldDecl<'src>> = None;
     let mut referenced_model_field: Option<&'b FieldDecl<'src>> = None;
+    let mut referenced_model_relation_field: Option<&'b FieldDecl<'src>> = None;
     for arg in relation_args.iter() {
         match arg.arg_name {
             Token::Ident(ATTRIB_NAMED_ARG_NAME, _) => {
                 if let Token::Str(..) = arg.arg_value {
-                    relation_name = Some(arg.arg_value.clone())
+                    relation_name = Some(&arg.arg_value)
                 } else {
                     return Err(SemanticError::RelationInvalidAttributeArg {
                         span: arg.arg_value.span(),
@@ -78,6 +82,11 @@ pub(crate) fn validate_relation_attribute_args<'src, 'b>(
         }
     }
 
+    if relation_name.is_some() {
+        referenced_model_relation_field =
+            get_referenced_model_relation_field(relation_name.unwrap(), model, referenced_model)?;
+    }
+
     // Make sure relation scalar field and referenced field are of the `same primitive type`
     if relation_scalar_field.is_some()
         && referenced_model_field.is_some()
@@ -98,6 +107,7 @@ pub(crate) fn validate_relation_attribute_args<'src, 'b>(
             relation_name,
             relation_scalar_field,
             referenced_model_field,
+            referenced_model_relation_field,
         })
     }
 }
@@ -221,6 +231,45 @@ fn get_referenced_model_field<'src, 'b>(
             model_name: Some(model.name.ident_name().unwrap()),
         })
     }
+}
+
+fn get_referenced_model_relation_field<'src, 'b>(
+    relation_name: &'b Token<'src>,
+    model: &'b ModelDecl<'src>,
+    referenced_model: &'b ModelDecl<'src>,
+) -> Result<Option<&'b FieldDecl<'src>>, SemanticError<'src>> {
+    let mut referenced_model_relation_field = referenced_model.fields.iter().filter(|field| {
+        // Does this field has relation attribute to it ?
+        let mut has_relation_attribute = field.attributes.iter().filter(|attrib| {
+            if let Token::Ident(ATTRIB_NAME_RELATION, _) = attrib.name {
+                true
+            } else {
+                false
+            }
+        });
+
+        if let Some(relation_attrib) = has_relation_attribute.next() {
+            // if yes, then does field type & relation name matches ?
+            match &relation_attrib.arg {
+                Some(AttribArg::Args(named_args)) => {
+                    named_args.iter().fold(false, |acc, named_arg| {
+                        if relation_name == &named_arg.arg_value
+                            && field.field_type.r#type().token() == &model.name
+                        {
+                            acc || true
+                        } else {
+                            acc || false
+                        }
+                    })
+                }
+                _ => false,
+            }
+        } else {
+            false
+        }
+    });
+
+    Ok(referenced_model_relation_field.next())
 }
 
 /// Validates the attributes of the given field in the model.

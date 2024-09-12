@@ -378,6 +378,31 @@ mod tests {
     }
 
     #[test]
+    fn test_relation_errs_partial() {
+        let field_errs_sdml = std::fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/semantic_analysis/relation_errs/partial.sdml"
+        ))
+        .unwrap();
+        let expected_semantic_errs: Vec<SemanticError> = vec![];
+
+        let decls = crate::parser::delcarations()
+            .parse(&field_errs_sdml)
+            .into_result()
+            .unwrap();
+        let mut ast = to_data_model(decls, true).unwrap();
+        match semantic_update(&mut ast) {
+            Ok(_) => assert!(false, "Expecting field errors to surface"),
+            Err(errs) => {
+                eprintln!("{errs:#?}");
+                assert_eq!(expected_semantic_errs.len(), errs.len());
+                errs.into_iter()
+                    .for_each(|e| assert!(expected_semantic_errs.contains(&e)));
+            }
+        }
+    }
+
+    #[test]
     fn test_semantic_update() {
         let semantic_errs_sdml = std::fs::read_to_string(concat!(
             env!("CARGO_MANIFEST_DIR"),

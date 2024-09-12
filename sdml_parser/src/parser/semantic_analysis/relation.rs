@@ -207,6 +207,7 @@ fn new_relation_edge<'src>(
         relation_name,
         relation_scalar_field,
         referenced_model_field,
+        referenced_model_relation_field,
     } = validate_relation_attribute_args(relation_args, field, model, referenced_model)?;
 
     if relation_name.is_none() {
@@ -218,6 +219,17 @@ fn new_relation_edge<'src>(
         });
     }
     let relation_name = relation_name.unwrap();
+
+    // Is this a partial relation ?
+    if referenced_model_relation_field.is_none() {
+        return Err(SemanticError::RelationPartial {
+            span: field.name.span(),
+            relation_name: relation_name.ident_name().unwrap(),
+            field_name: Some(field.name.ident_name().unwrap()),
+            model_name: Some(model.name.ident_name().unwrap()),
+        });
+    }
+    let referenced_model_relation_field = referenced_model_relation_field.unwrap();
 
     // Is this OneSideRelation ?
     if relation_scalar_field.is_none() && referenced_model_field.is_none() {
@@ -239,10 +251,25 @@ fn new_relation_edge<'src>(
                 .is_some()
         });
 
-    // Is this OneSideRelationRight ?
-    if relation_scalar_field_is_unique {
-        // See if this is a self relation
+    if (relation_scalar_field_is_unique && referenced_model_relation_field.field_type.is_array)
+        || (!relation_scalar_field_is_unique
+            && !referenced_model_relation_field.field_type.is_array)
+    {
+        // If relation scalar field is unique but referenced model relation field is of array type OR
+        // if the relation scalar field is NOT unique but referenced model field is NOT of array type then
+        // it is not a valid relation, so point it out!!
+        return Err(SemanticError::RelationInvalid {
+            span: referenced_model_relation_field.name.span(),
+            relation_name: relation_name.ident_name().unwrap(),
+            field_name: referenced_model_relation_field.name.ident_name().unwrap(),
+            model_name: model.name.ident_name().unwrap(),
+        });
+    } else if relation_scalar_field_is_unique
+        && !referenced_model_relation_field.field_type.is_array
+    {
+        // Is this one side relation.
         if model.name == referenced_model.name {
+            // See if this is a self relation
             return Ok(RelationEdge::SelfOneToOneRelation {
                 relation_name: relation_name.clone(),
                 scalar_field_name: relation_scalar_field.unwrap().name.clone(),
