@@ -133,7 +133,7 @@ fn get_relation_scalar_field<'src, 'b>(
                 _ => true,
             }
         }) {
-            Err(SemanticError::RelationScalarFieldIsNotScalar {
+            Err(SemanticError::RelationScalarFieldIsNotPrimitive {
                 span: relation_scalar_field.unwrap().name.span(),
                 field_name: relation_scalar_field.unwrap().name.ident_name().unwrap(),
                 model_name: model.name.ident_name().unwrap(),

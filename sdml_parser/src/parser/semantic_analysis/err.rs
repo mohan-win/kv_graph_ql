@@ -103,8 +103,8 @@ pub enum SemanticError<'src> {
         model_name: &'src str,
     },
     /// This error is thrown if the relation scalar field referenced in relation
-    /// attribute is invalid.
-    RelationScalarFieldIsNotScalar {
+    /// attribute is not of primitive type.
+    RelationScalarFieldIsNotPrimitive {
         span: Span,
         field_name: &'src str,
         model_name: &'src str,

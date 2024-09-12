@@ -281,7 +281,7 @@ mod tests {
             .unwrap();
         let mut ast = to_data_model(decls, true).unwrap();
         match semantic_update(&mut ast) {
-            Ok(_) => assert!(false, "Expecting attribute errors to surface"),
+            Ok(_) => assert!(false, "Expecting model errors to surface"),
             Err(errs) => {
                 assert_eq!(expected_semantic_errs.len(), errs.len());
                 errs.into_iter()
@@ -292,7 +292,7 @@ mod tests {
 
     #[test]
     fn test_field_errs() {
-        let model_errs_sdml = std::fs::read_to_string(concat!(
+        let field_errs_sdml = std::fs::read_to_string(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/semantic_analysis/field_errs.sdml"
         ))
@@ -327,16 +327,52 @@ mod tests {
         ];
 
         let decls = crate::parser::delcarations()
-            .parse(&model_errs_sdml)
+            .parse(&field_errs_sdml)
             .into_result()
             .unwrap();
         let mut ast = to_data_model(decls, true).unwrap();
         match semantic_update(&mut ast) {
-            Ok(_) => assert!(false, "Expecting attribute errors to surface"),
+            Ok(_) => assert!(false, "Expecting field errors to surface"),
             Err(errs) => {
                 assert_eq!(expected_semantic_errs.len(), errs.len());
                 errs.into_iter()
                     .for_each(|e| assert!(expected_semantic_errs.contains(&e)));
+            }
+        }
+    }
+
+    #[test]
+    fn test_relation_errs_duplicate() {
+        let relation_errs_sdml = std::fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/semantic_analysis/relation_errs/duplicate.sdml"
+        ))
+        .unwrap();
+
+        let decls = crate::parser::delcarations()
+            .parse(&relation_errs_sdml)
+            .into_result()
+            .unwrap();
+        let mut ast = to_data_model(decls, true).unwrap();
+        match semantic_update(&mut ast) {
+            Ok(_) => assert!(false, "Expecting relation errors to surface"),
+            Err(errs) => {
+                assert!(
+                    errs.len() >= 3,
+                    "Relations with conflicting names should result in error"
+                );
+                errs.into_iter().for_each(|e| match e {
+                    SemanticError::RelationDuplicate { .. }
+                    | SemanticError::RelationInvalidAttributeArg { .. } => {
+                        eprintln!("Duplicate relations can result in either RelationDuplicate or RelationInvalidAttributeArg error")
+                    }
+                    _ => {
+                        assert!(
+                            false,
+                            "Relations with conflicting names should result in error"
+                        )
+                    }
+                });
             }
         }
     }
