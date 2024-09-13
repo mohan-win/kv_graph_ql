@@ -343,7 +343,7 @@ mod tests {
 
     #[test]
     fn test_relation_errs_invalid() {
-        let field_errs_sdml = std::fs::read_to_string(concat!(
+        let relation_errs_sdml = std::fs::read_to_string(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/semantic_analysis/relation_errs/invalid.sdml"
         ))
@@ -385,12 +385,12 @@ mod tests {
         ];
 
         let decls = crate::parser::delcarations()
-            .parse(&field_errs_sdml)
+            .parse(&relation_errs_sdml)
             .into_result()
             .unwrap();
         let mut ast = to_data_model(decls, true).unwrap();
         match semantic_update(&mut ast) {
-            Ok(_) => assert!(false, "Expecting invalid relation errors to surface"),
+            Ok(_) => assert!(false, "Expecting relation errors to surface"),
             Err(errs) => {
                 assert_eq!(expected_semantic_errs.len(), errs.len());
                 errs.into_iter()
@@ -398,177 +398,59 @@ mod tests {
             }
         }
     }
-    /*
-        #[test]
-        fn test_relation_errs_duplicate() {
-            let relation_errs_sdml = std::fs::read_to_string(concat!(
-                env!("CARGO_MANIFEST_DIR"),
-                "/test_data/semantic_analysis/relation_errs/duplicate.sdml"
-            ))
-            .unwrap();
 
-            let decls = crate::parser::delcarations()
-                .parse(&relation_errs_sdml)
-                .into_result()
-                .unwrap();
-            let mut ast = to_data_model(decls, true).unwrap();
-            match semantic_update(&mut ast) {
-                Ok(_) => assert!(false, "Expecting relation errors to surface"),
-                Err(errs) => {
-                    eprintln!("{errs:#?}");
+    #[test]
+    fn test_relation_errs_duplicate() {
+        let relation_errs_sdml = std::fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/semantic_analysis/relation_errs/duplicate.sdml"
+        ))
+        .unwrap();
+
+        let decls = crate::parser::delcarations()
+            .parse(&relation_errs_sdml)
+            .into_result()
+            .unwrap();
+        let mut ast = to_data_model(decls, true).unwrap();
+        match semantic_update(&mut ast) {
+            Ok(_) => assert!(false, "Expecting relation errors to surface"),
+            Err(errs) => {
+                assert_eq!(3, errs.len());
+                errs.into_iter().for_each(|e| {
                     assert!(
-                        errs.len() >= 3,
-                        "Relations with conflicting names should result in error"
+                        match e {
+                            SemanticError::RelationDuplicate { .. } => true,
+                            _ => false,
+                        },
+                        "Expecting SemanticError::RelationDuplicate error",
                     );
-                    errs.into_iter().for_each(|e| match e {
-                        SemanticError::RelationDuplicate { .. }
-                        | SemanticError::RelationInvalidAttributeArg { .. } => {
-                            eprintln!("Duplicate relations can result in either RelationDuplicate or RelationInvalidAttributeArg error")
-                        }
-                        _ => {
-                            assert!(
-                                false,
-                                "Relations with conflicting names should result in error"
-                            )
-                        }
-                    });
-                }
+                })
             }
         }
+    }
 
-        #[test]
-        fn test_relation_errs_partial() {
-            let field_errs_sdml = std::fs::read_to_string(concat!(
-                env!("CARGO_MANIFEST_DIR"),
-                "/test_data/semantic_analysis/relation_errs/partial.sdml"
-            ))
+    #[test]
+    fn test_relation_errs_partial() {
+        let relation_errs_sdml = std::fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/semantic_analysis/relation_errs/partial.sdml"
+        ))
+        .unwrap();
+        let expected_semantic_errs: Vec<SemanticError> = vec![];
+
+        let decls = crate::parser::delcarations()
+            .parse(&relation_errs_sdml)
+            .into_result()
             .unwrap();
-            let expected_semantic_errs: Vec<SemanticError> = vec![];
-
-            let decls = crate::parser::delcarations()
-                .parse(&field_errs_sdml)
-                .into_result()
-                .unwrap();
-            let mut ast = to_data_model(decls, true).unwrap();
-            match semantic_update(&mut ast) {
-                Ok(_) => assert!(false, "Expecting field errors to surface"),
-                Err(errs) => {
-                    eprintln!("{errs:#?}");
-                    assert_eq!(expected_semantic_errs.len(), errs.len());
-                    errs.into_iter()
-                        .for_each(|e| assert!(expected_semantic_errs.contains(&e)));
-                }
+        let mut ast = to_data_model(decls, true).unwrap();
+        match semantic_update(&mut ast) {
+            Ok(_) => assert!(false, "Expecting relation errors to surface"),
+            Err(errs) => {
+                eprintln!("{errs:#?}");
+                assert_eq!(expected_semantic_errs.len(), errs.len());
+                errs.into_iter()
+                    .for_each(|e| assert!(expected_semantic_errs.contains(&e)));
             }
         }
-
-        #[test]
-        fn test_semantic_update() {
-            let semantic_errs_sdml = std::fs::read_to_string(concat!(
-                env!("CARGO_MANIFEST_DIR"),
-                "/test_data/semantic_analysis/semantic_errs.sdml"
-            ))
-            .unwrap();
-            let expected_semantic_errs = vec![
-                SemanticError::ModelIdFieldMissing {
-                    span: Span::new(45, 298),
-                    model_name: "User",
-                },
-                SemanticError::AttributeIncompatible {
-                    span: Span::new(102, 117),
-                    attrib_name: "unknown_attrib",
-                    first_attrib_name: "unique",
-                    field_name: "email",
-                    model_name: "User",
-                },
-                SemanticError::AttributeArgInvalid {
-                    span: Span::new(196, 200),
-                    attrib_arg_name: Some("USER"),
-                    attrib_name: "default",
-                    field_name: "nickNames",
-                    model_name: "User",
-                },
-                SemanticError::EnumValueUndefined {
-                    span: Span::new(241, 245),
-                    enum_value: "Role",
-                    attrib_name: "default",
-                    field_name: "role",
-                    model_name: "User",
-                },
-                SemanticError::RelationAttributeMissing {
-                    span: Span::new(251, 263),
-                    field_name: "profile",
-                    model_name: "User",
-                },
-                SemanticError::RelationAttributeMissing {
-                    span: Span::new(276, 288),
-                    field_name: "posts",
-                    model_name: "User",
-                },
-                SemanticError::ModelIdFieldMissing {
-                    span: Span::new(361, 604),
-                    model_name: "Post",
-                },
-                SemanticError::AttributeArgInvalid {
-                    span: Span::new(414, 432),
-                    attrib_arg_name: Some("unknown_function"),
-                    attrib_name: "default",
-                    field_name: "createdAt",
-                    model_name: "Post",
-                },
-                SemanticError::TypeUndefined {
-                    span: Span::new(500, 504),
-                    type_name: "Bool",
-                    field_name: "published",
-                    model_name: "Post",
-                },
-                SemanticError::AttributeArgInvalid {
-                    span: Span::new(545, 550),
-                    attrib_arg_name: Some("False"),
-                    attrib_name: "default",
-                    field_name: "deleted",
-                    model_name: "Post",
-                },
-                SemanticError::RelationAttributeMissing {
-                    span: Span::new(557, 569),
-                    field_name: "author",
-                    model_name: "Post",
-                },
-                SemanticError::RelationAttributeMissing {
-                    span: Span::new(578, 590),
-                    field_name: "category",
-                    model_name: "Post",
-                },
-                SemanticError::ModelIdFieldMissing {
-                    span: Span::new(298, 361),
-                    model_name: "Profile",
-                },
-                SemanticError::RelationAttributeMissing {
-                    span: Span::new(342, 353),
-                    field_name: "user",
-                    model_name: "Profile",
-                },
-                SemanticError::ModelIdFieldMissing {
-                    span: Span::new(604, 672),
-                    model_name: "Category",
-                },
-                SemanticError::RelationAttributeMissing {
-                    span: Span::new(650, 662),
-                    field_name: "posts",
-                    model_name: "Category",
-                },
-            ];
-
-            let decls = crate::parser::delcarations()
-                .parse(&semantic_errs_sdml)
-                .into_result()
-                .unwrap();
-            let mut ast = to_data_model(decls, true).unwrap();
-            match semantic_update(&mut ast) {
-                Ok(_) => assert!(false, "Expecting attribute errors to surface"),
-                Err(errs) => errs
-                    .into_iter()
-                    .for_each(|e| assert!(expected_semantic_errs.contains(&e))),
-            }
-        }
-    */
+    }
 }

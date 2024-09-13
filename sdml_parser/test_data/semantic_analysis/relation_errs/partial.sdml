@@ -5,14 +5,14 @@ model User {
     negativePosts   Post[]      @relation(name:"negative_posts")
     mentees         User[]      @relation(name:"mentor_mentee")
     mentor          User?       @relation(name:"mentor_mentee", field: mentorId, references: userId)
-    mentorId        ShortStr?   @unique
+    mentorId        ShortStr?   
     profile         Profile?    @relation(name:"user_profile")
 }
 
 model Post {
     postId           ShortStr    @id @default(auto())
     content          LongStr
-    authorId         ShortStr?   @unique
+    authorId         ShortStr?   
     author           User?       @relation(name: "user_posts", field: authorId, references: userId)
     negativeAuthorId ShortStr?
     negativeAuthor   User?       @relation(name:"negative_posts", field: negativeAuthorId, references: userId)

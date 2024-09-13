@@ -6,19 +6,19 @@ model User {
 model Post {
     postId   ShortStr    @id @default(auto())
     content  LongStr
-    authorId ShortStr?   @unique
+    authorId ShortStr?   
     author   User?       @relation(name: "posts", field: authorId, references: userId)
     author1  User?       @relation(name: "posts", field: authorId, references: userId)
 }
 
 model User1 {
     userId  ShortStr    @id @default(auto())
-    posts   Post[]      @relation(name:"posts")
+    posts   Post1[]      @relation(name:"posts")
 }
 
 model Post1 {
     postId   ShortStr    @id @default(auto())
     content  LongStr
-    authorId ShortStr?   @unique
+    authorId ShortStr?   
     author   User1?      @relation(name: "posts", field: authorId, references: userId)
 }
