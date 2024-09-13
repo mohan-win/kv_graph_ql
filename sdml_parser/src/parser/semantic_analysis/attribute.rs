@@ -83,8 +83,12 @@ pub(crate) fn validate_relation_attribute_args<'src, 'b>(
     }
 
     if relation_name.is_some() {
-        referenced_model_relation_field =
-            get_referenced_model_relation_field(relation_name.unwrap(), model, referenced_model)?;
+        referenced_model_relation_field = get_referenced_model_relation_field(
+            relation_name.unwrap(),
+            field,
+            model,
+            referenced_model,
+        )?;
     }
 
     // Make sure relation scalar field and referenced field are of the `same primitive type`
@@ -235,14 +239,17 @@ fn get_referenced_model_field<'src, 'b>(
 
 fn get_referenced_model_relation_field<'src, 'b>(
     relation_name: &'b Token<'src>,
+    field: &'b FieldDecl<'src>,
     model: &'b ModelDecl<'src>,
     referenced_model: &'b ModelDecl<'src>,
 ) -> Result<Option<&'b FieldDecl<'src>>, SemanticError<'src>> {
-    let mut referenced_model_relation_field = referenced_model.fields.iter().filter(|field| {
+    let is_self_relation = model.name == referenced_model.name;
+    let mut referenced_model_relation_field = referenced_model.fields.iter().filter(|fld| {
         // Does this field has relation attribute to it ?
-        let mut has_relation_attribute = field.attributes.iter().filter(|attrib| {
+        let mut has_relation_attribute = fld.attributes.iter().filter(|attrib| {
             if let Token::Ident(ATTRIB_NAME_RELATION, _) = attrib.name {
-                true
+                // In case of self relation, make sure to pick the right relation field.
+                true && (!is_self_relation || fld.name != field.name)
             } else {
                 false
             }
@@ -254,7 +261,7 @@ fn get_referenced_model_relation_field<'src, 'b>(
                 Some(AttribArg::Args(named_args)) => {
                     named_args.iter().fold(false, |acc, named_arg| {
                         if relation_name == &named_arg.arg_value
-                            && field.field_type.r#type().token() == &model.name
+                            && fld.field_type.r#type().token() == &model.name
                         {
                             acc || true
                         } else {

@@ -1,0 +1,25 @@
+model User {
+    userId       ShortStr    @id @default(auto())
+    spouse       User?       @relation(name: "users_spouse", field: spouseUserId, references: userId)
+    spouseUserId ShortStr?   
+    posts        Post[]      @relation(name:"posts")
+}
+
+model Post {
+    postId   ShortStr    @id @default(auto())
+    content  LongStr
+    authorId ShortStr?   @unique
+    author   User?       @relation(name: "posts", field: authorId, references: userId)
+}
+
+model User1 {
+    userId       ShortStr    @id @default(auto())
+    singlePost   Post1       @relation(name:"posts1")
+}
+
+model Post1 {
+    postId   ShortStr    @id @default(auto())
+    content  LongStr
+    authorId ShortStr?   
+    author   User1?      @relation(name: "posts1", field: authorId, references: userId)
+}

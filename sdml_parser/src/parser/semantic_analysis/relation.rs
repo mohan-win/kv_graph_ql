@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{any::Any, collections::HashMap};
 
 use crate::ast::{AttribArg, FieldDecl, ModelDecl, NamedArg, RelationEdge, Token};
 
@@ -142,7 +142,6 @@ impl<'src> RelationMap<'src> {
                     left.unwrap().relation_name() == right.unwrap().relation_name(),
                     "Relation name should match for the edges in a relation"
                 );
-                eprintln!("Valid relations left:{:#?} right:{:#?}", left, right); // ToDo:: remove!
                 Ok(())
             }
         }
@@ -220,84 +219,101 @@ fn new_relation_edge<'src>(
     }
     let relation_name = relation_name.unwrap();
 
-    // Is this a partial relation ?
-    if referenced_model_relation_field.is_none() {
-        return Err(SemanticError::RelationPartial {
-            span: field.name.span(),
-            relation_name: relation_name.str().unwrap(),
-            field_name: Some(field.name.ident_name().unwrap()),
-            model_name: Some(model.name.ident_name().unwrap()),
-        });
-    }
-    let referenced_model_relation_field = referenced_model_relation_field.unwrap();
-
-    // Is this OneSideRelation ?
     if relation_scalar_field.is_none() && referenced_model_field.is_none() {
+        // Is this OneSideRelation ?
         return Ok(RelationEdge::OneSideRelation {
             relation_name: relation_name.clone(),
             referenced_model_name: referenced_model.name.clone(),
         });
-    }
-
-    let relation_scalar_field_is_unique =
-        relation_scalar_field.is_some_and(|relation_scalar_field| {
-            relation_scalar_field
-                .attributes
-                .iter()
-                .find(|attrib| match attrib.name {
-                    Token::Ident(ATTRIB_NAME_UNIQUE, ..) => true,
-                    _ => false,
-                })
-                .is_some()
-        });
-
-    if (relation_scalar_field_is_unique && referenced_model_relation_field.field_type.is_array)
-        || (!relation_scalar_field_is_unique
-            && !referenced_model_relation_field.field_type.is_array)
-    {
-        // If relation scalar field is unique but referenced model relation field is of array type OR
-        // if the relation scalar field is NOT unique but referenced model field is NOT of array type then
-        // it is not a valid relation, so point it out!!
-        return Err(SemanticError::RelationInvalid {
-            span: referenced_model_relation_field.name.span(),
-            relation_name: relation_name.str().unwrap(),
-            field_name: referenced_model_relation_field.name.ident_name().unwrap(),
+    } else if relation_scalar_field.is_none() {
+        return Err(SemanticError::RelationScalarFieldNotFound {
+            span: relation_name.span(),
+            field_name: field.name.ident_name().unwrap(),
             model_name: model.name.ident_name().unwrap(),
         });
-    } else if relation_scalar_field_is_unique
-        && !referenced_model_relation_field.field_type.is_array
-    {
-        // Is this one side relation.
-        if model.name == referenced_model.name {
-            // See if this is a self relation
-            return Ok(RelationEdge::SelfOneToOneRelation {
-                relation_name: relation_name.clone(),
-                scalar_field_name: relation_scalar_field.unwrap().name.clone(),
-                referenced_model_name: referenced_model.name.clone(),
-                referenced_field_name: referenced_model_field.unwrap().name.clone(),
-            });
-        } else {
-            return Ok(RelationEdge::OneSideRelationRight {
-                relation_name: relation_name.clone(),
-                scalar_field_name: relation_scalar_field.unwrap().name.clone(),
-                referenced_model_name: referenced_model.name.clone(),
-                referenced_field_name: referenced_model_field.unwrap().name.clone(),
-            });
-        }
-    } else if referenced_model_field.is_some() && !relation_scalar_field_is_unique {
-        // Is this ManySideRelation ?
-        return Ok(RelationEdge::ManySideRelation {
-            relation_name: relation_name.clone(),
-            scalar_field_name: relation_scalar_field.unwrap().name.clone(),
-            referenced_model_name: referenced_model.name.clone(),
-            referenced_field_name: referenced_model_field.unwrap().name.clone(),
-        });
     }
+    let relation_scalar_field = relation_scalar_field.unwrap();
 
-    Err(SemanticError::RelationInvalid {
-        span: relation_name.span(),
-        relation_name: relation_name.str().unwrap(),
-        field_name: field.name.ident_name().unwrap(),
-        model_name: model.name.ident_name().unwrap(),
-    })
+    let scalar_fld_unique = relation_scalar_field
+        .attributes
+        .iter()
+        .find(|attrib| match attrib.name {
+            Token::Ident(ATTRIB_NAME_UNIQUE, ..) => true,
+            _ => false,
+        })
+        .is_some();
+    let rel_fld_exists = referenced_model_relation_field.is_some();
+    let rel_fld_array = referenced_model_relation_field.is_some_and(|fld| fld.field_type.is_array);
+
+    match (scalar_fld_unique, rel_fld_exists, rel_fld_array) {
+        (_scalar_fld_unique @ true, _rel_fld_exists @ true, _rel_fld_array @ true) => {
+            Err(SemanticError::RelationScalarFieldIsUnique {
+                span: relation_scalar_field.name.span(),
+                field_name: relation_scalar_field.name.ident_name().unwrap(),
+                model_name: model.name.ident_name().unwrap(),
+                referenced_model_name: referenced_model.name.ident_name().unwrap(),
+                referenced_model_relation_field_name: referenced_model_relation_field
+                    .unwrap()
+                    .name
+                    .ident_name()
+                    .unwrap(),
+            })
+        }
+        (_scalar_fld_unique @ false, _rel_fld_exists @ true, _rel_fld_array @ false) => {
+            Err(SemanticError::RelationScalarFieldNotUnique {
+                span: relation_scalar_field.name.span(),
+                field_name: relation_scalar_field.name.ident_name().unwrap(),
+                model_name: model.name.ident_name().unwrap(),
+                referenced_model_name: referenced_model.name.ident_name().unwrap(),
+                referenced_model_relation_field_name: referenced_model_relation_field
+                    .map_or(None, |fld| fld.name.ident_name()),
+            })
+        }
+        (_scalar_fld_unique @ false, _rel_fld_exists @ false, _rel_fld_array @ _)
+            if model.name == referenced_model.name =>
+        {
+            // Self relation should always be a 1-to-1 relation.
+            Err(SemanticError::RelationScalarFieldNotUnique {
+                span: relation_scalar_field.name.span(),
+                field_name: relation_scalar_field.name.ident_name().unwrap(),
+                model_name: model.name.ident_name().unwrap(),
+                referenced_model_name: referenced_model.name.ident_name().unwrap(),
+                referenced_model_relation_field_name: referenced_model_relation_field
+                    .map_or(None, |fld| fld.name.ident_name()),
+            })
+        }
+        (_scalar_fld_unique @ true, _rel_fld_exists @ false, _)
+            if model.name == referenced_model.name =>
+        {
+            // See if this is a self relation
+            Ok(RelationEdge::SelfOneToOneRelation {
+                relation_name: relation_name.clone(),
+                scalar_field_name: relation_scalar_field.name.clone(),
+                referenced_model_name: referenced_model.name.clone(),
+                referenced_field_name: referenced_model_field.unwrap().name.clone(),
+            })
+        }
+        (_scalar_fld_unique @ true, _rel_fld_exists @ true, _rel_fld_array @ false) => {
+            Ok(RelationEdge::OneSideRelationRight {
+                relation_name: relation_name.clone(),
+                scalar_field_name: relation_scalar_field.name.clone(),
+                referenced_model_name: referenced_model.name.clone(),
+                referenced_field_name: referenced_model_field.unwrap().name.clone(),
+            })
+        }
+        (_scalar_fld_unique @ false, _rel_fld_exists @ true, _rel_fld_array @ true) => {
+            Ok(RelationEdge::ManySideRelation {
+                relation_name: relation_name.clone(),
+                scalar_field_name: relation_scalar_field.name.clone(),
+                referenced_model_name: referenced_model.name.clone(),
+                referenced_field_name: referenced_model_field.unwrap().name.clone(),
+            })
+        }
+        _ => Err(SemanticError::RelationInvalid {
+            span: relation_name.span(),
+            relation_name: relation_name.str().unwrap(),
+            field_name: field.name.ident_name().unwrap(),
+            model_name: model.name.ident_name().unwrap(),
+        }),
+    }
 }

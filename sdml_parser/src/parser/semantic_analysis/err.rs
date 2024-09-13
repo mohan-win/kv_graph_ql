@@ -136,6 +136,28 @@ pub enum SemanticError<'src> {
         referenced_field_name: &'src str,
         referenced_model_name: &'src str,
     },
+    /// This error is thrown when relation scalar field is not unique,
+    /// Ex. In an 1-to-1 relation, relation scalar field should be unique.
+    RelationScalarFieldNotUnique {
+        /// span of relation scalar field.
+        span: Span,
+        /// relation scalar field name.
+        field_name: &'src str,
+        model_name: &'src str,
+        referenced_model_name: &'src str,
+        referenced_model_relation_field_name: Option<&'src str>,
+    },
+    /// This error is thrown when relation scalar field is unique,
+    /// Ex. In an 1-to-Many relation, the relation scalar field shouldn't be unique.
+    RelationScalarFieldIsUnique {
+        /// span of relation scalar field.
+        span: Span,
+        /// relation scalar field name.
+        field_name: &'src str,
+        model_name: &'src str,
+        referenced_model_name: &'src str,
+        referenced_model_relation_field_name: &'src str,
+    },
     /// This error is thrown when relation scalar and
     /// referenced fields in a relation, has mismatching types.
     RelationScalarAndReferencedFieldsTypeMismatch {
