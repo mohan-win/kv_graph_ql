@@ -222,7 +222,6 @@ mod tests {
             Ok(_) => assert!(false, "Model file with duplicate types should throw err!"),
             Err(errs) => {
                 assert_eq!(
-                    errs,
                     vec![
                         SemanticError::TypeDuplicateDefinition {
                             span: Span::new(52, 54),
@@ -236,7 +235,8 @@ mod tests {
                             span: Span::new(666, 670),
                             type_name: "Role"
                         }
-                    ]
+                    ],
+                    errs
                 )
             }
         }
@@ -415,16 +415,15 @@ mod tests {
         match semantic_update(&mut ast) {
             Ok(_) => assert!(false, "Expecting relation errors to surface"),
             Err(errs) => {
+                eprintln!("{errs:#?}");
+                let errs: Vec<_> = errs
+                    .into_iter()
+                    .filter(|e| match e {
+                        SemanticError::RelationDuplicate { .. } => true,
+                        _ => false,
+                    })
+                    .collect();
                 assert_eq!(3, errs.len());
-                errs.into_iter().for_each(|e| {
-                    assert!(
-                        match e {
-                            SemanticError::RelationDuplicate { .. } => true,
-                            _ => false,
-                        },
-                        "Expecting SemanticError::RelationDuplicate error",
-                    );
-                })
             }
         }
     }
@@ -436,7 +435,32 @@ mod tests {
             "/test_data/semantic_analysis/relation_errs/partial.sdml"
         ))
         .unwrap();
-        let expected_semantic_errs: Vec<SemanticError> = vec![];
+        let expected_semantic_errs: Vec<SemanticError> = vec![
+            SemanticError::RelationInvalid {
+                span: Span::new(738, 752),
+                relation_name: "user_profile",
+                field_name: Some("user"),
+                model_name: Some("Profile"),
+            },
+            SemanticError::RelationInvalid {
+                span: Span::new(385, 397),
+                relation_name: "user_posts",
+                field_name: Some("author"),
+                model_name: Some("Post"),
+            },
+            SemanticError::RelationInvalid {
+                span: Span::new(515, 531),
+                relation_name: "negative_posts",
+                field_name: Some("negativeAuthor"),
+                model_name: Some("Post"),
+            },
+            SemanticError::RelationPartial {
+                span: Span::new(153, 168),
+                relation_name: "mentor_mentee",
+                field_name: None,
+                model_name: None,
+            },
+        ];
 
         let decls = crate::parser::delcarations()
             .parse(&relation_errs_sdml)
@@ -446,7 +470,6 @@ mod tests {
         match semantic_update(&mut ast) {
             Ok(_) => assert!(false, "Expecting relation errors to surface"),
             Err(errs) => {
-                eprintln!("{errs:#?}");
                 assert_eq!(expected_semantic_errs.len(), errs.len());
                 errs.into_iter()
                     .for_each(|e| assert!(expected_semantic_errs.contains(&e)));

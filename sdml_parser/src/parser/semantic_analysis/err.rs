@@ -72,8 +72,8 @@ pub enum SemanticError<'src> {
     RelationInvalid {
         span: Span,
         relation_name: &'src str,
-        field_name: &'src str,
-        model_name: &'src str,
+        field_name: Option<&'src str>,
+        model_name: Option<&'src str>,
     },
     /// Duplicate Relation - This error is thrown when *same* relation name represent more than one relation.
     RelationDuplicate {

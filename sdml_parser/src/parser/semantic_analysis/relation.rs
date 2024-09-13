@@ -117,9 +117,9 @@ impl<'src> RelationMap<'src> {
             (
                 Some(RelationEdge::OneSideRelation { .. }),
                 Some(RelationEdge::OneSideRelation { .. }),
-            ) => Err(SemanticError::RelationInvalidAttributeArg {
+            ) => Err(SemanticError::RelationInvalid {
                 span: right.unwrap().relation_name().span(),
-                relation_name: right.unwrap().relation_name().str(),
+                relation_name: right.unwrap().relation_name().str().unwrap(),
                 field_name: None,
                 model_name: None,
             }),
@@ -131,9 +131,9 @@ impl<'src> RelationMap<'src> {
             | (
                 Some(RelationEdge::ManySideRelation { .. }),
                 Some(RelationEdge::OneSideRelation { .. }),
-            ) => Err(SemanticError::RelationInvalidAttributeArg {
+            ) => Err(SemanticError::RelationInvalid {
                 span: left.unwrap().relation_name().span(),
-                relation_name: left.unwrap().relation_name().str(),
+                relation_name: left.unwrap().relation_name().str().unwrap(),
                 field_name: None,
                 model_name: None,
             }),
@@ -189,8 +189,8 @@ pub fn get_relation_edge<'src>(
             Err(SemanticError::RelationInvalidAttributeArg {
                 span: relation_attribute.name.span(),
                 relation_name: None,
-                field_name: Some(field.name.ident_name().unwrap()),
-                model_name: Some(model.name.ident_name().unwrap()),
+                field_name: field.name.ident_name(),
+                model_name: model.name.ident_name(),
             })
         }
     }
@@ -312,8 +312,8 @@ fn new_relation_edge<'src>(
         _ => Err(SemanticError::RelationInvalid {
             span: relation_name.span(),
             relation_name: relation_name.str().unwrap(),
-            field_name: field.name.ident_name().unwrap(),
-            model_name: model.name.ident_name().unwrap(),
+            field_name: field.name.ident_name(),
+            model_name: model.name.ident_name(),
         }),
     }
 }

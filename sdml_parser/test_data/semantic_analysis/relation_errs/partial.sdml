@@ -1,12 +1,8 @@
 model User {
     userId          ShortStr    @id @default(auto())
     email           ShortStr    @unique
-    posts           Post[]      @relation(name:"user_posts")
-    negativePosts   Post[]      @relation(name:"negative_posts")
     mentees         User[]      @relation(name:"mentor_mentee")
-    mentor          User?       @relation(name:"mentor_mentee", field: mentorId, references: userId)
     mentorId        ShortStr?   
-    profile         Profile?    @relation(name:"user_profile")
 }
 
 model Post {
