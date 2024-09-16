@@ -1,4 +1,4 @@
-use std::{any::Any, collections::HashMap};
+use std::collections::HashMap;
 
 use crate::ast::{AttribArg, FieldDecl, ModelDecl, NamedArg, RelationEdge, Token};
 

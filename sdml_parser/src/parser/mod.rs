@@ -204,7 +204,7 @@ fn named_arg<'src>() -> impl Parser<'src, &'src str, NamedArg<'src>, Err<Rich<'s
         .padded()
         .then(just(":"))
         .then(identifier.or(string()).padded())
-        .map_with(|((arg_name, _colon), arg_value), e| NamedArg {
+        .map_with(|((arg_name, _colon), arg_value), _e| NamedArg {
             arg_name,
             arg_value,
         })

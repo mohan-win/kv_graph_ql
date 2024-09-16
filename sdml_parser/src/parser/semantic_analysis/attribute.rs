@@ -565,6 +565,7 @@ enum AllowedFieldType {
     /// Attribute is allowed only on non-scalar field.
     NonScalarField { can_be_optional: bool },
     /// Attribute is allowed on both scalar and non-scalar field
+    #[allow(dead_code)]
     AnyField { can_be_optional: bool },
 }
 
@@ -606,6 +607,7 @@ impl fmt::Display for AllowedFieldType {
 #[derive(Debug)]
 struct AttributeDetails {
     /// Name of the attribute
+    #[allow(dead_code)]
     name: &'static str,
     /// Compatible attributes which can be applied along with this attribute for the same field.
     compatible_attribute_names: Vec<&'static str>,
