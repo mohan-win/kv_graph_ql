@@ -590,4 +590,74 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn test_relation_errs_field_n_references() {
+        let relation_errs_sdml = std::fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/semantic_analysis/relation_errs/field_n_references.sdml"
+        ))
+        .unwrap();
+        let expected_semantic_errs: Vec<SemanticError> = vec![
+            SemanticError::RelationReferencedFieldNotUnique {
+                span: Span::new(1198, 1203),
+                field_name: "user",
+                model_name: "Profile",
+                referenced_field_name: "email",
+                referenced_model_name: "User",
+            },
+            SemanticError::RelationScalarAndReferencedFieldsTypeMismatch {
+                span: Span::new(586, 602),
+                field_name: "spouseUserId",
+                model_name: "User",
+                referenced_field_name: "userId",
+                referenced_model_name: "User",
+            },
+            SemanticError::RelationScalarAndReferencedFieldsTypeMismatch {
+                span: Span::new(724, 741),
+                field_name: "authorId",
+                model_name: "Post",
+                referenced_field_name: "userId",
+                referenced_model_name: "User",
+            },
+            SemanticError::RelationScalarFieldIsNotPrimitive {
+                span: Span::new(854, 871),
+                field_name: "negativeAuthorId",
+                model_name: "Post",
+            },
+            SemanticError::RelationPartial {
+                span: Span::new(142, 154),
+                relation_name: "user_posts",
+                field_name: None,
+                model_name: None,
+            },
+            SemanticError::RelationPartial {
+                span: Span::new(203, 219),
+                relation_name: "negative_posts",
+                field_name: None,
+                model_name: None,
+            },
+            SemanticError::RelationPartial {
+                span: Span::new(463, 477),
+                relation_name: "user_profile",
+                field_name: None,
+                model_name: None,
+            },
+        ];
+
+        let decls = crate::parser::delcarations()
+            .parse(&relation_errs_sdml)
+            .into_result()
+            .unwrap();
+        let mut ast = to_data_model(decls, true).unwrap();
+        match semantic_update(&mut ast) {
+            Ok(_) => assert!(false, "Expecting relation errors to surface"),
+            Err(errs) => {
+                eprintln!("{errs:#?}");
+                assert_eq!(expected_semantic_errs.len(), errs.len());
+                errs.into_iter()
+                    .for_each(|e| assert!(expected_semantic_errs.contains(&e)));
+            }
+        }
+    }
 }
