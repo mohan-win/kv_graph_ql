@@ -7,12 +7,6 @@ use crate::ast::Span;
 pub enum SemanticError<'src> {
     /// This error is returned when a Model is missing an Id field (a.k.a field marked with @id attribute).
     ModelIdFieldMissing { span: Span, model_name: &'src str },
-    /// This error is thrown when field marked with @id attribute is not scalar.
-    ModelIdFieldNotScalar {
-        span: Span,
-        field_name: &'src str,
-        model_name: &'src str,
-    },
     /// This error is thrown when a Model has more than one field marked with @id attribute.
     ModelIdFieldDuplicate {
         span: Span,
