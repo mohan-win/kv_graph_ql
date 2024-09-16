@@ -1,29 +1,29 @@
 model User {
     userId          ShortStr    @id @default(auto())
     email           ShortStr    @unique
-    posts           Post[]      @relation(name:"user_posts")
-    negativePosts   Post[]      
+    posts           Post[]      @relation(name1:"user_posts")
+    negativePosts   Post[]      @relation(name:"negative_posts")
     mentees         User[]      @relation(name:"mentor_mentee")
     mentor          User?       @relation(name:"mentor_mentee", field: mentorId, references: userId)
-    mentorId        ShortStr?   
+    mentorId        ShortStr?
     profile         Profile?    @relation(name:"user_profile")
-    spouse          User?       
+    spouse          User?       @relation(name:"user_spouse", references: userId)
     spouseUserId    ShortStr?   @unique
 }
 
 model Post {
     postId           ShortStr    @id @default(auto())
     content          LongStr
-    authorId         ShortStr?   
-    author           User?       @relation(name: "user_posts", field: authorId, references: userId)
+    authorId         ShortStr?
+    author           User?       @relation(name: "user_posts", field: authorId1, references: userId)
     negativeAuthorId ShortStr?
-    negativeAuthor   User?       @relation(name:"negative_posts", field: negativeAuthorId, references: userId)
+    negativeAuthor   User?       @relation(name:"negative_posts", field: negativeAuthorId, references: userId1)
 }
 
 model Profile {
     profileId   ShortStr    @id @default(auto())
     bday        DateTime
     married     Boolean
-    user        User        
+    user        User        @relation(name:"user_profile", field: userId, references: email)
     userId      ShortStr    @unique
 }

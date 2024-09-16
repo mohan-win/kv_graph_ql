@@ -99,6 +99,7 @@ pub enum SemanticError<'src> {
     /// This error is thrown if the relation scalar field is not found.
     RelationScalarFieldNotFound {
         span: Span,
+        scalar_field_name: Option<&'src str>,
         field_name: &'src str,
         model_name: &'src str,
     },
@@ -167,12 +168,6 @@ pub enum SemanticError<'src> {
         referenced_field_name: &'src str,
         referenced_model_name: &'src str,
     },
-    /// This error is thrown for relation attribute which is missing name.
-    RelationAttributeMissingName {
-        span: Span,
-        field_name: &'src str,
-        model_name: &'src str,
-    },
     /// This error is thrown if any attribute on a relation is invalid.
     RelationInvalidAttribute {
         span: Span,
@@ -184,6 +179,7 @@ pub enum SemanticError<'src> {
     RelationInvalidAttributeArg {
         span: Span,
         relation_name: Option<&'src str>,
+        arg_name: Option<&'src str>,
         field_name: Option<&'src str>,
         model_name: Option<&'src str>,
     },

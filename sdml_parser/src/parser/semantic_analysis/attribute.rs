@@ -30,7 +30,7 @@ pub const ATTRIB_NAMED_ARG_FIELD: &str = "field";
 pub const ATTRIB_NAMED_ARG_REFERENCES: &str = "references";
 
 pub(crate) struct RelationAttributeDetails<'src, 'b> {
-    pub relation_name: Option<&'b Token<'src>>,
+    pub relation_name: &'b Token<'src>,
     pub relation_scalar_field: Option<&'b FieldDecl<'src>>,
     pub referenced_model_field: Option<&'b FieldDecl<'src>>,
     pub referenced_model_relation_field: Option<&'b FieldDecl<'src>>,
@@ -45,18 +45,61 @@ pub(crate) fn validate_relation_attribute_args<'src, 'b>(
     let mut relation_name: Option<&'b Token<'src>> = None;
     let mut relation_scalar_field: Option<&'b FieldDecl<'src>> = None;
     let mut referenced_model_field: Option<&'b FieldDecl<'src>> = None;
-    let mut referenced_model_relation_field: Option<&'b FieldDecl<'src>> = None;
+    let referenced_model_relation_field: Option<&'b FieldDecl<'src>>;
+
+    // Step 1: Validate relation attribute has correct set of args.
+    let mut valid_arg_sets: HashMap<usize, Vec<_>> = HashMap::new();
+    valid_arg_sets.insert(1, vec![ATTRIB_NAMED_ARG_NAME]);
+    valid_arg_sets.insert(
+        3,
+        vec![
+            ATTRIB_NAMED_ARG_NAME,
+            ATTRIB_NAMED_ARG_FIELD,
+            ATTRIB_NAMED_ARG_REFERENCES,
+        ],
+    );
+    // Check for invalid arg sets
+    let allowed_arg_set = valid_arg_sets.get(&relation_args.len());
+    if allowed_arg_set.is_none() {
+        return Err(SemanticError::RelationInvalidAttributeArg {
+            span: field.name.span(),
+            relation_name: None,
+            arg_name: None,
+            field_name: field.name.ident_name(),
+            model_name: model.name.ident_name(),
+        });
+    } else {
+        relation_args.iter().try_for_each(|arg| {
+            if allowed_arg_set
+                .unwrap()
+                .contains(&arg.arg_name.ident_name().unwrap())
+            {
+                Ok(())
+            } else {
+                Err(SemanticError::RelationInvalidAttributeArg {
+                    span: field.name.span(),
+                    relation_name: None,
+                    arg_name: arg.arg_name.ident_name(),
+                    field_name: field.name.ident_name(),
+                    model_name: model.name.ident_name(),
+                })
+            }
+        })?;
+    }
+
+    // Step 2: Get those arg values, and make sure they are of expected type.
     for arg in relation_args.iter() {
         match arg.arg_name {
             Token::Ident(ATTRIB_NAMED_ARG_NAME, _) => {
                 if let Token::Str(..) = arg.arg_value {
-                    relation_name = Some(&arg.arg_value)
+                    relation_name = Some(&arg.arg_value);
                 } else {
                     return Err(SemanticError::RelationInvalidAttributeArg {
                         span: arg.arg_value.span(),
                         relation_name: None,
-                        field_name: Some(field.name.ident_name().unwrap()),
-                        model_name: Some(model.name.ident_name().unwrap()),
+                        arg_name: arg.arg_name.ident_name(),
+                        field_name: field.name.ident_name(),
+                        model_name: model.name.ident_name(),
                     });
                 }
             }
@@ -75,21 +118,20 @@ pub(crate) fn validate_relation_attribute_args<'src, 'b>(
                 return Err(SemanticError::RelationInvalidAttributeArg {
                     span: arg.arg_value.span(),
                     relation_name: None,
-                    field_name: Some(field.name.ident_name().unwrap()),
-                    model_name: Some(model.name.ident_name().unwrap()),
+                    arg_name: arg.arg_name.ident_name(),
+                    field_name: field.name.ident_name(),
+                    model_name: model.name.ident_name(),
                 })
             }
         }
     }
 
-    if relation_name.is_some() {
-        referenced_model_relation_field = get_referenced_model_relation_field(
-            relation_name.unwrap(),
-            field,
-            model,
-            referenced_model,
-        )?;
-    }
+    referenced_model_relation_field = get_referenced_model_relation_field(
+        relation_name.expect("relation_name can't be None at this point."),
+        field,
+        model,
+        referenced_model,
+    )?;
 
     // Make sure relation scalar field and referenced field are of the `same primitive type`
     if relation_scalar_field.is_some()
@@ -108,7 +150,7 @@ pub(crate) fn validate_relation_attribute_args<'src, 'b>(
         )
     } else {
         Ok(RelationAttributeDetails {
-            relation_name,
+            relation_name: relation_name.expect("relation_name can't be None at this point."),
             relation_scalar_field,
             referenced_model_field,
             referenced_model_relation_field,
@@ -137,6 +179,7 @@ fn get_relation_scalar_field<'src, 'b>(
         if relation_scalar_field.is_none() {
             Err(SemanticError::RelationScalarFieldNotFound {
                 span: relation_arg_field.arg_value.span(),
+                scalar_field_name: relation_arg_field.arg_value.ident_name(),
                 field_name: field.name.ident_name().unwrap(),
                 model_name: model.name.ident_name().unwrap(),
             })
@@ -159,6 +202,7 @@ fn get_relation_scalar_field<'src, 'b>(
         Err(SemanticError::RelationInvalidAttributeArg {
             span: relation_arg_field.arg_value.span(),
             relation_name: None,
+            arg_name: relation_arg_field.arg_name.ident_name(),
             field_name: Some(field.name.ident_name().unwrap()),
             model_name: Some(model.name.ident_name().unwrap()),
         })
@@ -231,8 +275,9 @@ fn get_referenced_model_field<'src, 'b>(
         Err(SemanticError::RelationInvalidAttributeArg {
             span: relation_arg_references.arg_value.span(),
             relation_name: None,
-            field_name: Some(field.name.ident_name().unwrap()),
-            model_name: Some(model.name.ident_name().unwrap()),
+            arg_name: relation_arg_references.arg_name.ident_name(),
+            field_name: field.name.ident_name(),
+            model_name: model.name.ident_name(),
         })
     }
 }

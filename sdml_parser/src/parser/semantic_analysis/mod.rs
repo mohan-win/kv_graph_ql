@@ -476,4 +476,118 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn test_relation_errs_attribute_missing() {
+        let relation_errs_sdml = std::fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/semantic_analysis/relation_errs/attribute_missing.sdml"
+        ))
+        .unwrap();
+        let expected_semantic_errs: Vec<SemanticError> = vec![
+            SemanticError::RelationAttributeMissing {
+                span: Span::new(171, 187),
+                field_name: "negativePosts",
+                model_name: "User",
+            },
+            SemanticError::RelationAttributeMissing {
+                span: Span::new(465, 481),
+                field_name: "spouse",
+                model_name: "User",
+            },
+            SemanticError::RelationAttributeMissing {
+                span: Span::new(1030, 1042),
+                field_name: "user",
+                model_name: "Profile",
+            },
+        ];
+
+        let decls = crate::parser::delcarations()
+            .parse(&relation_errs_sdml)
+            .into_result()
+            .unwrap();
+        let mut ast = to_data_model(decls, true).unwrap();
+        match semantic_update(&mut ast) {
+            Ok(_) => assert!(false, "Expecting relation errors to surface"),
+            Err(errs) => {
+                eprintln!("{errs:#?}");
+                let errs: Vec<_> = errs
+                    .into_iter()
+                    .filter(|e| match e {
+                        SemanticError::RelationAttributeMissing { .. } => true,
+                        _ => false,
+                    })
+                    .collect();
+                assert_eq!(expected_semantic_errs.len(), errs.len());
+                errs.into_iter()
+                    .for_each(|e| assert!(expected_semantic_errs.contains(&e)));
+            }
+        }
+    }
+
+    #[test]
+    fn test_relation_errs_attribute_arg_invalid() {
+        let relation_errs_sdml = std::fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/semantic_analysis/relation_errs/attribute_arg_invalid.sdml"
+        ))
+        .unwrap();
+        let expected_semantic_errs: Vec<SemanticError> = vec![
+            SemanticError::RelationInvalidAttributeArg {
+                span: Span::new(110, 126),
+                relation_name: None,
+                arg_name: Some("name1"),
+                field_name: Some("posts"),
+                model_name: Some("User"),
+            },
+            SemanticError::AttributeArgInvalid {
+                span: Span::new(148, 153),
+                attrib_arg_name: Some("name1"),
+                attrib_name: "relation",
+                field_name: "posts",
+                model_name: "User",
+            },
+            SemanticError::RelationInvalidAttributeArg {
+                span: Span::new(495, 511),
+                relation_name: None,
+                arg_name: None,
+                field_name: Some("spouse"),
+                model_name: Some("User"),
+            },
+            SemanticError::RelationScalarFieldNotFound {
+                span: Span::new(813, 822),
+                scalar_field_name: Some("authorId1"),
+                field_name: "author",
+                model_name: "Post",
+            },
+            SemanticError::RelationReferencedFieldNotFound {
+                span: Span::new(978, 985),
+                field_name: "negativeAuthor",
+                model_name: "Post",
+                referenced_field_name: "userId1",
+                referenced_model_name: "User",
+            },
+            SemanticError::RelationPartial {
+                span: Span::new(215, 231),
+                relation_name: "negative_posts",
+                field_name: None,
+                model_name: None,
+            },
+        ];
+
+        let decls = crate::parser::delcarations()
+            .parse(&relation_errs_sdml)
+            .into_result()
+            .unwrap();
+        let mut ast = to_data_model(decls, true).unwrap();
+        match semantic_update(&mut ast) {
+            Ok(_) => assert!(false, "Expecting relation errors to surface"),
+            Err(errs) => {
+                eprintln!("{errs:#?}");
+                assert_eq!(expected_semantic_errs.len(), errs.len());
+                errs.into_iter()
+                    .for_each(|e| assert!(expected_semantic_errs.contains(&e)));
+            }
+        }
+    }
 }

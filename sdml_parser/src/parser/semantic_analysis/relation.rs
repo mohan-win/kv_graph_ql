@@ -189,6 +189,7 @@ pub fn get_relation_edge<'src>(
             Err(SemanticError::RelationInvalidAttributeArg {
                 span: relation_attribute.name.span(),
                 relation_name: None,
+                arg_name: None,
                 field_name: field.name.ident_name(),
                 model_name: model.name.ident_name(),
             })
@@ -209,16 +210,6 @@ fn new_relation_edge<'src>(
         referenced_model_relation_field,
     } = validate_relation_attribute_args(relation_args, field, model, referenced_model)?;
 
-    if relation_name.is_none() {
-        // Name is mandatory for relation attribute, if not present throw error.
-        return Err(SemanticError::RelationAttributeMissingName {
-            span: field.name.span(),
-            field_name: field.name.ident_name().unwrap(),
-            model_name: model.name.ident_name().unwrap(),
-        });
-    }
-    let relation_name = relation_name.unwrap();
-
     if relation_scalar_field.is_none() && referenced_model_field.is_none() {
         // Is this OneSideRelation ?
         return Ok(RelationEdge::OneSideRelation {
@@ -228,6 +219,7 @@ fn new_relation_edge<'src>(
     } else if relation_scalar_field.is_none() {
         return Err(SemanticError::RelationScalarFieldNotFound {
             span: relation_name.span(),
+            scalar_field_name: None,
             field_name: field.name.ident_name().unwrap(),
             model_name: model.name.ident_name().unwrap(),
         });
