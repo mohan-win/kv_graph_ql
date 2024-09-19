@@ -54,6 +54,7 @@ fn field_to_filters<'src>(
             r#type: primitive_type,
             ..
         } => match *primitive_type {
+            sdml_ast::PrimitiveType::ShortStr if field.has_id_attrib() => id_field_def(&field.name),
             sdml_ast::PrimitiveType::ShortStr | sdml_ast::PrimitiveType::LongStr => {
                 string_field_def(&field.name)
             }
@@ -65,6 +66,16 @@ fn field_to_filters<'src>(
             sdml_ast::PrimitiveType::Float64 => number_field_def(&field.name, NumberType::Float),
         },
     }
+}
+
+/// Generates necessary filter arguments for id field.
+fn id_field_def<'src>(
+    field_name: &sdml_ast::Token<'src>,
+) -> GraphQLGenResult<Vec<InputValueDefinition>> {
+    string_field_def(&sdml_ast::Token::Ident(
+        graphql_gen::ID_FIELD_NAME,
+        field_name.span(),
+    ))
 }
 
 /// Generates necessary filter arguments for a string field.
@@ -374,6 +385,26 @@ NOT: [UserWhereInput!]
 id: String
 """not equals"""
 id_not: String
+"""contains substring"""
+id_contains: String
+"""doesn't contain substring"""
+id_not_contains: String
+id_starts_with: String
+id_not_starts_with: String
+id_ends_with: String
+id_not_ends_with: String
+"""less than"""
+id_lt: String
+"""less than or equals"""
+id_lte: String
+"""greater than"""
+id_gt: String
+"""greater than or equals"""
+id_gte: String
+"""in list"""
+id_in: [String]
+"""not in list"""
+id_not_in: [String]
 """equals"""
 email: String
 """not equals"""
@@ -474,31 +505,39 @@ config db {
 }
 
 model User {
+    userId      ShortStr      @id @default(auto())
     email       ShortStr      @unique
     name        ShortStr?     
     nickNames   ShortStr[]
     role        Role          @default(USER)
-    profile     Profile?
-    posts       Post[]
+    profile     Profile?      @relation(name: "user_profile")
+    posts       Post[]        @relation(name: "user_posts")
 }
 
 model Profile {
+    profileId  ShortStr       @id @default(auto())
     bio        LongStr?
-    user       User
+    user       User           @relation(name: "user_profile", field: userEmail, references: email)
+    userEmail  ShortStr       @unique
 }
 
 model Post {
+    postId      ShortStr    @id @default(auto())
     createdAt   DateTime    @default(now())
     updatedAt   DateTime
     title       ShortStr
     published   Boolean     @default(false)
-    author      User
-    category    Category[]
+    author      User        @relation(name: "user_posts", field: authorId, references: userId)
+    authorId    ShortStr    
+    category    Category[]  @relation(name: "post_category", field: categoryIds, references: categoryId)
+    categoryIds ShortStr[]
 }
 
 model Category {
+    categoryId  ShortStr    @id @default(auto())
     name        ShortStr    @unique
-    posts       Post[]
+    posts       Post[]      @relation(name: "post_category", field: postIds, references: postId)
+    postIds     ShortStr[]
 }
 
 enum Role {

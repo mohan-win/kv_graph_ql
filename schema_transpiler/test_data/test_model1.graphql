@@ -1,4 +1,5 @@
 scalar DateTime
+directive @map(name: String!) on FIELD_DEFINITION
 directive @unique on FIELD_DEFINITION
 
 type Query {
@@ -231,7 +232,7 @@ type Aggregate {
 User
 """
 type User implements Node {
-  id: ID! @unique
+  id: ID! @map(name: "userId") @unique
   email: String! @unique
   name: String
   nickNames: [String!]! # Let (non-connection / non-relation) array fields generated be always non-null for both array and elements.

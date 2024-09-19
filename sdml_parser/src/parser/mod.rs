@@ -7,7 +7,7 @@ use crate::ast::{
 use chumsky::text::{self, ascii};
 use chumsky::{extra::Err, prelude::*};
 
-pub mod semantic_analysis;
+pub(crate) mod semantic_analysis;
 use semantic_analysis::err::SemanticError;
 
 pub fn semantic_analysis<'src>(

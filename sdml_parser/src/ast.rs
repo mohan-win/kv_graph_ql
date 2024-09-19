@@ -220,6 +220,25 @@ pub struct FieldDecl<'src> {
     pub attributes: Vec<Attribute<'src>>,
 }
 
+impl<'src> FieldDecl<'src> {
+    /// Returns true if this field has id attribute
+    pub fn has_id_attrib(&self) -> bool {
+        self.attributes
+            .iter()
+            .filter(|attrib| {
+                if let Token::Ident(crate::parser::semantic_analysis::ATTRIB_NAME_ID, _span) =
+                    attrib.name
+                {
+                    true
+                } else {
+                    false
+                }
+            })
+            .next()
+            .is_some()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct FieldType<'src> {
     r#type: RefCell<Type<'src>>, // Note: interier mutability, this is because the field_type for custom types set to Type::Unknown in the first pass. And then in the later pass actual type is determined.

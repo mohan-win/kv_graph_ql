@@ -6,7 +6,7 @@ use std::{
 
 /// Error Module
 pub mod err;
-use attribute::ATTRIB_NAME_ID;
+pub use attribute::ATTRIB_NAME_ID;
 use err::SemanticError;
 use relation::RelationMap;
 
@@ -22,7 +22,7 @@ mod relation;
 /// # returns
 /// - segregated data_model
 /// - (or) SemanticError::DuplicateTypeDefinition if duplicate types types found.
-pub(crate) fn to_data_model<'src>(
+pub fn to_data_model<'src>(
     delcarations: Vec<Declaration<'src>>,
     check_duplicate_types: bool,
 ) -> Result<DataModel<'src>, Vec<SemanticError<'src>>> {
@@ -88,7 +88,7 @@ pub(crate) fn to_data_model<'src>(
 /// # Returns
 /// - () if there are no errors during update.
 /// - or array of errors if known semantic errors found.
-pub(crate) fn semantic_update<'src>(
+pub fn semantic_update<'src>(
     input_ast: &mut DataModel<'src>,
 ) -> Result<(), Vec<SemanticError<'src>>> {
     let mut relations = RelationMap::new();

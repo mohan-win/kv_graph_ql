@@ -12,6 +12,7 @@ pub use error::ErrorGraphQLGen;
 use graphql_ast::*;
 use open_crud::*;
 
+pub const ID_FIELD_NAME: &str = "id";
 pub type GraphQLGenResult<T> = Result<T, ErrorGraphQLGen>;
 
 /// Date time scalar definition.
