@@ -25,7 +25,26 @@ fn scalar_date_time_def() -> TypeDefinition {
     }
 }
 
-/// Unique directive definition.
+/// @map directive definition.
+fn directive_map_def() -> DirectiveDefinition {
+    DirectiveDefinition {
+        description: Some(
+            "This object field maps to a different field name in SDML model.".to_string(),
+        ),
+        name: Name::new("map"),
+        arguments: vec![InputValueDefinition {
+            description: Some("SDML model field name".to_string()),
+            name: Name::new("name"),
+            ty: Type::new("String!").unwrap(),
+            default_value: None,
+            directives: vec![],
+        }],
+        is_repeatable: false,
+        locations: vec![DirectiveLocation::FieldDefinition],
+    }
+}
+
+/// @unique directive definition.
 fn directive_unique_def() -> DirectiveDefinition {
     DirectiveDefinition {
         description: Some("When applied to an object field, the value of the field should be unique across all object instances of the same type".to_string()),
@@ -76,7 +95,21 @@ scalar DateTime
     }
 
     #[test]
-    fn test_directive_defs() {
+    fn test_directive_map_def() {
+        let expected_graph_ql = r#"
+"""This object field maps to a different field name in SDML model."""
+directive @map(
+"""SDML model field name"""
+name: String!
+) on
+| FIELD_DEFINITION
+"#;
+        let map_directive = directive_map_def();
+        assert_eq!(expected_graph_ql, map_directive.to_string());
+    }
+
+    #[test]
+    fn test_directive_unique_def() {
         let expected_graph_ql = r#"
 """When applied to an object field, the value of the field should be unique across all object instances of the same type"""
 directive @unique on
