@@ -364,6 +364,8 @@ fn generate_where_input_filters<'src>(
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
+
     use chumsky::prelude::*;
     use sdml_ast::Span;
     use sdml_parser::parser;
@@ -372,179 +374,17 @@ mod tests {
 
     #[test]
     fn test_where_input_type_def() {
-        let expected_str = r#"
-"""The where filter which can match zero or more objects"""
-input UserWhereInput {
-"""Logical AND on all given filters."""
-AND: [UserWhereInput!]
-"""Logical OR on all given filters."""
-OR: [UserWhereInput!]
-"""Logical NOT on all given filters combined by AND."""
-NOT: [UserWhereInput!]
-"""equals"""
-id: String
-"""not equals"""
-id_not: String
-"""contains substring"""
-id_contains: String
-"""doesn't contain substring"""
-id_not_contains: String
-id_starts_with: String
-id_not_starts_with: String
-id_ends_with: String
-id_not_ends_with: String
-"""less than"""
-id_lt: String
-"""less than or equals"""
-id_lte: String
-"""greater than"""
-id_gt: String
-"""greater than or equals"""
-id_gte: String
-"""in list"""
-id_in: [String]
-"""not in list"""
-id_not_in: [String]
-"""equals"""
-email: String
-"""not equals"""
-email_not: String
-"""contains substring"""
-email_contains: String
-"""doesn't contain substring"""
-email_not_contains: String
-email_starts_with: String
-email_not_starts_with: String
-email_ends_with: String
-email_not_ends_with: String
-"""less than"""
-email_lt: String
-"""less than or equals"""
-email_lte: String
-"""greater than"""
-email_gt: String
-"""greater than or equals"""
-email_gte: String
-"""in list"""
-email_in: [String]
-"""not in list"""
-email_not_in: [String]
-"""equals"""
-name: String
-"""not equals"""
-name_not: String
-"""contains substring"""
-name_contains: String
-"""doesn't contain substring"""
-name_not_contains: String
-name_starts_with: String
-name_not_starts_with: String
-name_ends_with: String
-name_not_ends_with: String
-"""less than"""
-name_lt: String
-"""less than or equals"""
-name_lte: String
-"""greater than"""
-name_gt: String
-"""greater than or equals"""
-name_gte: String
-"""in list"""
-name_in: [String]
-"""not in list"""
-name_not_in: [String]
-"""equals"""
-nickNames: String
-"""not equals"""
-nickNames_not: String
-"""contains substring"""
-nickNames_contains: String
-"""doesn't contain substring"""
-nickNames_not_contains: String
-nickNames_starts_with: String
-nickNames_not_starts_with: String
-nickNames_ends_with: String
-nickNames_not_ends_with: String
-"""less than"""
-nickNames_lt: String
-"""less than or equals"""
-nickNames_lte: String
-"""greater than"""
-nickNames_gt: String
-"""greater than or equals"""
-nickNames_gte: String
-"""in list"""
-nickNames_in: [String]
-"""not in list"""
-nickNames_not_in: [String]
-"""equals"""
-role: Role
-"""not equals"""
-role_not: Role
-"""in list"""
-role_in: [Role]
-"""not in list"""
-role_not_in: [Role]
-"""condition must be true for related node"""
-profile: ProfileWhereInput
-"""is the relation field null"""
-profile_is_null: Boolean
-"""condition must be true for all nodes"""
-posts_every: PostWhereInput
-"""condition must be true for at least 1 node"""
-posts_some: PostWhereInput
-"""condition must be false for all nodes"""
-posts_none: PostWhereInput
-"""is the relation field empty"""
-posts_is_empty: Boolean
-}
-"#;
-        let sdml_str = r#"
-config db {
-    provider = "foundationDB"
-}
-
-model User {
-    userId      ShortStr      @id @default(auto())
-    email       ShortStr      @unique
-    name        ShortStr?     
-    nickNames   ShortStr[]
-    role        Role          @default(USER)
-    profile     Profile?      @relation(name: "user_profile")
-    posts       Post[]        @relation(name: "user_posts")
-}
-
-model Profile {
-    profileId  ShortStr       @id @default(auto())
-    bio        LongStr?
-    user       User           @relation(name: "user_profile", field: userEmail, references: email)
-    userEmail  ShortStr       @unique
-}
-
-model Post {
-    postId      ShortStr    @id @default(auto())
-    createdAt   DateTime    @default(now())
-    updatedAt   DateTime
-    title       ShortStr
-    published   Boolean     @default(false)
-    author      User        @relation(name: "user_posts", field: authorId, references: userId)
-    authorId    ShortStr    
-    category    Category[]  @relation(name: "post_category", field: categoryIds, references: categoryId)
-    categoryIds ShortStr[]
-}
-
-model Category {
-    categoryId  ShortStr    @id @default(auto())
-    name        ShortStr    @unique
-    posts       Post[]      @relation(name: "post_category", field: postIds, references: postId)
-    postIds     ShortStr[]
-}
-
-enum Role {
-    USER
-    ADMIN
-}  
-"#;
+        let mut expected_graphql_str = fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/user_where_input_type.graphql"
+        ))
+        .unwrap();
+        expected_graphql_str.retain(|c| !c.is_whitespace());
+        let sdml_str = fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/user_where_input_type.sdml"
+        ))
+        .unwrap();
         let sdml_declarations = parser::delcarations()
             .parse(&sdml_str)
             .into_output()
@@ -557,7 +397,9 @@ enum Role {
             .expect("User model should exist in the SDML.");
         let user_where_input_grapql_ast =
             where_input_type_def(user_model_sdml_ast).expect("It should return UserWhereInput");
-        assert_eq!(expected_str, user_where_input_grapql_ast.to_string())
+        let mut user_where_input_graphql = user_where_input_grapql_ast.to_string();
+        user_where_input_graphql.retain(|c| !c.is_whitespace());
+        assert_eq!(expected_graphql_str, user_where_input_graphql)
     }
 
     #[test]

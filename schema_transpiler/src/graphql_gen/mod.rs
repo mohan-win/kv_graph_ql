@@ -81,6 +81,15 @@ fn interface_node_def() -> TypeDefinition {
     }
 }
 
+/**
+ * Generate filters for individual types
+ * - WhereInput, WhereUniqueInput   
+ * - OrderByInput
+ * - Generate GraphQL Type for the model
+ * - Create & Update types
+ * - Root fields in Query & Mutation.
+ */
+
 #[cfg(test)]
 mod tests {
     use super::*;

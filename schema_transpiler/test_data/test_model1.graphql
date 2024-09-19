@@ -420,9 +420,7 @@ enum UserOrderByInput {
   id_DSC
   email_ASC
   email_DSC
-  nickNames_ASC # ToDo:: Find out if they are ordered by list count.
-  nickNames_DSC
-  role_ASC # ToDo:: Find out if they are ordered by location of enum, or enum name ?
+  role_ASC # Note: The enum ASC, DSC sorts based on the location of the enum elements in the def.
   role_DSC
 }
 
