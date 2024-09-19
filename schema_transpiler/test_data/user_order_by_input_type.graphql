@@ -1,0 +1,13 @@
+"""
+Order by input for User's scalar fields
+"""
+enum UserOrderByInput {
+  id_ASC
+  id_DSC
+  email_ASC
+  email_DSC
+  name_ASC
+  name_DSC
+  role_ASC
+  role_DSC
+}
