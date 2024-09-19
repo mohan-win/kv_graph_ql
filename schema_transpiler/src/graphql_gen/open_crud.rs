@@ -21,6 +21,7 @@ pub enum InputType {
     Create(CreateInputType),
     Update(UpdateInputType),
     Filter(FilterType),
+    OrderBy,
 }
 
 impl Named for InputType {
@@ -29,6 +30,7 @@ impl Named for InputType {
             InputType::Create(create_input_type) => create_input_type.name(model_name),
             InputType::Update(update_input_type) => update_input_type.name(model_name),
             InputType::Filter(filter_input_type) => filter_input_type.name(model_name),
+            InputType::OrderBy => format!("{model_name}OrderByInput"),
         }
     }
 }

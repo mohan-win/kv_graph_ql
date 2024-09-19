@@ -4,8 +4,8 @@
 //! SDML models.
 //!
 mod error;
+mod input_type;
 mod open_crud;
-mod where_input;
 
 use super::*;
 pub use error::ErrorGraphQLGen;
