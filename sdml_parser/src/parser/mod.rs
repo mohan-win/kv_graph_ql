@@ -760,7 +760,7 @@ mod tests {
         }
 
         model EmptyModel {
-            id  Int32   @id
+            id  ShortStr   @id
         }
         enum Role {
             USER
@@ -937,8 +937,8 @@ mod tests {
                     name: Token::Ident("id", Span::new(0, 0)),
                     field_type: FieldType::new(
                         Type::Primitive {
-                            r#type: PrimitiveType::Int32,
-                            token: Token::Ident("Int32", Span::new(0, 0)),
+                            r#type: PrimitiveType::ShortStr,
+                            token: Token::Ident("ShortStr", Span::new(0, 0)),
                         },
                         false,
                         false,

@@ -257,7 +257,7 @@ mod tests {
             },
             SemanticError::AttributeInvalid {
                 span: Span::new(337, 340),
-                reason: String::from("Only Non-Optional Scalar field is allowed"),
+                reason: String::from("Only Non-Optional Scalar Short String field is allowed"),
                 attrib_name: "id",
                 field_name: "profileId",
                 model_name: "Profile",
@@ -268,7 +268,7 @@ mod tests {
             },
             SemanticError::AttributeInvalid {
                 span: Span::new(464, 467),
-                reason: String::from("Only Non-Optional Scalar field is allowed"),
+                reason: String::from("Only Non-Optional Scalar Short String field is allowed"),
                 attrib_name: "id",
                 field_name: "postId",
                 model_name: "Post",
@@ -283,6 +283,7 @@ mod tests {
         match semantic_update(&mut ast) {
             Ok(_) => assert!(false, "Expecting model errors to surface"),
             Err(errs) => {
+                eprintln!("{:#?}", errs);
                 assert_eq!(expected_semantic_errs.len(), errs.len());
                 errs.into_iter()
                     .for_each(|e| assert!(expected_semantic_errs.contains(&e)))

@@ -235,10 +235,24 @@ impl<'src> FieldType<'src> {
             is_array,
         }
     }
+    /// Is this a scalar (i.e. non-array) short string type ?
+    pub fn is_scalar_short_str(&self) -> bool {
+        if self.is_array {
+            false
+        } else {
+            match &*self.r#type() {
+                Type::Primitive {
+                    r#type: PrimitiveType::ShortStr,
+                    ..
+                } => true,
+                _ => false,
+            }
+        }
+    }
     /// Is this typed as a  scalar field (i.e) can it hold only one value ?
     /// **Note**: If this is an array type, this field is able to
     /// hold more than one value. Hence it is not scalar field.
-    pub fn is_scalar_field(&self) -> bool {
+    pub fn is_scalar(&self) -> bool {
         if self.is_array {
             false
         } else {

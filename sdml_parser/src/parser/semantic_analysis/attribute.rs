@@ -399,7 +399,8 @@ fn is_valid_field_type<'src>(
             model_name: model.name.ident_name().unwrap(),
         }),
         Some(attrib_detail) => {
-            let is_scalar_field = field.field_type.is_scalar_field();
+            let is_scalar_short_str_field = field.field_type.is_scalar_short_str();
+            let is_scalar_field = field.field_type.is_scalar();
             let is_optional_field = field.field_type.is_optional;
 
             let invalid_attribute_err = Err(SemanticError::AttributeInvalid {
@@ -410,6 +411,15 @@ fn is_valid_field_type<'src>(
                 model_name: model.name.ident_name().unwrap(),
             });
             match attrib_detail.allowed_field_type {
+                AllowedFieldType::ScalarShortStrField { can_be_optional }
+                    if is_scalar_short_str_field =>
+                {
+                    if !can_be_optional && is_optional_field {
+                        invalid_attribute_err
+                    } else {
+                        Ok(())
+                    }
+                }
                 AllowedFieldType::ScalarField { can_be_optional } if is_scalar_field => {
                     if !can_be_optional && is_optional_field {
                         invalid_attribute_err
@@ -560,6 +570,8 @@ fn validate_attribute_args<'src>(
 
 #[derive(Debug, PartialEq)]
 enum AllowedFieldType {
+    /// Attribute is allowed only on short (i.e. shouldn't be an array) string field.
+    ScalarShortStrField { can_be_optional: bool },
     /// Attribute is allowed on only scalar field.
     ScalarField { can_be_optional: bool },
     /// Attribute is allowed only on non-scalar field.
@@ -580,6 +592,11 @@ impl fmt::Display for AllowedFieldType {
         };
         // ToDo:: internationalization.
         match self {
+            AllowedFieldType::ScalarShortStrField { can_be_optional } => write!(
+                f,
+                "{} Scalar Short String field is allowed",
+                optionality_prefix(*can_be_optional)
+            ),
             AllowedFieldType::ScalarField { can_be_optional } => write!(
                 f,
                 "{} Scalar field is allowed",
@@ -661,7 +678,9 @@ impl AttributeDetails {
             allowed_arg_fns: vec![],
             allowed_arg_values: vec![],
             allowed_named_args: vec![],
-            allowed_field_type: AllowedFieldType::ScalarField {
+            // Only allow ShortStr as the type for ID fields. So that
+            // it can directly map to GraphQL type ID field.
+            allowed_field_type: AllowedFieldType::ScalarShortStrField {
                 can_be_optional: false,
             },
         }
