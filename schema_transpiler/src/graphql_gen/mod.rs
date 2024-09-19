@@ -3,6 +3,7 @@
 //! This module exposes necessary functions to generate GraphQL types for
 //! SDML models.
 //!
+mod enum_type;
 mod error;
 mod input_type;
 mod open_crud;
@@ -13,6 +14,7 @@ use graphql_ast::*;
 use open_crud::*;
 
 pub const ID_FIELD_NAME: &str = "id";
+pub const ID_TYPE_NAME: &str = "ID";
 pub type GraphQLGenResult<T> = Result<T, ErrorGraphQLGen>;
 
 /// Date time scalar definition.
@@ -85,8 +87,9 @@ fn interface_node_def() -> TypeDefinition {
  * Generate filters for individual types
  * - WhereInput, WhereUniqueInput   
  * - OrderByInput
- * - Generate GraphQL Type for the model
- * - Create & Update types
+ * - Gererate GrapQL enums for all SDML enums.
+ * - Generate GraphQL Type for the SDML model.
+ * - Create & Update types.
  * - Root fields in Query & Mutation.
  */
 

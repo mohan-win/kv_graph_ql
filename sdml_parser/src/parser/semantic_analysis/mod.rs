@@ -7,6 +7,7 @@ use std::{
 /// Error Module
 pub mod err;
 pub use attribute::ATTRIB_NAME_ID;
+pub use attribute::ATTRIB_NAME_UNIQUE;
 use err::SemanticError;
 use relation::RelationMap;
 

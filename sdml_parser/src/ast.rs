@@ -221,12 +221,28 @@ pub struct FieldDecl<'src> {
 }
 
 impl<'src> FieldDecl<'src> {
-    /// Returns true if this field has id attribute
+    /// Returns true if this field has @id attribute.
     pub fn has_id_attrib(&self) -> bool {
         self.attributes
             .iter()
             .filter(|attrib| {
                 if let Token::Ident(crate::parser::semantic_analysis::ATTRIB_NAME_ID, _span) =
+                    attrib.name
+                {
+                    true
+                } else {
+                    false
+                }
+            })
+            .next()
+            .is_some()
+    }
+    /// Returns true if this field has @unique attribute.
+    pub fn has_unique_attrib(&self) -> bool {
+        self.attributes
+            .iter()
+            .filter(|attrib| {
+                if let Token::Ident(crate::parser::semantic_analysis::ATTRIB_NAME_UNIQUE, _span) =
                     attrib.name
                 {
                     true

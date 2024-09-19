@@ -268,6 +268,12 @@ impl Type {
         })
     }
 
+    pub(crate) fn new_from(sdml_type: &sdml_parser::ast::PrimitiveType) -> Type {
+        Type::new(&Self::map_primitive_type_to_graphql_ty_name(&sdml_type)).expect(
+            "Every SDML primitive type should have a corresponding representation in GraphQL",
+        )
+    }
+
     /// Returns the graphql type name for the given SDML primitve type.
     pub(crate) fn map_primitive_type_to_graphql_ty_name(
         r#type: &sdml_parser::ast::PrimitiveType,
