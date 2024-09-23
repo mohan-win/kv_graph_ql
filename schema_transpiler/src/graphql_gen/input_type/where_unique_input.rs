@@ -100,13 +100,13 @@ mod tests {
     fn test_where_unique_def() {
         let mut expected_graphql_str = fs::read_to_string(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/test_data/user_where_unique_input.graphql"
+            "/test_data/input_type/user_where_unique_input.graphql"
         ))
         .unwrap();
         expected_graphql_str.retain(|c| !c.is_whitespace());
         let sdml_str = fs::read_to_string(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/test_data/user_where_unique_input.sdml"
+            "/test_data/input_type/user_where_unique_input.sdml"
         ))
         .unwrap();
         let sdml_declarations = parser::delcarations()

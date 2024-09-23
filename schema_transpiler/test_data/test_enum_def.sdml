@@ -1,0 +1,25 @@
+
+config db {
+    provider = "foundationDB"
+}
+
+model User {
+    userId      ShortStr      @id @default(auto())
+    email       ShortStr      @unique
+    name        ShortStr?     
+    nickNames   ShortStr[]
+    role        Role          @default(USER)
+    title       Title?
+}
+
+enum Role {
+    USER
+    ADMIN
+}
+
+enum Title {
+    MR
+    MRS
+    MISS
+    MS
+}
