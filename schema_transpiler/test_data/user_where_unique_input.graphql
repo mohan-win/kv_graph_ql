@@ -1,0 +1,7 @@
+"""
+The where unique filter which can match at-most 1 object.
+"""
+input UserWhereUniqueInput {
+  id: ID
+  email: String
+}

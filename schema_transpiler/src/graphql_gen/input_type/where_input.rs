@@ -2,7 +2,7 @@
 use super::*;
 
 /// Generates where input type for the given model.
-pub fn where_input_type_def<'src>(
+pub fn where_input_def<'src>(
     model: &sdml_ast::ModelDecl<'src>,
 ) -> GraphQLGenResult<TypeDefinition> {
     let mut filters = logical_operations_def(&model.name)?;
@@ -373,7 +373,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_where_input_type_def() {
+    fn test_where_input_def() {
         let mut expected_graphql_str = fs::read_to_string(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/user_where_input.graphql"
@@ -396,7 +396,7 @@ mod tests {
             .get("User")
             .expect("User model should exist in the SDML.");
         let user_where_input_grapql_ast =
-            where_input_type_def(user_model_sdml_ast).expect("It should return UserWhereInput");
+            where_input_def(user_model_sdml_ast).expect("It should return UserWhereInput");
         let mut user_where_input_graphql = user_where_input_grapql_ast.to_string();
         user_where_input_graphql.retain(|c| !c.is_whitespace());
         assert_eq!(expected_graphql_str, user_where_input_graphql)

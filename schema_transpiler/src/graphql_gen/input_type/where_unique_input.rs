@@ -4,7 +4,7 @@ use super::*;
 /// Generates WhereUniqueInput filter type for the given model.
 /// When this fitler gets passed as an argument,
 /// it will exactly match *at-most* 1 record in the graphQL response.
-pub fn where_unique_type_def<'src>(
+pub fn where_unique_unique_input_def<'src>(
     model: &sdml_ast::ModelDecl<'src>,
 ) -> GraphQLGenResult<TypeDefinition> {
     // Note: SDML validates / ensures that only scalar fields can have @unique attribute
@@ -87,8 +87,39 @@ fn unique_scalar_field_to_filter<'src>(
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use std::fs;
+
+    use chumsky::prelude::*;
+    use sdml_parser::parser;
+
     #[test]
-    fn test_where_unique_type_def() {
-        
+    fn test_where_unique_def() {
+        let mut expected_graphql_str = fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/user_where_unique_input.graphql"
+        ))
+        .unwrap();
+        expected_graphql_str.retain(|c| !c.is_whitespace());
+        let sdml_str = fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/user_where_unique_input.sdml"
+        ))
+        .unwrap();
+        let sdml_declarations = parser::delcarations()
+            .parse(&sdml_str)
+            .into_output()
+            .expect("It should be a valid SDML.");
+        let data_model = parser::semantic_analysis(sdml_declarations)
+            .expect("A valid SDML file shouldn't fail in parsing.");
+        let user_model_sdml_ast = data_model
+            .models()
+            .get("User")
+            .expect("User model should exist in the SDML.");
+        let user_where_input_grapql_ast = where_unique_unique_input_def(user_model_sdml_ast)
+            .expect("It should return UserWhereInput");
+        let mut user_where_input_graphql = user_where_input_grapql_ast.to_string();
+        user_where_input_graphql.retain(|c| !c.is_whitespace());
+        assert_eq!(expected_graphql_str, user_where_input_graphql)
     }
 }
