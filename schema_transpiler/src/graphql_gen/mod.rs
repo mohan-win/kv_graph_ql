@@ -3,6 +3,7 @@
 //! This module exposes necessary functions to generate GraphQL types for
 //! SDML models.
 //!
+mod aux_type;
 mod enum_type;
 mod error;
 mod input_type;

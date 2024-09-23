@@ -35,6 +35,22 @@ impl Named for InputType {
     }
 }
 
+/// Identifies auxiliary [output] types in OpenCRUD interface.
+#[derive(Debug, Clone, PartialEq)]
+pub enum AuxiliaryType {
+    Edge,
+    Connection,
+}
+
+impl Named for AuxiliaryType {
+    fn name(&self, model_name: &str) -> String {
+        match self {
+            AuxiliaryType::Edge => format!("{model_name}Edge"),
+            AuxiliaryType::Connection => format!("{model_name}Connection"),
+        }
+    }
+}
+
 /// Identifies input types used in create interfaces.
 #[derive(Debug, Clone, PartialEq)]
 pub enum CreateInputType {
