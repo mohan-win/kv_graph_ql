@@ -1,7 +1,7 @@
 use std::{collections::BTreeMap, fmt::Debug};
 
-use graphql_value::*;
 use bytes::Bytes;
+use graphql_value::*;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 fn test_value<T: Serialize + DeserializeOwned + Clone + PartialEq + Debug>(value: T) {
@@ -25,7 +25,9 @@ fn test_serde() {
     struct NewType(i32);
     test_value(NewType(100i32));
 
-    #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, Copy, Clone, Ord, PartialOrd)]
+    #[derive(
+        Serialize, Deserialize, Debug, Eq, PartialEq, Hash, Copy, Clone, Ord, PartialOrd,
+    )]
     enum Enum {
         A,
         B,

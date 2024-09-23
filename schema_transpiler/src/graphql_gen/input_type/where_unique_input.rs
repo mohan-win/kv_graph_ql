@@ -15,14 +15,17 @@ pub fn where_unique_unique_input_def<'src>(
         .filter(|fld| (fld.has_id_attrib() | fld.has_unique_attrib()));
     let unique_field_filters = unique_scalar_fields
         .map(unique_scalar_field_to_filter)
-        .collect::<Result<Vec<InputValueDefinition>, ErrorGraphQLGen>>()?;
+        .collect::<Result<Vec<InputValueDefinition>, ErrorGraphQLGen>>(
+    )?;
     let model_name = model
         .name
         .try_get_ident_name()
         .map_err(ErrorGraphQLGen::new_sdml_error)?; // Note: Model should have a valid identifier, otherwise it will be caught by SDML parser! So we can just use unwrap()..
     Ok(TypeDefinition {
         extend: false,
-        description: Some("The where unique filter which can match at-most 1 object.".to_string()),
+        description: Some(
+            "The where unique filter which can match at-most 1 object.".to_string(),
+        ),
         name: Name::new(FilterType::WhereUniqueInput.name(model_name)),
         directives: vec![],
         kind: TypeKind::InputObject(InputObjectType {
@@ -116,8 +119,9 @@ mod tests {
             .models()
             .get("User")
             .expect("User model should exist in the SDML.");
-        let user_where_input_grapql_ast = where_unique_unique_input_def(user_model_sdml_ast)
-            .expect("It should return UserWhereInput");
+        let user_where_input_grapql_ast =
+            where_unique_unique_input_def(user_model_sdml_ast)
+                .expect("It should return UserWhereInput");
         let mut user_where_input_graphql = user_where_input_grapql_ast.to_string();
         user_where_input_graphql.retain(|c| !c.is_whitespace());
         assert_eq!(expected_graphql_str, user_where_input_graphql)

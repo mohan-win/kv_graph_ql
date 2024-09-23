@@ -12,7 +12,8 @@ use super::{
 
 #[derive(Debug)]
 pub(crate) struct RelationMap<'src> {
-    relations: HashMap<&'src str, (Option<RelationEdge<'src>>, Option<RelationEdge<'src>>)>,
+    relations:
+        HashMap<&'src str, (Option<RelationEdge<'src>>, Option<RelationEdge<'src>>)>,
 }
 
 impl<'src> RelationMap<'src> {
@@ -57,7 +58,8 @@ impl<'src> RelationMap<'src> {
         let relation_name_str = edge.relation_name().str().unwrap();
         if let Some(existing_relation) = self.relations.get_mut(relation_name_str) {
             match existing_relation {
-                (Some(_), Some(_)) | (Some(RelationEdge::SelfOneToOneRelation { .. }), None) => {
+                (Some(_), Some(_))
+                | (Some(RelationEdge::SelfOneToOneRelation { .. }), None) => {
                     Err(SemanticError::RelationDuplicate {
                         span: edge.relation_name().span(),
                         relation_name: relation_name_str,
@@ -235,7 +237,8 @@ fn new_relation_edge<'src>(
         })
         .is_some();
     let rel_fld_exists = referenced_model_relation_field.is_some();
-    let rel_fld_array = referenced_model_relation_field.is_some_and(|fld| fld.field_type.is_array);
+    let rel_fld_array =
+        referenced_model_relation_field.is_some_and(|fld| fld.field_type.is_array);
 
     match (scalar_fld_unique, rel_fld_exists, rel_fld_array) {
         (_scalar_fld_unique @ true, _rel_fld_exists @ true, _rel_fld_array @ true) => {

@@ -57,8 +57,12 @@ impl Named for CreateInputType {
     fn name(&self, model_name: &str) -> String {
         match self {
             CreateInputType::CreateInput => format!("{model_name}CreateInput"),
-            CreateInputType::CreateManyInlineInput => format!("{model_name}CreateManyInlineInput"),
-            CreateInputType::CreateOneInlineInput => format!("{model_name}CreateOneInlineInput"),
+            CreateInputType::CreateManyInlineInput => {
+                format!("{model_name}CreateManyInlineInput")
+            }
+            CreateInputType::CreateOneInlineInput => {
+                format!("{model_name}CreateOneInlineInput")
+            }
         }
     }
 }
@@ -104,8 +108,12 @@ impl Named for UpdateInputType {
         match self {
             UpdateInputType::UpdateInput => format!("{model_name}UpdateInput"),
             UpdateInputType::UpsertInput => format!("{model_name}UpsertInput"),
-            UpdateInputType::UpdateManyInlineInput => format!("{model_name}UpdateManyInlineInput"),
-            UpdateInputType::UpdateOneInlineInput => format!("{model_name}UpdateOneInlineInput"),
+            UpdateInputType::UpdateManyInlineInput => {
+                format!("{model_name}UpdateManyInlineInput")
+            }
+            UpdateInputType::UpdateOneInlineInput => {
+                format!("{model_name}UpdateOneInlineInput")
+            }
             UpdateInputType::UpdateWithNestedWhereUniqueInput => {
                 format!("{model_name}UpdateWithNestedWhereUniqueInput")
             }

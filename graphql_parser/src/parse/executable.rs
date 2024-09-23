@@ -29,8 +29,9 @@ pub fn parse_query<T: AsRef<str>>(input: T) -> Result<ExecutableDocument> {
         match item {
             DefinitionItem::Operation(item) => {
                 if let Some(name) = item.node.name {
-                    let operations = operations
-                        .get_or_insert_with(|| DocumentOperations::Multiple(HashMap::new()));
+                    let operations = operations.get_or_insert_with(|| {
+                        DocumentOperations::Multiple(HashMap::new())
+                    });
                     let operations = match operations {
                         DocumentOperations::Single(anonymous) => {
                             return Err(Error::MultipleOperations {
@@ -68,27 +69,28 @@ pub fn parse_query<T: AsRef<str>>(input: T) -> Result<ExecutableDocument> {
                             });
                         }
                         None => {
-                            operations = Some(DocumentOperations::Single(Positioned::new(
-                                item.node.definition,
-                                item.pos,
-                            )));
+                            operations = Some(DocumentOperations::Single(
+                                Positioned::new(item.node.definition, item.pos),
+                            ));
                         }
                     }
                 }
             }
-            DefinitionItem::Fragment(item) => match fragments.entry(item.node.name.node) {
-                hash_map::Entry::Occupied(entry) => {
-                    let (name, first) = entry.remove_entry();
-                    return Err(Error::FragmentDuplicated {
-                        fragment: name,
-                        first: first.pos,
-                        second: item.pos,
-                    });
+            DefinitionItem::Fragment(item) => {
+                match fragments.entry(item.node.name.node) {
+                    hash_map::Entry::Occupied(entry) => {
+                        let (name, first) = entry.remove_entry();
+                        return Err(Error::FragmentDuplicated {
+                            fragment: name,
+                            first: first.pos,
+                            second: item.pos,
+                        });
+                    }
+                    hash_map::Entry::Vacant(entry) => {
+                        entry.insert(Positioned::new(item.node.definition, item.pos));
+                    }
                 }
-                hash_map::Entry::Vacant(entry) => {
-                    entry.insert(Positioned::new(item.node.definition, item.pos));
-                }
-            },
+            }
         }
     }
 
@@ -116,7 +118,10 @@ enum DefinitionItem {
     Fragment(Positioned<FragmentDefinitionItem>),
 }
 
-fn parse_definition_item(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<DefinitionItem> {
+fn parse_definition_item(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<DefinitionItem> {
     debug_assert_eq!(pair.as_rule(), Rule::executable_definition);
 
     let pair = exactly_one(pair.into_inner());
@@ -146,7 +151,9 @@ fn parse_operation_definition_item(
     let pair = exactly_one(pair.into_inner());
     Ok(Positioned::new(
         match pair.as_rule() {
-            Rule::named_operation_definition => parse_named_operation_definition(pair, pc)?,
+            Rule::named_operation_definition => {
+                parse_named_operation_definition(pair, pc)?
+            }
             Rule::selection_set => OperationDefinitionItem {
                 name: None,
                 definition: OperationDefinition {
@@ -172,11 +179,13 @@ fn parse_named_operation_definition(
 
     let ty = parse_operation_type(pairs.next().unwrap(), pc)?;
     let name = parse_if_rule(&mut pairs, Rule::name, |pair| parse_name(pair, pc))?;
-    let variable_definitions = parse_if_rule(&mut pairs, Rule::variable_definitions, |pair| {
-        parse_variable_definitions(pair, pc)
-    })?;
+    let variable_definitions =
+        parse_if_rule(&mut pairs, Rule::variable_definitions, |pair| {
+            parse_variable_definitions(pair, pc)
+        })?;
     let directives = parse_opt_directives(&mut pairs, pc)?;
-    let selection_set = parse_selection_set(pairs.next().unwrap(), pc, MAX_RECURSION_DEPTH)?;
+    let selection_set =
+        parse_selection_set(pairs.next().unwrap(), pc, MAX_RECURSION_DEPTH)?;
 
     debug_assert_eq!(pairs.next(), None);
 
@@ -265,10 +274,14 @@ fn parse_selection(
     Ok(Positioned::new(
         match pair.as_rule() {
             Rule::field => Selection::Field(parse_field(pair, pc, remaining_depth)?),
-            Rule::fragment_spread => Selection::FragmentSpread(parse_fragment_spread(pair, pc)?),
-            Rule::inline_fragment => {
-                Selection::InlineFragment(parse_inline_fragment(pair, pc, remaining_depth)?)
+            Rule::fragment_spread => {
+                Selection::FragmentSpread(parse_fragment_spread(pair, pc)?)
             }
+            Rule::inline_fragment => Selection::InlineFragment(parse_inline_fragment(
+                pair,
+                pc,
+                remaining_depth,
+            )?),
             _ => unreachable!(),
         },
         pos,
@@ -309,7 +322,10 @@ fn parse_field(
     ))
 }
 
-fn parse_alias(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<Name>> {
+fn parse_alias(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Positioned<Name>> {
     debug_assert_eq!(pair.as_rule(), Rule::alias);
     parse_name(exactly_one(pair.into_inner()), pc)
 }
@@ -351,8 +367,11 @@ fn parse_inline_fragment(
         parse_type_condition(pair, pc)
     })?;
     let directives = parse_opt_directives(&mut pairs, pc)?;
-    let selection_set =
-        parse_selection_set(pairs.next().unwrap(), pc, recursion_depth!(remaining_depth))?;
+    let selection_set = parse_selection_set(
+        pairs.next().unwrap(),
+        pc,
+        recursion_depth!(remaining_depth),
+    )?;
 
     debug_assert_eq!(pairs.next(), None);
 
@@ -383,7 +402,8 @@ fn parse_fragment_definition_item(
     let name = parse_name(pairs.next().unwrap(), pc)?;
     let type_condition = parse_type_condition(pairs.next().unwrap(), pc)?;
     let directives = parse_opt_directives(&mut pairs, pc)?;
-    let selection_set = parse_selection_set(pairs.next().unwrap(), pc, MAX_RECURSION_DEPTH)?;
+    let selection_set =
+        parse_selection_set(pairs.next().unwrap(), pc, MAX_RECURSION_DEPTH)?;
 
     debug_assert_eq!(pairs.next(), None);
 

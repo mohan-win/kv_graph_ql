@@ -23,7 +23,9 @@ impl fmt::Display for TypeSystemDefinition {
         match self {
             TypeSystemDefinition::Schema(schema) => f.write_str(&schema.to_string()),
             TypeSystemDefinition::Type(r#type) => f.write_str(&r#type.to_string()),
-            TypeSystemDefinition::Directive(directive) => f.write_str(&directive.to_string()),
+            TypeSystemDefinition::Directive(directive) => {
+                f.write_str(&directive.to_string())
+            }
         }
     }
 }
@@ -92,7 +94,9 @@ impl fmt::Display for DirectiveLocation {
             DirectiveLocation::Enum => write!(f, "ENUM"),
             DirectiveLocation::EnumValue => write!(f, "ENUM_VALUE"),
             DirectiveLocation::InputObject => write!(f, "INPUT_OBJECT"),
-            DirectiveLocation::InputFieldDefinition => write!(f, "INPUT_FIELD_DEFINITION"),
+            DirectiveLocation::InputFieldDefinition => {
+                write!(f, "INPUT_FIELD_DEFINITION")
+            }
         }
     }
 }
@@ -253,7 +257,10 @@ impl fmt::Display for ConstDirective {
 /// When there is a description, writes the description encloded by new-lines both before and after.
 /// If the description is empty, then it just writes a new-line.
 #[inline(always)]
-fn ln_display_description_ln(f: &mut fmt::Formatter, desc: &Option<String>) -> fmt::Result {
+fn ln_display_description_ln(
+    f: &mut fmt::Formatter,
+    desc: &Option<String>,
+) -> fmt::Result {
     write!(f, "\n")?;
     if desc.is_some() && desc.as_ref().unwrap().len() > 0 {
         write!(f, "\"\"\"{}\"\"\"\n", desc.as_ref().unwrap())
@@ -286,7 +293,10 @@ fn display_implements(f: &mut fmt::Formatter, interfaces: &Vec<Name>) -> fmt::Re
 }
 
 #[inline(always)]
-fn display_type_inside_block(f: &mut fmt::Formatter, r#type: impl fmt::Display) -> fmt::Result {
+fn display_type_inside_block(
+    f: &mut fmt::Formatter,
+    r#type: impl fmt::Display,
+) -> fmt::Result {
     f.write_str(" {")?;
     f.write_str(&r#type.to_string())?;
     f.write_str("\n}")
@@ -606,7 +616,9 @@ me: User!
             name: Name::new("deprecated"),
             arguments: vec![(
                 Name::new("reason"),
-                ConstValue::String("use userConnection for better performance".to_string()),
+                ConstValue::String(
+                    "use userConnection for better performance".to_string(),
+                ),
             )],
         };
         let users_field = FieldDefinition {
@@ -691,7 +703,9 @@ createdAt: DateTime!
                         directives: vec![unique_directive.clone()],
                     },
                     FieldDefinition {
-                        description: Some("The time the document was created".to_string()),
+                        description: Some(
+                            "The time the document was created".to_string(),
+                        ),
                         name: Name::new("createdAt"),
                         arguments: vec![],
                         ty: Type::new("DateTime!").unwrap(),
@@ -778,7 +792,9 @@ me: User!
             name: Name::new("deprecated"),
             arguments: vec![(
                 Name::new("reason"),
-                ConstValue::String("use userConnection for better performance".to_string()),
+                ConstValue::String(
+                    "use userConnection for better performance".to_string(),
+                ),
             )],
         };
         let users_field = FieldDefinition {
@@ -863,7 +879,9 @@ createdAt: DateTime!
                         directives: vec![unique_directive.clone()],
                     },
                     FieldDefinition {
-                        description: Some("The time the document was created".to_string()),
+                        description: Some(
+                            "The time the document was created".to_string(),
+                        ),
                         name: Name::new("createdAt"),
                         arguments: vec![],
                         ty: Type::new("DateTime!").unwrap(),
@@ -970,7 +988,9 @@ OTHER
                             name: Name::new("deprecated"),
                             arguments: vec![(
                                 Name::new("reason"),
-                                ConstValue::String("Use either USER or ADMIN".to_string()),
+                                ConstValue::String(
+                                    "Use either USER or ADMIN".to_string(),
+                                ),
                             )],
                         }],
                     },
@@ -1095,7 +1115,9 @@ reason: String = "No longer supported"
                     description: None,
                     name: Name::new("reason"),
                     ty: Type::new("String").unwrap(),
-                    default_value: Some(ConstValue::String("No longer supported".to_string())),
+                    default_value: Some(ConstValue::String(
+                        "No longer supported".to_string(),
+                    )),
                     directives: vec![],
                 }
             }],

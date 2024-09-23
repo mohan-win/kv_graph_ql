@@ -3,8 +3,9 @@ use std::{fmt, vec};
 use indexmap::IndexMap;
 use serde::{
     de::{
-        self, Deserialize, DeserializeOwned, DeserializeSeed, EnumAccess, Error as DeError,
-        IntoDeserializer, MapAccess, SeqAccess, Unexpected, VariantAccess, Visitor,
+        self, Deserialize, DeserializeOwned, DeserializeSeed, EnumAccess,
+        Error as DeError, IntoDeserializer, MapAccess, SeqAccess, Unexpected,
+        VariantAccess, Visitor,
     },
     forward_to_deserialize_any,
 };
@@ -61,7 +62,10 @@ impl ConstValue {
     }
 }
 
-fn visit_array<'de, V>(array: Vec<ConstValue>, visitor: V) -> Result<V::Value, DeserializerError>
+fn visit_array<'de, V>(
+    array: Vec<ConstValue>,
+    visitor: V,
+) -> Result<V::Value, DeserializerError>
 where
     V: Visitor<'de>,
 {
@@ -104,7 +108,10 @@ impl<'de> de::Deserializer<'de> for ConstValue {
     type Error = DeserializerError;
 
     #[inline]
-    fn deserialize_any<V>(self, visitor: V) -> Result<<V as Visitor<'de>>::Value, Self::Error>
+    fn deserialize_any<V>(
+        self,
+        visitor: V,
+    ) -> Result<<V as Visitor<'de>>::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
@@ -129,7 +136,10 @@ impl<'de> de::Deserializer<'de> for ConstValue {
     }
 
     #[inline]
-    fn deserialize_option<V>(self, visitor: V) -> Result<<V as Visitor<'de>>::Value, Self::Error>
+    fn deserialize_option<V>(
+        self,
+        visitor: V,
+    ) -> Result<<V as Visitor<'de>>::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
@@ -210,7 +220,10 @@ impl<'de> EnumAccess<'de> for EnumDeserializer {
     type Variant = VariantDeserializer;
 
     #[inline]
-    fn variant_seed<V>(self, seed: V) -> Result<(V::Value, VariantDeserializer), DeserializerError>
+    fn variant_seed<V>(
+        self,
+        seed: V,
+    ) -> Result<(V::Value, VariantDeserializer), DeserializerError>
     where
         V: DeserializeSeed<'de>,
     {
@@ -257,7 +270,11 @@ impl<'de> VariantAccess<'de> for VariantDeserializer {
         }
     }
 
-    fn tuple_variant<V>(self, _len: usize, visitor: V) -> Result<V::Value, DeserializerError>
+    fn tuple_variant<V>(
+        self,
+        _len: usize,
+        visitor: V,
+    ) -> Result<V::Value, DeserializerError>
     where
         V: Visitor<'de>,
     {
@@ -347,7 +364,10 @@ impl<'de> serde::Deserializer<'de> for SeqDeserializer {
 impl<'de> SeqAccess<'de> for SeqDeserializer {
     type Error = DeserializerError;
 
-    fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, DeserializerError>
+    fn next_element_seed<T>(
+        &mut self,
+        seed: T,
+    ) -> Result<Option<T::Value>, DeserializerError>
     where
         T: DeserializeSeed<'de>,
     {
@@ -504,6 +524,8 @@ impl<'de> de::Deserializer<'de> for NameDeserializer {
 
 /// Interpret a `ConstValue` as an instance of type `T`.
 #[inline]
-pub fn from_value<T: DeserializeOwned>(value: ConstValue) -> Result<T, DeserializerError> {
+pub fn from_value<T: DeserializeOwned>(
+    value: ConstValue,
+) -> Result<T, DeserializerError> {
     T::deserialize(value)
 }

@@ -13,7 +13,9 @@ use serde::{Deserialize, Serialize};
 ///
 /// You can serialize and deserialize it to the GraphQL `locations` format
 /// ([reference](https://spec.graphql.org/October2021/#sec-Errors)).
-#[derive(PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Default, Hash, Serialize, Deserialize)]
+#[derive(
+    PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Default, Hash, Serialize, Deserialize,
+)]
 pub struct Pos {
     /// One-based line number.
     pub line: usize,

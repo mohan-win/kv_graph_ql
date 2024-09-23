@@ -34,7 +34,10 @@ pub use variables::Variables;
 pub struct Name(Arc<str>);
 
 impl Serialize for Name {
-    fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
+    fn serialize<S: Serializer>(
+        &self,
+        serializer: S,
+    ) -> std::result::Result<S::Ok, S::Error> {
         serializer.serialize_str(&self.0)
     }
 }
@@ -528,7 +531,10 @@ fn write_binary(bytes: &[u8], f: &mut Formatter<'_>) -> fmt::Result {
     f.write_char(']')
 }
 
-fn write_list<T: Display>(list: impl IntoIterator<Item = T>, f: &mut Formatter<'_>) -> fmt::Result {
+fn write_list<T: Display>(
+    list: impl IntoIterator<Item = T>,
+    f: &mut Formatter<'_>,
+) -> fmt::Result {
     f.write_char('[')?;
     let mut iter = list.into_iter();
     if let Some(item) = iter.next() {

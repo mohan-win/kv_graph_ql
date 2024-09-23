@@ -1,4 +1,6 @@
-use crate::ast::{DataModel, Declaration, EnumDecl, FieldDecl, ModelDecl, Span, Token, Type};
+use crate::ast::{
+    DataModel, Declaration, EnumDecl, FieldDecl, ModelDecl, Span, Token, Type,
+};
 use std::{
     collections::{HashMap, HashSet},
     ops::{ControlFlow, Deref},
@@ -144,11 +146,9 @@ fn get_actual_type<'src>(
     if let Type::Unknown(type_name_tok) = &*field.field_type.r#type() {
         let type_name = type_name_tok.ident_name().unwrap();
         match models.get(type_name) {
-            Some(referenced_model) => Ok(Some(Type::Relation(relation::get_relation_edge(
-                model,
-                field,
-                referenced_model,
-            )?))),
+            Some(referenced_model) => Ok(Some(Type::Relation(
+                relation::get_relation_edge(model, field, referenced_model)?,
+            ))),
             None => match enums.get(type_name) {
                 Some(_) => Ok(Some(Type::Enum {
                     enum_ty_name: type_name_tok.clone(), // Clone
@@ -167,7 +167,9 @@ fn get_actual_type<'src>(
 }
 
 /// Make sure model has ONLY one field marked with @id
-fn validate_model_id_field<'src>(model: &ModelDecl<'src>) -> Result<(), SemanticError<'src>> {
+fn validate_model_id_field<'src>(
+    model: &ModelDecl<'src>,
+) -> Result<(), SemanticError<'src>> {
     let mut id_fields = model.fields.iter().filter(|field| {
         field
             .attributes
@@ -258,7 +260,9 @@ mod tests {
             },
             SemanticError::AttributeInvalid {
                 span: Span::new(337, 340),
-                reason: String::from("Only Non-Optional Scalar Short String field is allowed"),
+                reason: String::from(
+                    "Only Non-Optional Scalar Short String field is allowed",
+                ),
                 attrib_name: "id",
                 field_name: "profileId",
                 model_name: "Profile",
@@ -269,7 +273,9 @@ mod tests {
             },
             SemanticError::AttributeInvalid {
                 span: Span::new(464, 467),
-                reason: String::from("Only Non-Optional Scalar Short String field is allowed"),
+                reason: String::from(
+                    "Only Non-Optional Scalar Short String field is allowed",
+                ),
                 attrib_name: "id",
                 field_name: "postId",
                 model_name: "Post",

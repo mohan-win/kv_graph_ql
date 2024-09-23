@@ -1,8 +1,8 @@
 use std::ops::Div;
 
 use crate::ast::{
-    AttribArg, Attribute, ConfigDecl, ConfigPair, DataModel, Declaration, EnumDecl, FieldDecl,
-    FieldType, ModelDecl, NamedArg, PrimitiveType, Token, Type,
+    AttribArg, Attribute, ConfigDecl, ConfigPair, DataModel, Declaration, EnumDecl,
+    FieldDecl, FieldType, ModelDecl, NamedArg, PrimitiveType, Token, Type,
 };
 use chumsky::text::{self, ascii};
 use chumsky::{extra::Err, prelude::*};
@@ -33,7 +33,8 @@ pub fn delcarations<'src>(
 }
 
 #[inline(always)]
-fn config_decl<'src>() -> impl Parser<'src, &'src str, Declaration<'src>, Err<Rich<'src, char>>> {
+fn config_decl<'src>(
+) -> impl Parser<'src, &'src str, Declaration<'src>, Err<Rich<'src, char>>> {
     text::keyword("config")
         .padded()
         .then(
@@ -53,7 +54,8 @@ fn config_decl<'src>() -> impl Parser<'src, &'src str, Declaration<'src>, Err<Ri
 }
 
 #[inline(always)]
-fn config_pair<'src>() -> impl Parser<'src, &'src str, ConfigPair<'src>, Err<Rich<'src, char>>> {
+fn config_pair<'src>(
+) -> impl Parser<'src, &'src str, ConfigPair<'src>, Err<Rich<'src, char>>> {
     ascii::ident()
         .map_with(|ident, e| Token::Ident(ident, e.span()))
         .padded()
@@ -102,7 +104,8 @@ fn bool<'src>() -> impl Parser<'src, &'src str, Token<'src>, Err<Rich<'src, char
 }
 
 #[inline(always)]
-fn enum_decl<'src>() -> impl Parser<'src, &'src str, Declaration<'src>, Err<Rich<'src, char>>> {
+fn enum_decl<'src>(
+) -> impl Parser<'src, &'src str, Declaration<'src>, Err<Rich<'src, char>>> {
     let identifier = ascii::ident().map_with(|tok, e| Token::Ident(tok, e.span()));
     text::keyword("enum")
         .padded()
@@ -127,7 +130,8 @@ fn enum_decl<'src>() -> impl Parser<'src, &'src str, Declaration<'src>, Err<Rich
 }
 
 #[inline(always)]
-fn model_decl<'src>() -> impl Parser<'src, &'src str, Declaration<'src>, Err<Rich<'src, char>>> {
+fn model_decl<'src>(
+) -> impl Parser<'src, &'src str, Declaration<'src>, Err<Rich<'src, char>>> {
     text::keyword("model")
         .padded()
         .then(ascii::ident().padded())
@@ -145,7 +149,8 @@ fn model_decl<'src>() -> impl Parser<'src, &'src str, Declaration<'src>, Err<Ric
 }
 
 #[inline(always)]
-fn field_decl<'src>() -> impl Parser<'src, &'src str, FieldDecl<'src>, Err<Rich<'src, char>>> {
+fn field_decl<'src>(
+) -> impl Parser<'src, &'src str, FieldDecl<'src>, Err<Rich<'src, char>>> {
     ascii::ident()
         .padded()
         .map_with(|tok, e| Token::Ident(tok, e.span()))
@@ -159,7 +164,8 @@ fn field_decl<'src>() -> impl Parser<'src, &'src str, FieldDecl<'src>, Err<Rich<
 }
 
 #[inline(always)]
-fn field_type<'src>() -> impl Parser<'src, &'src str, FieldType<'src>, Err<Rich<'src, char>>> {
+fn field_type<'src>(
+) -> impl Parser<'src, &'src str, FieldType<'src>, Err<Rich<'src, char>>> {
     let primitive_type = text::keyword("ShortStr")
         .or(text::keyword("LongStr"))
         .or(text::keyword("DateTime"))
@@ -198,7 +204,8 @@ fn field_type<'src>() -> impl Parser<'src, &'src str, FieldType<'src>, Err<Rich<
 }
 
 #[inline(always)]
-fn named_arg<'src>() -> impl Parser<'src, &'src str, NamedArg<'src>, Err<Rich<'src, char>>> {
+fn named_arg<'src>() -> impl Parser<'src, &'src str, NamedArg<'src>, Err<Rich<'src, char>>>
+{
     let identifier = ascii::ident().map_with(|tok, e| Token::Ident(tok, e.span()));
     identifier
         .padded()
@@ -211,7 +218,8 @@ fn named_arg<'src>() -> impl Parser<'src, &'src str, NamedArg<'src>, Err<Rich<'s
 }
 
 #[inline(always)]
-fn attribute<'src>() -> impl Parser<'src, &'src str, Attribute<'src>, Err<Rich<'src, char>>> {
+fn attribute<'src>(
+) -> impl Parser<'src, &'src str, Attribute<'src>, Err<Rich<'src, char>>> {
     let arg_list = named_arg()
         .then(
             just(",")
@@ -227,7 +235,9 @@ fn attribute<'src>() -> impl Parser<'src, &'src str, Attribute<'src>, Err<Rich<'
         );
     let function = ascii::ident()
         .then(just("()"))
-        .map_with(|(func_name, _parans), e| AttribArg::Function(Token::Ident(func_name, e.span())));
+        .map_with(|(func_name, _parans), e| {
+            AttribArg::Function(Token::Ident(func_name, e.span()))
+        });
 
     let identifier =
         ascii::ident().map_with(|tok, e| AttribArg::Ident(Token::Ident(tok, e.span())));
@@ -714,7 +724,10 @@ mod tests {
                         ),
                         attributes: vec![Attribute {
                             name: Token::Ident("default", Span::new(0, 0)),
-                            arg: Some(AttribArg::Ident(Token::Ident("USER", Span::new(0, 0))))
+                            arg: Some(AttribArg::Ident(Token::Ident(
+                                "USER",
+                                Span::new(0, 0)
+                            )))
                         }]
                     }
                 ]
@@ -863,17 +876,32 @@ mod tests {
                         ),
                         attributes: vec![Attribute {
                             name: Token::Ident("default", Span::new(0, 0)),
-                            arg: Some(AttribArg::Ident(Token::Ident("USER", Span::new(0, 0)))),
+                            arg: Some(AttribArg::Ident(Token::Ident(
+                                "USER",
+                                Span::new(0, 0),
+                            ))),
                         }],
                     },
                     FieldDecl {
                         name: Token::Ident("mentor", Span::new(0, 0)),
                         field_type: FieldType::new(
                             Type::Relation(RelationEdge::ManySideRelation {
-                                relation_name: Token::Str(r#""UserMentor""#, Span::new(0, 0)),
-                                scalar_field_name: Token::Ident("mentorEmail", Span::new(0, 0)),
-                                referenced_model_name: Token::Ident("User", Span::new(0, 0)),
-                                referenced_field_name: Token::Ident("email", Span::new(0, 0)),
+                                relation_name: Token::Str(
+                                    r#""UserMentor""#,
+                                    Span::new(0, 0),
+                                ),
+                                scalar_field_name: Token::Ident(
+                                    "mentorEmail",
+                                    Span::new(0, 0),
+                                ),
+                                referenced_model_name: Token::Ident(
+                                    "User",
+                                    Span::new(0, 0),
+                                ),
+                                referenced_field_name: Token::Ident(
+                                    "email",
+                                    Span::new(0, 0),
+                                ),
                             }),
                             true,
                             false,
@@ -883,11 +911,17 @@ mod tests {
                             arg: Some(AttribArg::Args(vec![
                                 NamedArg {
                                     arg_name: Token::Ident("name", Span::new(0, 0)),
-                                    arg_value: Token::Str("\"UserMentor\"", Span::new(0, 0)),
+                                    arg_value: Token::Str(
+                                        "\"UserMentor\"",
+                                        Span::new(0, 0),
+                                    ),
                                 },
                                 NamedArg {
                                     arg_name: Token::Ident("field", Span::new(0, 0)),
-                                    arg_value: Token::Ident("mentorEmail", Span::new(0, 0)),
+                                    arg_value: Token::Ident(
+                                        "mentorEmail",
+                                        Span::new(0, 0),
+                                    ),
                                 },
                                 NamedArg {
                                     arg_name: Token::Ident("references", Span::new(0, 0)),
@@ -912,8 +946,14 @@ mod tests {
                         name: Token::Ident("mentees", Span::new(0, 0)),
                         field_type: FieldType::new(
                             Type::Relation(RelationEdge::OneSideRelation {
-                                relation_name: Token::Str("\"UserMentor\"", Span::new(0, 0)),
-                                referenced_model_name: Token::Ident("User", Span::new(0, 0)),
+                                relation_name: Token::Str(
+                                    "\"UserMentor\"",
+                                    Span::new(0, 0),
+                                ),
+                                referenced_model_name: Token::Ident(
+                                    "User",
+                                    Span::new(0, 0),
+                                ),
                             }),
                             false,
                             true,

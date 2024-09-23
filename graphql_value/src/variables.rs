@@ -26,7 +26,8 @@ impl Display for Variables {
 impl<'de> Deserialize<'de> for Variables {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         Ok(Self(
-            <Option<BTreeMap<Name, ConstValue>>>::deserialize(deserializer)?.unwrap_or_default(),
+            <Option<BTreeMap<Name, ConstValue>>>::deserialize(deserializer)?
+                .unwrap_or_default(),
         ))
     }
 }

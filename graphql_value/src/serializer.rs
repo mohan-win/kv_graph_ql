@@ -189,7 +189,10 @@ impl ser::Serializer for Serializer {
     }
 
     #[inline]
-    fn serialize_seq(self, _len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
+    fn serialize_seq(
+        self,
+        _len: Option<usize>,
+    ) -> Result<Self::SerializeSeq, Self::Error> {
         Ok(SerializeSeq(vec![]))
     }
 
@@ -222,7 +225,10 @@ impl ser::Serializer for Serializer {
     }
 
     #[inline]
-    fn serialize_map(self, _len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
+    fn serialize_map(
+        self,
+        _len: Option<usize>,
+    ) -> Result<Self::SerializeMap, Self::Error> {
         Ok(SerializeMap {
             map: IndexMap::new(),
             key: None,
@@ -387,7 +393,11 @@ impl ser::SerializeStruct for SerializeStruct {
     type Error = SerializerError;
 
     #[inline]
-    fn serialize_field<T>(&mut self, key: &'static str, value: &T) -> Result<(), Self::Error>
+    fn serialize_field<T>(
+        &mut self,
+        key: &'static str,
+        value: &T,
+    ) -> Result<(), Self::Error>
     where
         T: ser::Serialize + ?Sized,
     {
@@ -410,7 +420,11 @@ impl ser::SerializeStructVariant for SerializeStructVariant {
     type Error = SerializerError;
 
     #[inline]
-    fn serialize_field<T>(&mut self, key: &'static str, value: &T) -> Result<(), Self::Error>
+    fn serialize_field<T>(
+        &mut self,
+        key: &'static str,
+        value: &T,
+    ) -> Result<(), Self::Error>
     where
         T: ser::Serialize + ?Sized,
     {
@@ -576,7 +590,10 @@ impl serde::Serializer for MapKeySerializer {
     }
 
     #[inline]
-    fn serialize_seq(self, _len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
+    fn serialize_seq(
+        self,
+        _len: Option<usize>,
+    ) -> Result<Self::SerializeSeq, Self::Error> {
         Err(key_must_be_a_string())
     }
 
@@ -606,7 +623,10 @@ impl serde::Serializer for MapKeySerializer {
     }
 
     #[inline]
-    fn serialize_map(self, _len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
+    fn serialize_map(
+        self,
+        _len: Option<usize>,
+    ) -> Result<Self::SerializeMap, Self::Error> {
         Err(key_must_be_a_string())
     }
 

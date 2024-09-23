@@ -59,7 +59,9 @@ impl<'a> Iterator for OperationsIter<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         match &mut self.0 {
             OperationsIterInner::Single(op) => op.take().map(|op| (None, op)),
-            OperationsIterInner::Multiple(iter) => iter.next().map(|(name, op)| (Some(name), op)),
+            OperationsIterInner::Multiple(iter) => {
+                iter.next().map(|(name, op)| (Some(name), op))
+            }
         }
     }
 

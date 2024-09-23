@@ -6,18 +6,16 @@ pub fn where_input_def<'src>(
     model: &sdml_ast::ModelDecl<'src>,
 ) -> GraphQLGenResult<TypeDefinition> {
     let mut filters = logical_operations_def(&model.name)?;
-    let model_field_filters =
-        model
-            .fields
-            .iter()
-            .map(field_to_filters)
-            .try_fold(Vec::new(), |mut acc, filters| match filters {
-                Ok(filters) => {
-                    acc.extend(filters.into_iter());
-                    Ok(acc)
-                }
-                Err(e) => Err(e),
-            })?;
+    let model_field_filters = model.fields.iter().map(field_to_filters).try_fold(
+        Vec::new(),
+        |mut acc, filters| match filters {
+            Ok(filters) => {
+                acc.extend(filters.into_iter());
+                Ok(acc)
+            }
+            Err(e) => Err(e),
+        },
+    )?;
     filters.extend(model_field_filters.into_iter());
     let model_name = model
         .name
@@ -25,7 +23,9 @@ pub fn where_input_def<'src>(
         .map_err(ErrorGraphQLGen::new_sdml_error)?;
     Ok(TypeDefinition {
         extend: false,
-        description: Some("The where filter which can match zero or more objects".to_string()),
+        description: Some(
+            "The where filter which can match zero or more objects".to_string(),
+        ),
         name: Name::new(FilterType::WhereInput.name(model_name)),
         directives: vec![],
         kind: TypeKind::InputObject(InputObjectType { fields: filters }),
@@ -54,7 +54,9 @@ fn field_to_filters<'src>(
             r#type: primitive_type,
             ..
         } => match *primitive_type {
-            sdml_ast::PrimitiveType::ShortStr if field.has_id_attrib() => id_field_def(&field.name),
+            sdml_ast::PrimitiveType::ShortStr if field.has_id_attrib() => {
+                id_field_def(&field.name)
+            }
             sdml_ast::PrimitiveType::ShortStr | sdml_ast::PrimitiveType::LongStr => {
                 string_field_def(&field.name)
             }
@@ -63,7 +65,9 @@ fn field_to_filters<'src>(
             sdml_ast::PrimitiveType::Int32 | sdml_ast::PrimitiveType::Int64 => {
                 number_field_def(&field.name, NumberType::Integer)
             }
-            sdml_ast::PrimitiveType::Float64 => number_field_def(&field.name, NumberType::Float),
+            sdml_ast::PrimitiveType::Float64 => {
+                number_field_def(&field.name, NumberType::Float)
+            }
         },
     }
 }
@@ -231,7 +235,8 @@ fn relation_field_def<'src>(
         .token()
         .try_get_ident_name()
         .map_err(ErrorGraphQLGen::new_sdml_error)?;
-    let relation_where_filter = open_crud::FilterType::WhereInput.name(&related_model_name);
+    let relation_where_filter =
+        open_crud::FilterType::WhereInput.name(&related_model_name);
     // Many side of the relation
     if target_relation.is_array {
         Ok(vec![
@@ -243,7 +248,9 @@ fn relation_field_def<'src>(
                 directives: vec![],
             },
             InputValueDefinition {
-                description: Some("condition must be true for at least 1 node".to_string()),
+                description: Some(
+                    "condition must be true for at least 1 node".to_string(),
+                ),
                 name: Name::new(format!("{field_name}_some")),
                 ty: Type::new(&relation_where_filter).unwrap(),
                 default_value: None,
@@ -310,7 +317,9 @@ fn logical_operations_def<'src>(
             directives: vec![],
         },
         InputValueDefinition {
-            description: Some("Logical NOT on all given filters combined by AND.".to_string()),
+            description: Some(
+                "Logical NOT on all given filters combined by AND.".to_string(),
+            ),
             name: Name::new("NOT"),
             ty: Type::new(&format!("[{where_input_ty_name}!]")).unwrap(),
             default_value: None,
@@ -340,24 +349,26 @@ fn generate_where_input_filters<'src>(
     let field_name: &'src str = field_name
         .try_get_ident_name()
         .map_err(ErrorGraphQLGen::new_sdml_error)?;
-    let non_list_fields = non_list_field_names_fmt
-        .into_iter()
-        .map(|(field_format, field_desc)| InputValueDefinition {
-            description: Some(field_desc.to_string()),
-            name: Name::new(field_format.replace("{}", field_name)),
-            ty: Type::new(field_type_name).unwrap(),
-            default_value: None,
-            directives: vec![],
-        });
-    let list_fields = list_field_names_fmt
-        .into_iter()
-        .map(|(field_format, field_desc)| InputValueDefinition {
-            description: Some(field_desc.to_string()),
-            name: Name::new(field_format.replace("{}", field_name)),
-            ty: Type::new(&format!("[{field_type_name}]")).unwrap(),
-            default_value: None,
-            directives: vec![],
-        });
+    let non_list_fields =
+        non_list_field_names_fmt
+            .into_iter()
+            .map(|(field_format, field_desc)| InputValueDefinition {
+                description: Some(field_desc.to_string()),
+                name: Name::new(field_format.replace("{}", field_name)),
+                ty: Type::new(field_type_name).unwrap(),
+                default_value: None,
+                directives: vec![],
+            });
+    let list_fields =
+        list_field_names_fmt
+            .into_iter()
+            .map(|(field_format, field_desc)| InputValueDefinition {
+                description: Some(field_desc.to_string()),
+                name: Name::new(field_format.replace("{}", field_name)),
+                ty: Type::new(&format!("[{field_type_name}]")).unwrap(),
+                default_value: None,
+                directives: vec![],
+            });
 
     Ok(non_list_fields.chain(list_fields).collect())
 }
@@ -395,8 +406,8 @@ mod tests {
             .models()
             .get("User")
             .expect("User model should exist in the SDML.");
-        let user_where_input_grapql_ast =
-            where_input_def(user_model_sdml_ast).expect("It should return UserWhereInput");
+        let user_where_input_grapql_ast = where_input_def(user_model_sdml_ast)
+            .expect("It should return UserWhereInput");
         let mut user_where_input_graphql = user_where_input_grapql_ast.to_string();
         user_where_input_graphql.retain(|c| !c.is_whitespace());
         assert_eq!(expected_graphql_str, user_where_input_graphql)

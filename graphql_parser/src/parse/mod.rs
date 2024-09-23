@@ -113,7 +113,10 @@ fn parse_const_value(
         pos,
     ))
 }
-fn parse_value(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<Value>> {
+fn parse_value(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Positioned<Value>> {
     debug_assert_eq!(pair.as_rule(), Rule::value);
 
     let pos = pc.step(&pair);
@@ -153,11 +156,17 @@ fn parse_value(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Position
     ))
 }
 
-fn parse_variable(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<Name>> {
+fn parse_variable(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Positioned<Name>> {
     debug_assert_eq!(pair.as_rule(), Rule::variable);
     parse_name(exactly_one(pair.into_inner()), pc)
 }
-fn parse_number(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<Number>> {
+fn parse_number(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Positioned<Number>> {
     debug_assert_eq!(pair.as_rule(), Rule::number);
     let pos = pc.step(&pair);
     Ok(Positioned::new(
@@ -169,7 +178,10 @@ fn parse_number(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positio
         pos,
     ))
 }
-fn parse_string(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<String>> {
+fn parse_string(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Positioned<String>> {
     debug_assert_eq!(pair.as_rule(), Rule::string);
     let pos = pc.step(&pair);
     let pair = exactly_one(pair.into_inner());
@@ -182,7 +194,10 @@ fn parse_string(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positio
         pos,
     ))
 }
-fn parse_boolean(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<bool>> {
+fn parse_boolean(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Positioned<bool>> {
     debug_assert_eq!(pair.as_rule(), Rule::boolean);
     let pos = pc.step(&pair);
     Ok(Positioned::new(
@@ -194,7 +209,10 @@ fn parse_boolean(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positi
         pos,
     ))
 }
-fn parse_enum_value(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<Name>> {
+fn parse_enum_value(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Positioned<Name>> {
     debug_assert_eq!(pair.as_rule(), Rule::enum_value);
     parse_name(exactly_one(pair.into_inner()), pc)
 }
@@ -262,7 +280,10 @@ fn parse_const_directive(
         pos,
     ))
 }
-fn parse_directive(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<Directive>> {
+fn parse_directive(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Positioned<Directive>> {
     debug_assert_eq!(pair.as_rule(), Rule::directive);
 
     let pos = pc.step(&pair);

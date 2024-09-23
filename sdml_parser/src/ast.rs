@@ -28,7 +28,9 @@ impl<'src> PartialEq for Token<'src> {
             (Token::Float(self_float, _), Token::Float(other_float, _)) => {
                 self_float == other_float
             }
-            (Token::Bool(self_bool, _), Token::Bool(other_bool, _)) => self_bool == other_bool,
+            (Token::Bool(self_bool, _), Token::Bool(other_bool, _)) => {
+                self_bool == other_bool
+            }
             (_, _) => false,
         }
     }
@@ -70,7 +72,9 @@ impl<'src> Token<'src> {
             ))
         }
     }
-    pub fn try_get_graphql_name(&self) -> Result<graphql_value::Name, (&'static str, Span)> {
+    pub fn try_get_graphql_name(
+        &self,
+    ) -> Result<graphql_value::Name, (&'static str, Span)> {
         match self {
             Token::Ident(name, _) => Ok(graphql_value::Name::new(name)),
             other => Err(("GraphQL name should be a valid identifier", other.span())),
@@ -226,8 +230,10 @@ impl<'src> FieldDecl<'src> {
         self.attributes
             .iter()
             .filter(|attrib| {
-                if let Token::Ident(crate::parser::semantic_analysis::ATTRIB_NAME_ID, _span) =
-                    attrib.name
+                if let Token::Ident(
+                    crate::parser::semantic_analysis::ATTRIB_NAME_ID,
+                    _span,
+                ) = attrib.name
                 {
                     true
                 } else {
@@ -242,8 +248,10 @@ impl<'src> FieldDecl<'src> {
         self.attributes
             .iter()
             .filter(|attrib| {
-                if let Token::Ident(crate::parser::semantic_analysis::ATTRIB_NAME_UNIQUE, _span) =
-                    attrib.name
+                if let Token::Ident(
+                    crate::parser::semantic_analysis::ATTRIB_NAME_UNIQUE,
+                    _span,
+                ) = attrib.name
                 {
                     true
                 } else {
