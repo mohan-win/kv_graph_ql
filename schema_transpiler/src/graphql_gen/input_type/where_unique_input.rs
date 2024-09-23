@@ -84,3 +84,11 @@ fn unique_scalar_field_to_filter<'src>(
         directives: vec![],
     })
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_where_unique_type_def() {
+        
+    }
+}
