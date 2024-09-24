@@ -249,9 +249,19 @@ pub struct Type {
 }
 
 impl Type {
+    pub fn new(ty: &str, type_mod: sdml_parser::ast::FieldTypeMod) -> Type {
+        let ty = match type_mod {
+            sdml_parser::ast::FieldTypeMod::NonOptional => format!("{ty}!"),
+            sdml_parser::ast::FieldTypeMod::Optional => ty.to_string(),
+            sdml_parser::ast::FieldTypeMod::Array => format!("[{ty}!]!"),
+        };
+
+        Type::new_from_str(&ty).expect("Pass a valid type name!")
+    }
+
     /// Create a type from the type string.
     #[must_use]
-    pub fn new(ty: &str) -> Option<Self> {
+    pub(crate) fn new_from_str(ty: &str) -> Option<Self> {
         let (nullable, ty) = if let Some(rest) = ty.strip_suffix('!') {
             (false, rest)
         } else {
@@ -260,7 +270,7 @@ impl Type {
 
         Some(Self {
             base: if let Some(ty) = ty.strip_prefix('[') {
-                BaseType::List(Box::new(Self::new(ty.strip_suffix(']')?)?))
+                BaseType::List(Box::new(Self::new_from_str(ty.strip_suffix(']')?)?))
             } else {
                 BaseType::Named(Name::new(ty))
             },
@@ -268,23 +278,21 @@ impl Type {
         })
     }
 
-    pub(crate) fn new_from(sdml_type: &sdml_parser::ast::PrimitiveType) -> Type {
-        Type::new(&Self::map_primitive_type_to_graphql_ty_name(&sdml_type)).expect(
-            "Every SDML primitive type should have a corresponding representation in GraphQL",
-        )
-    }
-
     /// Returns the graphql type name for the given SDML primitve type.
-    pub(crate) fn map_primitive_type_to_graphql_ty_name(
+    pub(crate) fn map_sdml_type_to_graphql_ty_name(
         r#type: &sdml_parser::ast::PrimitiveType,
     ) -> String {
+        use crate::graphql_gen::{
+            FIELD_TYPE_NAME_BOOL, FIELD_TYPE_NAME_INT, FIELD_TYPE_NAME_STRING,
+            FIELD_TYPE_SCALAR_DATETIME,
+        };
         use sdml_parser::ast::PrimitiveType;
         match r#type {
-            PrimitiveType::ShortStr | PrimitiveType::LongStr => "String",
-            PrimitiveType::DateTime => "DateTime",
-            PrimitiveType::Boolean => "Boolean",
-            PrimitiveType::Int32 | PrimitiveType::Int64 => "Integer",
-            PrimitiveType::Float64 => "Float",
+            PrimitiveType::ShortStr | PrimitiveType::LongStr => FIELD_TYPE_NAME_STRING,
+            PrimitiveType::DateTime => FIELD_TYPE_SCALAR_DATETIME,
+            PrimitiveType::Boolean => FIELD_TYPE_NAME_BOOL,
+            PrimitiveType::Int32 | PrimitiveType::Int64 => FIELD_TYPE_NAME_INT,
+            PrimitiveType::Float64 => FIELD_TYPE_NAME_BOOL,
         }
         .to_string()
     }

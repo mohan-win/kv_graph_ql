@@ -7,12 +7,22 @@
 //! will have auto-generated CRUD interface comforming to OpenCRUD.
 //! - Instance of a model entity is called object.
 
+use super::Type;
+
 /// Trait exposing the name of the OpenCRUD abstraction.
 pub trait Named {
-    /// For the given model name return OpenCRUD abstraction name.
+    /// For the given model name return OpenCRUD abstraction name(a.k.a identifier).
     /// # Arguments
     /// `model_name` - name of the sdml model.
     fn name(&self, model_name: &str) -> String;
+    /// For the given model with name,
+    /// return OpenCRUD abstraction identifier's GraphQL type.
+    /// # Arguments
+    /// `model_name` - name of the sdml model.
+    /// `type_mod` - type modifier.
+    fn ty(&self, model_name: &str, type_mod: sdml_parser::ast::FieldTypeMod) -> Type {
+        Type::new(&self.name(model_name), type_mod)
+    }
 }
 
 /// Identifies various input types in OpenCRUD interface.

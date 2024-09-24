@@ -416,7 +416,7 @@ impl<'src> RelationEdge<'src> {
         }
     }
 
-    fn referenced_model_name(&self) -> &Token<'src> {
+    pub fn referenced_model_name(&self) -> &Token<'src> {
         match self {
             Self::OneSideRelation {
                 referenced_model_name,

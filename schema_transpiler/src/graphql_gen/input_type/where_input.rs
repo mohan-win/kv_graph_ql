@@ -77,7 +77,7 @@ fn id_field_def<'src>(
     field_name: &sdml_ast::Token<'src>,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
     string_field_def(&sdml_ast::Token::Ident(
-        graphql_gen::ID_FIELD_NAME,
+        graphql_gen::FIELD_NAME_ID,
         field_name.span(),
     ))
 }
@@ -103,7 +103,7 @@ fn string_field_def<'src>(
     ];
     generate_where_input_filters(
         field_name,
-        "String",
+        graphql_gen::FIELD_TYPE_NAME_STRING,
         &list_field_names_fmt,
         &non_list_field_names_fmt,
     )
@@ -129,8 +129,8 @@ fn number_field_def<'src>(
     ];
 
     let num_type = match number_type {
-        NumberType::Integer => "Integer",
-        NumberType::Float => "Float",
+        NumberType::Integer => graphql_gen::FIELD_TYPE_NAME_INT,
+        NumberType::Float => graphql_gen::FIELD_TYPE_NAME_FLOAT,
     };
     generate_where_input_filters(
         field_name,
@@ -144,7 +144,12 @@ fn boolean_field_def<'src>(
     field_name: &sdml_ast::Token<'src>,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
     let non_list_field_names_fmt = [("{}", "equals"), ("{}_not", "not equals")];
-    generate_where_input_filters(field_name, "Boolean", &[], &non_list_field_names_fmt)
+    generate_where_input_filters(
+        field_name,
+        graphql_gen::FIELD_TYPE_NAME_BOOL,
+        &[],
+        &non_list_field_names_fmt,
+    )
 }
 
 fn datetime_field_def<'src>(
@@ -161,7 +166,7 @@ fn datetime_field_def<'src>(
     ];
     generate_where_input_filters(
         field_name,
-        "DateTime",
+        graphql_gen::FIELD_TYPE_SCALAR_DATETIME,
         &list_field_names_fmt,
         &non_list_field_names_fmt,
     )
@@ -197,7 +202,7 @@ fn list_field_def<'src>(
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
     let scalar_type = match scalar_type {
         sdml_ast::Type::Primitive { r#type, .. } => {
-            Ok(Type::map_primitive_type_to_graphql_ty_name(r#type))
+            Ok(Type::map_sdml_type_to_graphql_ty_name(r#type))
         },
         sdml_ast::Type::Enum{enum_ty_name} => enum_ty_name.try_get_ident_name().map_or_else(
             |e| Err(ErrorGraphQLGen::new_sdml_error(e)),
@@ -238,12 +243,12 @@ fn relation_field_def<'src>(
     let relation_where_filter =
         open_crud::FilterType::WhereInput.name(&related_model_name);
     // Many side of the relation
-    if target_relation.is_array {
+    if target_relation.is_array() {
         Ok(vec![
             InputValueDefinition {
                 description: Some("condition must be true for all nodes".to_string()),
                 name: Name::new(format!("{field_name}_every")),
-                ty: Type::new(&relation_where_filter).unwrap(),
+                ty: Type::new(&relation_where_filter, sdml_ast::FieldTypeMod::Optional),
                 default_value: None,
                 directives: vec![],
             },
@@ -252,21 +257,21 @@ fn relation_field_def<'src>(
                     "condition must be true for at least 1 node".to_string(),
                 ),
                 name: Name::new(format!("{field_name}_some")),
-                ty: Type::new(&relation_where_filter).unwrap(),
+                ty: Type::new(&relation_where_filter, sdml_ast::FieldTypeMod::Optional),
                 default_value: None,
                 directives: vec![],
             },
             InputValueDefinition {
                 description: Some("condition must be false for all nodes".to_string()),
                 name: Name::new(format!("{field_name}_none")),
-                ty: Type::new(&relation_where_filter).unwrap(),
+                ty: Type::new(&relation_where_filter, sdml_ast::FieldTypeMod::Optional),
                 default_value: None,
                 directives: vec![],
             },
             InputValueDefinition {
                 description: Some("is the relation field empty".to_string()),
                 name: Name::new(format!("{field_name}_is_empty")),
-                ty: Type::new("Boolean").unwrap(),
+                ty: Type::new(FIELD_TYPE_NAME_BOOL, sdml_ast::FieldTypeMod::Optional),
                 default_value: None,
                 directives: vec![],
             },
@@ -276,14 +281,14 @@ fn relation_field_def<'src>(
             InputValueDefinition {
                 description: Some("condition must be true for related node".to_string()),
                 name: Name::new(format!("{field_name}")),
-                ty: Type::new(&relation_where_filter).unwrap(),
+                ty: Type::new(&relation_where_filter, sdml_ast::FieldTypeMod::Optional),
                 default_value: None,
                 directives: vec![],
             },
             InputValueDefinition {
                 description: Some("is the relation field null".to_string()),
                 name: Name::new(format!("{field_name}_is_null")),
-                ty: Type::new("Boolean").unwrap(),
+                ty: Type::new(FIELD_TYPE_NAME_BOOL, sdml_ast::FieldTypeMod::Optional),
                 default_value: None,
                 directives: vec![],
             },
@@ -305,14 +310,14 @@ fn logical_operations_def<'src>(
         InputValueDefinition {
             description: Some("Logical AND on all given filters.".to_string()),
             name: Name::new("AND"),
-            ty: Type::new(&format!("[{where_input_ty_name}!]")).unwrap(),
+            ty: Type::new_from_str(&format!("[{where_input_ty_name}!]")).unwrap(),
             default_value: None,
             directives: vec![],
         },
         InputValueDefinition {
             description: Some("Logical OR on all given filters.".to_string()),
             name: Name::new("OR"),
-            ty: Type::new(&format!("[{where_input_ty_name}!]")).unwrap(),
+            ty: Type::new_from_str(&format!("[{where_input_ty_name}!]")).unwrap(),
             default_value: None,
             directives: vec![],
         },
@@ -321,7 +326,7 @@ fn logical_operations_def<'src>(
                 "Logical NOT on all given filters combined by AND.".to_string(),
             ),
             name: Name::new("NOT"),
-            ty: Type::new(&format!("[{where_input_ty_name}!]")).unwrap(),
+            ty: Type::new_from_str(&format!("[{where_input_ty_name}!]")).unwrap(),
             default_value: None,
             directives: vec![],
         },
@@ -355,7 +360,7 @@ fn generate_where_input_filters<'src>(
             .map(|(field_format, field_desc)| InputValueDefinition {
                 description: Some(field_desc.to_string()),
                 name: Name::new(field_format.replace("{}", field_name)),
-                ty: Type::new(field_type_name).unwrap(),
+                ty: Type::new_from_str(field_type_name).unwrap(),
                 default_value: None,
                 directives: vec![],
             });
@@ -365,7 +370,7 @@ fn generate_where_input_filters<'src>(
             .map(|(field_format, field_desc)| InputValueDefinition {
                 description: Some(field_desc.to_string()),
                 name: Name::new(field_format.replace("{}", field_name)),
-                ty: Type::new(&format!("[{field_type_name}]")).unwrap(),
+                ty: Type::new_from_str(&format!("[{field_type_name}]")).unwrap(),
                 default_value: None,
                 directives: vec![],
             });
@@ -562,7 +567,7 @@ field_contains_some: [String]"#;
             &sdml_ast::Token::Ident("field", Span::new(0, 0)),
             &sdml_ast::Type::Primitive {
                 r#type: sdml_ast::PrimitiveType::ShortStr,
-                token: sdml_ast::Token::Ident("String", Span::new(0, 0)),
+                token: sdml_ast::Token::Ident(FIELD_TYPE_NAME_STRING, Span::new(0, 0)),
             },
         )
         .expect("It should be a valid output");

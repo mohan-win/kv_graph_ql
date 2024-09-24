@@ -11,7 +11,7 @@ pub fn order_by_input_enum_def<'src>(
                 .try_get_ident_name()
                 .map_err(ErrorGraphQLGen::new_sdml_error)?
         } else {
-            ID_FIELD_NAME
+            FIELD_NAME_ID
         };
 
         acc.push(EnumValueDefinition {

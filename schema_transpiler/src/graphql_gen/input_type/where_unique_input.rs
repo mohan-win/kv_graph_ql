@@ -37,22 +37,34 @@ pub fn where_unique_unique_input_def<'src>(
 fn unique_scalar_field_to_filter<'src>(
     field: &sdml_ast::FieldDecl<'src>,
 ) -> GraphQLGenResult<InputValueDefinition> {
+    debug_assert!(
+        field.has_id_attrib() | field.has_unique_attrib(),
+        "Only scalar fields with @id or @unique attribute should passed to this function"
+    );
     let is_id_field = field.has_id_attrib();
     let ty = match &*field.field_type.r#type() {
         sdml_ast::Type::Enum { enum_ty_name } => {
             let ty_name = enum_ty_name
                 .try_get_ident_name()
                 .map_err(ErrorGraphQLGen::new_sdml_error)?;
-            Ok(Type::new(ty_name).unwrap())
+            Ok(Type::new(ty_name, sdml_ast::FieldTypeMod::Optional))
         }
         sdml_ast::Type::Primitive {
             r#type: primitive_type,
             ..
         } => match primitive_type {
-            sdml_ast::PrimitiveType::ShortStr if is_id_field => {
-                Ok(Type::new(ID_TYPE_NAME).unwrap())
+            sdml_ast::PrimitiveType::ShortStr if is_id_field => Ok(Type::new(
+                FIELD_TYPE_NAME_ID,
+                sdml_ast::FieldTypeMod::Optional,
+            )),
+            sdml_prim_type => {
+                let graphql_ty_name =
+                    Type::map_sdml_type_to_graphql_ty_name(sdml_prim_type);
+                Ok(Type::new(
+                    &graphql_ty_name,
+                    sdml_ast::FieldTypeMod::Optional,
+                ))
             }
-            sdml_type => Ok(Type::new_from(sdml_type)),
         },
         other_type => {
             debug_assert!(
@@ -74,7 +86,7 @@ fn unique_scalar_field_to_filter<'src>(
     Ok(InputValueDefinition {
         description: None,
         name: if is_id_field {
-            Name::new(ID_FIELD_NAME)
+            Name::new(FIELD_NAME_ID)
         } else {
             let field_name = field
                 .name

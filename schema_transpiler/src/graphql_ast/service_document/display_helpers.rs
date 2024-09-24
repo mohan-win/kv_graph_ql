@@ -373,7 +373,7 @@ mod test {
         let id_input_value = InputValueDefinition {
             description: Some("This is some id with default value as def_id".to_string()),
             name: Name::new("id"),
-            ty: Type::new("ID").unwrap(),
+            ty: Type::new_from_str("ID").unwrap(),
             default_value: Some(ConstValue::String("def_id".to_string())),
             directives: vec![some_directive, deprecated_directive],
         };
@@ -386,7 +386,7 @@ id: ID = "def_id" @some(arg1: "String value", arg2: true, arg3: "Another string 
         let id_input_value = InputValueDefinition {
             description: Some("This is some id".to_string()),
             name: Name::new("id"),
-            ty: Type::new("ID").unwrap(),
+            ty: Type::new_from_str("ID").unwrap(),
             default_value: None,
             directives: vec![],
         };
@@ -399,7 +399,7 @@ id: ID"#;
         let id_input_value = InputValueDefinition {
             description: None,
             name: Name::new("id"),
-            ty: Type::new("ID").unwrap(),
+            ty: Type::new_from_str("ID").unwrap(),
             default_value: None,
             directives: vec![],
         };
@@ -437,7 +437,7 @@ id: ID"#;
         let id_input_value1 = InputValueDefinition {
             description: Some("This is some id with default value as def_id".to_string()),
             name: Name::new("id1"),
-            ty: Type::new("ID").unwrap(),
+            ty: Type::new_from_str("ID").unwrap(),
             default_value: Some(ConstValue::String("def_id".to_string())),
             directives: vec![some_directive, deprecated_directive],
         };
@@ -445,7 +445,7 @@ id: ID"#;
         let id_input_value2 = InputValueDefinition {
             description: Some("This is some id".to_string()),
             name: Name::new("id2"),
-            ty: Type::new("ID").unwrap(),
+            ty: Type::new_from_str("ID").unwrap(),
             default_value: None,
             directives: vec![],
         };
@@ -453,7 +453,7 @@ id: ID"#;
         let id_input_value3 = InputValueDefinition {
             description: None,
             name: Name::new("id3"),
-            ty: Type::new("ID").unwrap(),
+            ty: Type::new_from_str("ID").unwrap(),
             default_value: None,
             directives: vec![],
         };
@@ -499,7 +499,7 @@ id3: ID"#;
         let id_input_value1 = InputValueDefinition {
             description: Some("This is some id with default value as def_id".to_string()),
             name: Name::new("id1"),
-            ty: Type::new("ID").unwrap(),
+            ty: Type::new_from_str("ID").unwrap(),
             default_value: Some(ConstValue::String("def_id".to_string())),
             directives: vec![some_directive.clone(), deprecated_directive],
         };
@@ -507,7 +507,7 @@ id3: ID"#;
         let id_input_value2 = InputValueDefinition {
             description: Some("This is some id".to_string()),
             name: Name::new("id2"),
-            ty: Type::new("ID").unwrap(),
+            ty: Type::new_from_str("ID").unwrap(),
             default_value: None,
             directives: vec![],
         };
@@ -515,7 +515,7 @@ id3: ID"#;
         let id_input_value3 = InputValueDefinition {
             description: None,
             name: Name::new("id3"),
-            ty: Type::new("ID").unwrap(),
+            ty: Type::new_from_str("ID").unwrap(),
             default_value: None,
             directives: vec![],
         };
@@ -565,49 +565,49 @@ me: User!
             InputValueDefinition {
                 description: Some("Users where input".to_string()),
                 name: Name::new("where"),
-                ty: Type::new("UserWhereInput").unwrap(),
+                ty: Type::new_from_str("UserWhereInput").unwrap(),
                 default_value: None,
                 directives: vec![],
             },
             InputValueDefinition {
                 description: None,
                 name: Name::new("orderBy"),
-                ty: Type::new("UserOrderByInput").unwrap(),
+                ty: Type::new_from_str("UserOrderByInput").unwrap(),
                 default_value: None,
                 directives: vec![],
             },
             InputValueDefinition {
                 description: None,
                 name: Name::new("skip"),
-                ty: Type::new("Int").unwrap(),
+                ty: Type::new_from_str("Int").unwrap(),
                 default_value: None,
                 directives: vec![],
             },
             InputValueDefinition {
                 description: None,
                 name: Name::new("after"),
-                ty: Type::new("ID").unwrap(),
+                ty: Type::new_from_str("ID").unwrap(),
                 default_value: None,
                 directives: vec![],
             },
             InputValueDefinition {
                 description: None,
                 name: Name::new("before"),
-                ty: Type::new("ID").unwrap(),
+                ty: Type::new_from_str("ID").unwrap(),
                 default_value: None,
                 directives: vec![],
             },
             InputValueDefinition {
                 description: None,
                 name: Name::new("first"),
-                ty: Type::new("Int").unwrap(),
+                ty: Type::new_from_str("Int").unwrap(),
                 default_value: None,
                 directives: vec![],
             },
             InputValueDefinition {
                 description: None,
                 name: Name::new("last"),
-                ty: Type::new("Int").unwrap(),
+                ty: Type::new_from_str("Int").unwrap(),
                 default_value: None,
                 directives: vec![],
             },
@@ -625,21 +625,21 @@ me: User!
             description: Some("Fetch users for the given criteria".to_string()),
             name: Name::new("users"),
             arguments: users_field_args,
-            ty: Type::new("[User!]!").unwrap(),
+            ty: Type::new_from_str("[User!]!").unwrap(),
             directives: vec![deprecated_directive],
         };
         let admin_field = FieldDefinition {
             description: None,
             name: Name::new("adminUser"),
             arguments: vec![],
-            ty: Type::new("User").unwrap(),
+            ty: Type::new_from_str("User").unwrap(),
             directives: vec![],
         };
         let me_field = FieldDefinition {
             description: None,
             name: Name::new("me"),
             arguments: vec![],
-            ty: Type::new("User!").unwrap(),
+            ty: Type::new_from_str("User!").unwrap(),
             directives: vec![],
         };
 
@@ -692,14 +692,14 @@ createdAt: DateTime!
                         description: Some("The unique identifier".to_string()),
                         name: Name::new("id"),
                         arguments: vec![],
-                        ty: Type::new("ID!").unwrap(),
+                        ty: Type::new_from_str("ID!").unwrap(),
                         directives: vec![unique_directive.clone()],
                     },
                     FieldDefinition {
                         description: None,
                         name: Name::new("email"),
                         arguments: vec![],
-                        ty: Type::new("String!").unwrap(),
+                        ty: Type::new_from_str("String!").unwrap(),
                         directives: vec![unique_directive.clone()],
                     },
                     FieldDefinition {
@@ -708,7 +708,7 @@ createdAt: DateTime!
                         ),
                         name: Name::new("createdAt"),
                         arguments: vec![],
-                        ty: Type::new("DateTime!").unwrap(),
+                        ty: Type::new_from_str("DateTime!").unwrap(),
                         directives: vec![],
                     },
                 ],
@@ -741,49 +741,49 @@ me: User!
             InputValueDefinition {
                 description: Some("Users where input".to_string()),
                 name: Name::new("where"),
-                ty: Type::new("UserWhereInput").unwrap(),
+                ty: Type::new_from_str("UserWhereInput").unwrap(),
                 default_value: None,
                 directives: vec![],
             },
             InputValueDefinition {
                 description: None,
                 name: Name::new("orderBy"),
-                ty: Type::new("UserOrderByInput").unwrap(),
+                ty: Type::new_from_str("UserOrderByInput").unwrap(),
                 default_value: None,
                 directives: vec![],
             },
             InputValueDefinition {
                 description: None,
                 name: Name::new("skip"),
-                ty: Type::new("Int").unwrap(),
+                ty: Type::new_from_str("Int").unwrap(),
                 default_value: None,
                 directives: vec![],
             },
             InputValueDefinition {
                 description: None,
                 name: Name::new("after"),
-                ty: Type::new("ID").unwrap(),
+                ty: Type::new_from_str("ID").unwrap(),
                 default_value: None,
                 directives: vec![],
             },
             InputValueDefinition {
                 description: None,
                 name: Name::new("before"),
-                ty: Type::new("ID").unwrap(),
+                ty: Type::new_from_str("ID").unwrap(),
                 default_value: None,
                 directives: vec![],
             },
             InputValueDefinition {
                 description: None,
                 name: Name::new("first"),
-                ty: Type::new("Int").unwrap(),
+                ty: Type::new_from_str("Int").unwrap(),
                 default_value: None,
                 directives: vec![],
             },
             InputValueDefinition {
                 description: None,
                 name: Name::new("last"),
-                ty: Type::new("Int").unwrap(),
+                ty: Type::new_from_str("Int").unwrap(),
                 default_value: None,
                 directives: vec![],
             },
@@ -801,21 +801,21 @@ me: User!
             description: Some("Fetch users for the given criteria".to_string()),
             name: Name::new("users"),
             arguments: users_field_args,
-            ty: Type::new("[User!]!").unwrap(),
+            ty: Type::new_from_str("[User!]!").unwrap(),
             directives: vec![deprecated_directive],
         };
         let admin_field = FieldDefinition {
             description: None,
             name: Name::new("adminUser"),
             arguments: vec![],
-            ty: Type::new("User").unwrap(),
+            ty: Type::new_from_str("User").unwrap(),
             directives: vec![],
         };
         let me_field = FieldDefinition {
             description: None,
             name: Name::new("me"),
             arguments: vec![],
-            ty: Type::new("User!").unwrap(),
+            ty: Type::new_from_str("User!").unwrap(),
             directives: vec![],
         };
 
@@ -868,14 +868,14 @@ createdAt: DateTime!
                         description: Some("The unique identifier".to_string()),
                         name: Name::new("id"),
                         arguments: vec![],
-                        ty: Type::new("ID!").unwrap(),
+                        ty: Type::new_from_str("ID!").unwrap(),
                         directives: vec![unique_directive.clone()],
                     },
                     FieldDefinition {
                         description: None,
                         name: Name::new("email"),
                         arguments: vec![],
-                        ty: Type::new("String!").unwrap(),
+                        ty: Type::new_from_str("String!").unwrap(),
                         directives: vec![unique_directive.clone()],
                     },
                     FieldDefinition {
@@ -884,7 +884,7 @@ createdAt: DateTime!
                         ),
                         name: Name::new("createdAt"),
                         arguments: vec![],
-                        ty: Type::new("DateTime!").unwrap(),
+                        ty: Type::new_from_str("DateTime!").unwrap(),
                         directives: vec![],
                     },
                 ],
@@ -1096,7 +1096,7 @@ reason: String = "No longer supported"
                 InputValueDefinition {
                     description: None,
                     name: Name::new("name"),
-                    ty: Type::new("String!").unwrap(),
+                    ty: Type::new_from_str("String!").unwrap(),
                     default_value: None,
                     directives: vec![],
                 }
@@ -1114,7 +1114,8 @@ reason: String = "No longer supported"
                 InputValueDefinition {
                     description: None,
                     name: Name::new("reason"),
-                    ty: Type::new("String").unwrap(),
+                    ty: Type::new_from_str(crate::graphql_gen::FIELD_TYPE_NAME_STRING)
+                        .unwrap(),
                     default_value: Some(ConstValue::String(
                         "No longer supported".to_string(),
                     )),
