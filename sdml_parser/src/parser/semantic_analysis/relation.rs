@@ -238,7 +238,7 @@ fn new_relation_edge<'src>(
         .is_some();
     let rel_fld_exists = referenced_model_relation_field.is_some();
     let rel_fld_array =
-        referenced_model_relation_field.is_some_and(|fld| fld.field_type.is_array);
+        referenced_model_relation_field.is_some_and(|fld| fld.field_type.is_array());
 
     match (scalar_fld_unique, rel_fld_exists, rel_fld_array) {
         (_scalar_fld_unique @ true, _rel_fld_exists @ true, _rel_fld_array @ true) => {

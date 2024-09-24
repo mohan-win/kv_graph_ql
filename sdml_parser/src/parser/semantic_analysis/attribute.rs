@@ -432,7 +432,7 @@ fn is_valid_field_type<'src>(
         Some(attrib_detail) => {
             let is_scalar_short_str_field = field.field_type.is_scalar_short_str();
             let is_scalar_field = field.field_type.is_scalar();
-            let is_optional_field = field.field_type.is_optional;
+            let is_optional_field = field.field_type.is_optional();
 
             let invalid_attribute_err = Err(SemanticError::AttributeInvalid {
                 span: attrib.name.span(),

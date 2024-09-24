@@ -2,7 +2,7 @@ use std::ops::Div;
 
 use crate::ast::{
     AttribArg, Attribute, ConfigDecl, ConfigPair, DataModel, Declaration, EnumDecl,
-    FieldDecl, FieldType, ModelDecl, NamedArg, PrimitiveType, Token, Type,
+    FieldDecl, FieldType, FieldTypeMod, ModelDecl, NamedArg, PrimitiveType, Token, Type,
 };
 use chumsky::text::{self, ascii};
 use chumsky::{extra::Err, prelude::*};
@@ -195,11 +195,13 @@ fn field_type<'src>(
                     token: Token::Ident(r#type, e.span()),
                 },
             );
-            FieldType::new(
-                r#type,
-                optional_or_array.map_or(false, |v| v.eq("?")),
-                optional_or_array.map_or(false, |v| v.eq("[]")),
-            )
+            let field_type_mod =
+                optional_or_array.map_or(FieldTypeMod::NonOptional, |v| match v {
+                    "?" => FieldTypeMod::Optional,
+                    "[]" => FieldTypeMod::Array,
+                    _ => panic!("Unexpected type modifier!"),
+                });
+            FieldType::new(r#type, field_type_mod)
         })
 }
 
@@ -466,8 +468,7 @@ mod tests {
                     r#type: PrimitiveType::Boolean,
                     token: Token::Ident("Boolean", Span::new(0, 0))
                 },
-                false,
-                false
+                FieldTypeMod::NonOptional
             ))
         );
 
@@ -478,8 +479,7 @@ mod tests {
                     r#type: PrimitiveType::ShortStr,
                     token: Token::Ident("ShortStr", Span::new(0, 0))
                 },
-                false,
-                false,
+                FieldTypeMod::NonOptional
             ))
         );
 
@@ -490,8 +490,7 @@ mod tests {
                     r#type: PrimitiveType::ShortStr,
                     token: Token::Ident("ShortStr", Span::new(0, 0))
                 },
-                true,
-                false,
+                FieldTypeMod::Optional
             ))
         );
 
@@ -502,8 +501,7 @@ mod tests {
                     r#type: PrimitiveType::ShortStr,
                     token: Token::Ident("ShortStr", Span::new(0, 0)),
                 },
-                false,
-                true,
+                FieldTypeMod::Array
             ))
         );
 
@@ -511,8 +509,7 @@ mod tests {
             field_type().parse("MyEnum?").into_result(),
             Ok(FieldType::new(
                 Type::Unknown(Token::Ident("MyEnum", Span::new(0, 0))),
-                true,
-                false,
+                FieldTypeMod::Optional
             ))
         );
 
@@ -621,8 +618,7 @@ mod tests {
                         r#type: PrimitiveType::ShortStr,
                         token: Token::Ident("ShortStr", Span::new(0, 0))
                     },
-                    true,
-                    false
+                    FieldTypeMod::Optional
                 ),
                 attributes: vec![
                     Attribute {
@@ -651,8 +647,7 @@ mod tests {
                         r#type: PrimitiveType::ShortStr,
                         token: Token::Ident("ShortStr", Span::new(0, 0))
                     },
-                    true,
-                    false
+                    FieldTypeMod::Optional
                 ),
                 attributes: vec![]
             })
@@ -683,8 +678,7 @@ mod tests {
                                 r#type: (PrimitiveType::ShortStr),
                                 token: Token::Ident("ShortStr", Span::new(0, 0))
                             },
-                            false,
-                            false
+                            FieldTypeMod::NonOptional
                         ),
                         attributes: vec![Attribute {
                             name: Token::Ident("unique", Span::new(0, 0)),
@@ -698,8 +692,7 @@ mod tests {
                                 r#type: (PrimitiveType::ShortStr),
                                 token: Token::Ident("ShortStr", Span::new(0, 0))
                             },
-                            true,
-                            false
+                            FieldTypeMod::Optional
                         ),
                         attributes: vec![]
                     },
@@ -710,8 +703,7 @@ mod tests {
                                 r#type: (PrimitiveType::ShortStr),
                                 token: Token::Ident("ShortStr", Span::new(0, 0))
                             },
-                            false,
-                            true
+                            FieldTypeMod::Array
                         ),
                         attributes: vec![]
                     },
@@ -719,8 +711,7 @@ mod tests {
                         name: Token::Ident("role", Span::new(0, 0)),
                         field_type: FieldType::new(
                             Type::Unknown(Token::Ident("Role", Span::new(0, 0))),
-                            false,
-                            false
+                            FieldTypeMod::NonOptional
                         ),
                         attributes: vec![Attribute {
                             name: Token::Ident("default", Span::new(0, 0)),
@@ -809,8 +800,7 @@ mod tests {
                                 r#type: PrimitiveType::ShortStr,
                                 token: Token::Ident("ShortStr", Span::new(0, 0)),
                             },
-                            false,
-                            false,
+                            FieldTypeMod::NonOptional,
                         ),
                         attributes: vec![
                             Attribute {
@@ -833,8 +823,7 @@ mod tests {
                                 r#type: (PrimitiveType::ShortStr),
                                 token: Token::Ident("ShortStr", Span::new(0, 0)),
                             },
-                            false,
-                            false,
+                            FieldTypeMod::NonOptional,
                         ),
                         attributes: vec![Attribute {
                             name: Token::Ident("unique", Span::new(0, 0)),
@@ -848,8 +837,7 @@ mod tests {
                                 r#type: (PrimitiveType::ShortStr),
                                 token: Token::Ident("ShortStr", Span::new(0, 0)),
                             },
-                            true,
-                            false,
+                            FieldTypeMod::Optional,
                         ),
                         attributes: vec![],
                     },
@@ -860,8 +848,7 @@ mod tests {
                                 r#type: (PrimitiveType::ShortStr),
                                 token: Token::Ident("ShortStr", Span::new(0, 0)),
                             },
-                            false,
-                            true,
+                            FieldTypeMod::Array,
                         ),
                         attributes: vec![],
                     },
@@ -871,8 +858,7 @@ mod tests {
                             Type::Enum {
                                 enum_ty_name: Token::Ident("Role", Span::new(0, 0)),
                             },
-                            false,
-                            false,
+                            FieldTypeMod::NonOptional,
                         ),
                         attributes: vec![Attribute {
                             name: Token::Ident("default", Span::new(0, 0)),
@@ -903,8 +889,7 @@ mod tests {
                                     Span::new(0, 0),
                                 ),
                             }),
-                            true,
-                            false,
+                            FieldTypeMod::Optional,
                         ),
                         attributes: vec![Attribute {
                             name: Token::Ident("relation", Span::new(0, 0)),
@@ -937,8 +922,7 @@ mod tests {
                                 r#type: PrimitiveType::ShortStr,
                                 token: Token::Ident("ShortStr", Span::new(0, 0)),
                             },
-                            true,
-                            false,
+                            FieldTypeMod::Optional,
                         ),
                         attributes: vec![],
                     },
@@ -955,8 +939,7 @@ mod tests {
                                     Span::new(0, 0),
                                 ),
                             }),
-                            false,
-                            true,
+                            FieldTypeMod::Array,
                         ),
                         attributes: vec![Attribute {
                             name: Token::Ident("relation", Span::new(0, 0)),
@@ -980,8 +963,7 @@ mod tests {
                             r#type: PrimitiveType::ShortStr,
                             token: Token::Ident("ShortStr", Span::new(0, 0)),
                         },
-                        false,
-                        false,
+                        FieldTypeMod::NonOptional,
                     ),
                     attributes: vec![Attribute {
                         name: Token::Ident("id", Span::new(0, 0)),

@@ -263,24 +263,48 @@ impl<'src> FieldDecl<'src> {
     }
 }
 
+/// Field type modifier.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum FieldTypeMod {
+    /// Optional field type modifier, marks the field as optional.
+    Optional,
+    /// Non-optional field type modifier, marks the field as mandatory.
+    NonOptional,
+    /// Array field type modifier, marks the field type as array.
+    Array,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct FieldType<'src> {
     r#type: RefCell<Type<'src>>, // Note: interier mutability, this is because the field_type for custom types set to Type::Unknown in the first pass. And then in the later pass actual type is determined.
-    pub is_optional: bool,
-    pub is_array: bool,
+    pub type_mod: FieldTypeMod,
 }
 
 impl<'src> FieldType<'src> {
-    pub fn new(r#type: Type<'src>, is_optional: bool, is_array: bool) -> FieldType<'src> {
+    pub fn is_optional(&self) -> bool {
+        if let FieldTypeMod::Optional = self.type_mod {
+            true
+        } else {
+            false
+        }
+    }
+    pub fn is_array(&self) -> bool {
+        if let FieldTypeMod::Array = self.type_mod {
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn new(r#type: Type<'src>, type_mod: FieldTypeMod) -> FieldType<'src> {
         FieldType {
             r#type: RefCell::new(r#type),
-            is_optional,
-            is_array,
+            type_mod,
         }
     }
     /// Is this a scalar (i.e. non-array) short string type ?
     pub fn is_scalar_short_str(&self) -> bool {
-        if self.is_array {
+        if self.is_array() {
             false
         } else {
             match &*self.r#type() {
@@ -296,7 +320,7 @@ impl<'src> FieldType<'src> {
     /// **Note**: If this is an array type, this field is able to
     /// hold more than one value. Hence it is not scalar field.
     pub fn is_scalar(&self) -> bool {
-        if self.is_array {
+        if self.is_array() {
             false
         } else {
             match &*self.r#type() {
