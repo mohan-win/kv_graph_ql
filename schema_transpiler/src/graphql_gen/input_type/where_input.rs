@@ -458,21 +458,21 @@ field_not_in: [String]"#;
     fn test_input_filters_int_field_def() {
         let expected_str = r#"
 """equals"""
-field: Integer
+field: Int
 """not equals"""
-field_not: Integer
+field_not: Int
 """less than"""
-field_lt: Integer
+field_lt: Int
 """less than or equals"""
-field_lte: Integer
+field_lte: Int
 """greater than"""
-field_gt: Integer
+field_gt: Int
 """greater than or equals"""
-field_gte: Integer
+field_gte: Int
 """in list"""
-field_in: [Integer]
+field_in: [Int]
 """not in list"""
-field_not_in: [Integer]"#;
+field_not_in: [Int]"#;
         let int_field_input_filters = number_field_def(
             &sdml_ast::Token::Ident("field", Span::new(0, 0)),
             NumberType::Integer,

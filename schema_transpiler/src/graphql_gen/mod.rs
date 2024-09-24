@@ -93,7 +93,7 @@ fn interface_node_def() -> TypeDefinition {
                 description: Some("ID field with globally unique ID".to_string()),
                 name: Name::new("id"),
                 arguments: vec![],
-                ty: Type::new(FIELD_NAME_ID, sdml_ast::FieldTypeMod::NonOptional),
+                ty: Type::new(FIELD_TYPE_NAME_ID, sdml_ast::FieldTypeMod::NonOptional),
                 directives: vec![ConstDirective {
                     name: Name::new("unique"),
                     arguments: vec![],
