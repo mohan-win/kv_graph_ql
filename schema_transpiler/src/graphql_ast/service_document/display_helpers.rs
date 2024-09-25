@@ -281,7 +281,7 @@ fn display_directives(
 
 #[inline(always)]
 fn display_implements(f: &mut fmt::Formatter, interfaces: &Vec<Name>) -> fmt::Result {
-    if interfaces.len() > 1 {
+    if interfaces.len() > 0 {
         let interfaces_str = interfaces.iter().fold(" ".to_string(), |acc, interface| {
             format!("{}{} & ", acc, interface)
         });

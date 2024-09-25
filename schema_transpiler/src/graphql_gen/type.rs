@@ -101,16 +101,16 @@ fn non_relation_field_def<'src>(
     })
 }
 
-/// Returns arguments for the array field.
+/// Returns field arguments for the `relation` array field.
 fn array_field_args<'src>(
-    model_name: &'src str,
+    referenced_model_name: &'src str,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
     let mut args = vec![];
     args.push(InputValueDefinition {
         description: None,
         name: Name::new(FIELD_ARG_WHERE),
         ty: open_crud::FilterType::WhereInput
-            .ty(model_name, sdml_ast::FieldTypeMod::Optional),
+            .ty(referenced_model_name, sdml_ast::FieldTypeMod::Optional),
         default_value: None,
         directives: vec![],
     });
@@ -118,7 +118,7 @@ fn array_field_args<'src>(
         description: None,
         name: Name::new(FIELD_ARG_ORDER_BY),
         ty: open_crud::InputType::OrderBy
-            .ty(model_name, sdml_ast::FieldTypeMod::Optional),
+            .ty(referenced_model_name, sdml_ast::FieldTypeMod::Optional),
         default_value: None,
         directives: vec![],
     });
@@ -171,35 +171,31 @@ fn relation_field_def<'src>(
         _ => panic!("Only relation field is allowed here!"),
     };
 
-    let model_name_str = model
-        .name
-        .try_get_ident_name()
-        .map_err(ErrorGraphQLGen::new_sdml_error)?;
     let field_name = field
         .name
         .try_get_ident_name()
         .map_err(ErrorGraphQLGen::new_sdml_error)?;
-    let field_type_str = relation_edge
+    let referenced_model_name = relation_edge
         .referenced_model_name()
         .try_get_ident_name()
         .map_err(ErrorGraphQLGen::new_sdml_error)?;
-    let field_type = Type::new(field_type_str, field.field_type.type_mod);
+    let field_type = Type::new(referenced_model_name, field.field_type.type_mod);
 
     if field.field_type.is_array() {
         Ok(vec![
             FieldDefinition {
                 description: None,
                 name: Name::new(field_name),
-                arguments: array_field_args(model_name_str)?,
+                arguments: array_field_args(referenced_model_name)?,
                 ty: field_type,
                 directives: vec![],
             },
             FieldDefinition {
                 description: None,
-                name: Name::new(field_name),
-                arguments: array_field_args(model_name_str)?,
+                name: Name::new(format!("{field_name}Connection")),
+                arguments: array_field_args(referenced_model_name)?,
                 ty: open_crud::AuxiliaryType::Connection
-                    .ty(model_name_str, field.field_type.type_mod),
+                    .ty(referenced_model_name, field.field_type.type_mod),
                 directives: vec![],
             },
         ])
@@ -211,5 +207,45 @@ fn relation_field_def<'src>(
             ty: field_type,
             directives: vec![],
         }])
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use chumsky::prelude::*;
+    use sdml_parser::parser;
+    use std::fs;
+
+    use crate::graphql_gen::r#type::type_def;
+
+    #[test]
+    fn test_type_def() {
+        let mut expected_graphql_str = fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/test_type_def.graphql"
+        ))
+        .unwrap();
+        expected_graphql_str.retain(|c| !c.is_whitespace());
+        let sdml_str = fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/test_type_def.sdml"
+        ))
+        .unwrap();
+        let sdml_declarations = parser::delcarations()
+            .parse(&sdml_str)
+            .into_output()
+            .expect("It should be a valid SDML.");
+        let data_model = parser::semantic_analysis(sdml_declarations)
+            .expect("A valid SDML file shouldn't fail in parsing.");
+        let user_model_sdml_ast = data_model
+            .models()
+            .get("User")
+            .expect("User model should exist in the SDML.");
+        let user_type_graphql_ast =
+            type_def(user_model_sdml_ast).expect("It should return User");
+
+        let mut user_type_graphql = user_type_graphql_ast.to_string();
+        user_type_graphql.retain(|c| !c.is_whitespace());
+        assert_eq!(expected_graphql_str, user_type_graphql)
     }
 }

@@ -1,0 +1,51 @@
+"""
+User
+"""
+type User implements Node {
+  id: String! @map(name: "userId") @unique
+  email: String! @unique
+  name: String
+  nickNames: [String!]!
+  role: Role!
+  mentees(
+    where: UserWhereInput
+    orderBy: UserOrderByInput
+    skip: Int
+    after: ID
+    before: ID
+    first: Int
+    last: Int
+  ): [User!]!
+  menteesConnection(
+    where: UserWhereInput
+    orderBy: UserOrderByInput
+    skip: Int
+    after: ID
+    before: ID
+    first: Int
+    last: Int
+  ): [UserConnection!]!
+  mentor: User
+  mentorEmail: String
+  spouse: User
+  spouseUserId: String @unique
+  profile: Profile
+  posts(
+    where: PostWhereInput
+    orderBy: PostOrderByInput
+    skip: Int
+    after: ID
+    before: ID
+    first: Int
+    last: Int
+  ): [Post!]!
+  postsConnection(
+    where: PostWhereInput
+    orderBy: PostOrderByInput
+    skip: Int
+    after: ID
+    before: ID
+    first: Int
+    last: Int
+  ): [PostConnection!]!
+}
