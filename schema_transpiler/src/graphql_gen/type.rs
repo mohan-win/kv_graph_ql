@@ -1,9 +1,20 @@
 //! Module to code-gen required GraphQL object type for the given SDML model type.
 use super::*;
+use aux_type::connection_types_def;
 
-pub fn type_def<'src>(
+/// Code-gen GraphQL type and its auxiliary types for the given model.
+pub fn type_and_aux_types_def<'src>(
     model: &sdml_ast::ModelDecl<'src>,
-) -> GraphQLGenResult<TypeDefinition> {
+    pg_info: &TypeDefinition,
+    aggregate: &TypeDefinition,
+) -> GraphQLGenResult<Vec<TypeDefinition>> {
+    let mut result = vec![];
+    result.push(type_def(model)?);
+    result.extend(connection_types_def(&model.name, pg_info, aggregate)?);
+    Ok(result)
+}
+
+fn type_def<'src>(model: &sdml_ast::ModelDecl<'src>) -> GraphQLGenResult<TypeDefinition> {
     let model_name = model
         .name
         .try_get_ident_name()
@@ -216,7 +227,10 @@ mod tests {
     use sdml_parser::parser;
     use std::fs;
 
-    use crate::graphql_gen::r#type::type_def;
+    use crate::graphql_gen::{
+        aux_type,
+        r#type::{type_and_aux_types_def, type_def},
+    };
 
     #[test]
     fn test_type_def() {
@@ -247,5 +261,45 @@ mod tests {
         let mut user_type_graphql = user_type_graphql_ast.to_string();
         user_type_graphql.retain(|c| !c.is_whitespace());
         assert_eq!(expected_graphql_str, user_type_graphql)
+    }
+
+    #[test]
+    fn test_type_and_aux_types_def() {
+        let mut expected_graphql_str = fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/test_type_and_aux_types_def.graphql"
+        ))
+        .unwrap();
+        expected_graphql_str.retain(|c| !c.is_whitespace());
+        let sdml_str = fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/test_type_and_aux_types_def.sdml"
+        ))
+        .unwrap();
+        let sdml_declarations = parser::delcarations()
+            .parse(&sdml_str)
+            .into_output()
+            .expect("It should be a valid SDML.");
+        let data_model = parser::semantic_analysis(sdml_declarations)
+            .expect("A valid SDML file shouldn't fail in parsing.");
+        let user_model_sdml_ast = data_model
+            .models()
+            .get("User")
+            .expect("User model should exist in the SDML.");
+        let pg_info =
+            aux_type::page_info_type_def().expect("pg_info can't fail to generate");
+        let aggregage =
+            aux_type::aggregage_type_def().expect("aggregate can't fail to generate");
+        let user_types_graphql_ast =
+            type_and_aux_types_def(user_model_sdml_ast, &pg_info, &aggregage)
+                .expect("It should return User and their aux types!");
+
+        let mut user_types_graphql = user_types_graphql_ast
+            .into_iter()
+            .fold("".to_string(), |acc, ty| {
+                format!("{}{}", acc, ty.to_string())
+            });
+        user_types_graphql.retain(|c| !c.is_whitespace());
+        assert_eq!(expected_graphql_str, user_types_graphql)
     }
 }

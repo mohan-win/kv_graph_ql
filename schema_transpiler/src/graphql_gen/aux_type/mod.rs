@@ -1,16 +1,20 @@
 use super::*;
 
-/// Get connection type definition for given model.
-pub fn connection_type_def<'src>(
+/// Get connection type and its edge, definition for given model.
+pub fn connection_types_def<'src>(
     model_name: &sdml_ast::Token<'src>,
     pg_info: &TypeDefinition,
     aggregate: &TypeDefinition,
-) -> GraphQLGenResult<TypeDefinition> {
+) -> GraphQLGenResult<Vec<TypeDefinition>> {
+    let mut result = vec![];
     let edge = edge_type_def(model_name)?;
+    let edge_type_name = edge.name.as_str().to_string();
+    result.push(edge);
+
     let model_name = model_name
         .try_get_ident_name()
         .map_err(ErrorGraphQLGen::new_sdml_error)?;
-    Ok(TypeDefinition {
+    result.push(TypeDefinition {
         extend: false,
         description: None,
         name: Name::new(AuxiliaryType::Connection.name(model_name)),
@@ -32,7 +36,7 @@ pub fn connection_type_def<'src>(
                     description: None,
                     name: Name::new("edges"),
                     arguments: vec![],
-                    ty: Type::new(edge.name.as_str(), sdml_ast::FieldTypeMod::Array),
+                    ty: Type::new(&edge_type_name, sdml_ast::FieldTypeMod::Array),
                     directives: vec![],
                 },
                 FieldDefinition {
@@ -47,7 +51,9 @@ pub fn connection_type_def<'src>(
                 },
             ],
         }),
-    })
+    });
+
+    Ok(result)
 }
 
 fn edge_type_def<'src>(
@@ -232,6 +238,11 @@ cursor: String!
     #[test]
     fn test_connection_type_def() {
         let expected_graphql_str = r#"
+type UserEdge {
+node: User!
+cursor: String!
+}
+
 type UserConnection {
 pageInfo: PageInfo!
 edges: [UserEdge!]!
@@ -240,12 +251,17 @@ aggregate: Aggregate!
 "#;
         let pg_info_ty = page_info_type_def().unwrap();
         let aggregate_ty = aggregage_type_def().unwrap();
-        let user_connection_ty = connection_type_def(
+        let user_connection_types = connection_types_def(
             &sdml_parser::ast::Token::Ident("User", Span::new(0, 0)),
             &pg_info_ty,
             &aggregate_ty,
         )
         .unwrap();
-        assert_eq!(expected_graphql_str, user_connection_ty.to_string())
+        let actual_graphql_str = user_connection_types
+            .into_iter()
+            .fold("".to_string(), |acc, ty| {
+                format!("{}{}", acc, ty.to_string())
+            });
+        assert_eq!(expected_graphql_str, actual_graphql_str)
     }
 }
