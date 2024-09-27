@@ -10,7 +10,7 @@ pub fn type_and_aux_types_def<'src>(
 ) -> GraphQLGenResult<Vec<TypeDefinition>> {
     let mut result = vec![];
     result.push(type_def(model)?);
-    result.extend(connection_types_def(&model.name, pg_info, aggregate)?);
+    result.extend(connection_types_def(&model.name)?);
     Ok(result)
 }
 

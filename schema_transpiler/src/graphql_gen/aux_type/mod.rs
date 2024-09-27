@@ -3,8 +3,6 @@ use super::*;
 /// Get connection type and its edge, definition for given model.
 pub fn connection_types_def<'src>(
     model_name: &sdml_ast::Token<'src>,
-    pg_info: &TypeDefinition,
-    aggregate: &TypeDefinition,
 ) -> GraphQLGenResult<Vec<TypeDefinition>> {
     let mut result = vec![];
     let edge = edge_type_def(model_name)?;
@@ -26,10 +24,8 @@ pub fn connection_types_def<'src>(
                     description: None,
                     name: Name::new("pageInfo"),
                     arguments: vec![],
-                    ty: Type::new(
-                        pg_info.name.as_str(),
-                        sdml_ast::FieldTypeMod::NonOptional,
-                    ),
+                    ty: open_crud::QueryType::PageInfo
+                        .common_ty(sdml_ast::FieldTypeMod::NonOptional),
                     directives: vec![],
                 },
                 FieldDefinition {
@@ -43,10 +39,8 @@ pub fn connection_types_def<'src>(
                     description: None,
                     name: Name::new("aggregate"),
                     arguments: vec![],
-                    ty: Type::new(
-                        aggregate.name.as_str(),
-                        sdml_ast::FieldTypeMod::NonOptional,
-                    ),
+                    ty: open_crud::QueryType::Aggregate
+                        .common_ty(sdml_ast::FieldTypeMod::NonOptional),
                     directives: vec![],
                 },
             ],
@@ -96,7 +90,7 @@ pub fn page_info_type_def<'src>() -> GraphQLGenResult<TypeDefinition> {
     Ok(TypeDefinition {
         extend: false,
         description: None,
-        name: Name::new("PageInfo"),
+        name: Name::new(open_crud::QueryType::PageInfo.common_name()),
         directives: vec![],
         kind: TypeKind::Object(ObjectType {
             implements: vec![],
@@ -165,7 +159,7 @@ pub fn aggregage_type_def<'src>() -> GraphQLGenResult<TypeDefinition> {
     Ok(TypeDefinition {
         extend: false,
         description: None,
-        name: Name::new("Aggregate"),
+        name: Name::new(open_crud::QueryType::Aggregate.common_name()),
         directives: vec![],
         kind: TypeKind::Object(ObjectType {
             implements: vec![],
@@ -249,12 +243,8 @@ edges: [UserEdge!]!
 aggregate: Aggregate!
 }
 "#;
-        let pg_info_ty = page_info_type_def().unwrap();
-        let aggregate_ty = aggregage_type_def().unwrap();
         let user_connection_types = connection_types_def(
             &sdml_parser::ast::Token::Ident("User", Span::new(0, 0)),
-            &pg_info_ty,
-            &aggregate_ty,
         )
         .unwrap();
         let actual_graphql_str = user_connection_types

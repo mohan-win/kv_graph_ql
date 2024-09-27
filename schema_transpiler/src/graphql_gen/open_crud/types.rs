@@ -88,17 +88,21 @@ impl Named for AuxiliaryType {
 #[derive(Debug, Clone, PartialEq)]
 pub enum QueryType {
     RootNode,
+    PageInfo,
+    Aggregate,
 }
 
 impl Named for QueryType {
     fn name(&self, _model_name: &str) -> String {
         match self {
-            Self::RootNode => panic!("RootNode doesn't belong to any model."),
+            _ => panic!("{:#?} doesn't belong to any model.", self),
         }
     }
     fn common_name(&self) -> String {
         match self {
             Self::RootNode => "Node".to_string(),
+            Self::PageInfo => "PageInfo".to_string(),
+            Self::Aggregate => "Aggregate".to_string(),
         }
     }
 }
