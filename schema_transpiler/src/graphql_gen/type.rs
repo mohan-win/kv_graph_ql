@@ -19,13 +19,10 @@ fn type_def<'src>(model: &sdml_ast::ModelDecl<'src>) -> GraphQLGenResult<TypeDef
         .name
         .try_get_ident_name()
         .map_err(ErrorGraphQLGen::new_sdml_error)?;
-    let fields = model
-        .fields
-        .iter()
-        .try_fold(Vec::new(), |mut acc, model_fld| {
-            acc.extend(field_def(model, model_fld)?);
-            Ok(acc)
-        })?;
+    let fields = model.fields.iter().try_fold(Vec::new(), |mut acc, fld| {
+        acc.extend(field_def(fld)?);
+        Ok(acc)
+    })?;
 
     Ok(TypeDefinition {
         extend: false,
@@ -41,12 +38,11 @@ fn type_def<'src>(model: &sdml_ast::ModelDecl<'src>) -> GraphQLGenResult<TypeDef
 
 #[inline(always)]
 fn field_def<'src>(
-    model: &sdml_ast::ModelDecl<'src>,
     field: &sdml_ast::FieldDecl<'src>,
 ) -> GraphQLGenResult<Vec<FieldDefinition>> {
     match &*field.field_type.r#type() {
         sdml_ast::Type::Unknown(..) => panic!("Invalid field type!"),
-        sdml_ast::Type::Relation(..) => relation_field_def(model, field),
+        sdml_ast::Type::Relation(..) => relation_field_def(field),
         _ => Ok(vec![non_relation_field_def(field)?]),
     }
 }
@@ -113,7 +109,7 @@ fn non_relation_field_def<'src>(
 }
 
 /// Returns field arguments for the `relation` array field.
-fn array_field_args<'src>(
+pub fn array_field_args<'src>(
     referenced_model_name: &'src str,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
     let mut args = vec![];
@@ -173,7 +169,6 @@ fn array_field_args<'src>(
 
 /// Code-gen for relation field.
 fn relation_field_def<'src>(
-    model: &sdml_ast::ModelDecl<'src>,
     field: &sdml_ast::FieldDecl<'src>,
 ) -> GraphQLGenResult<Vec<FieldDefinition>> {
     let field_type = field.field_type.r#type();
@@ -203,6 +198,9 @@ fn relation_field_def<'src>(
             },
             FieldDefinition {
                 description: None,
+                // Note: Here the field_name is called <field_name>Connection,
+                // instead of using open_crud::QueryField::Connection.named(model_name).
+                // This is because, model.field_name from sdml file should be the name of the field in GraphQL.
                 name: Name::new(format!("{field_name}Connection")),
                 arguments: array_field_args(referenced_model_name)?,
                 ty: open_crud::AuxiliaryType::Connection
