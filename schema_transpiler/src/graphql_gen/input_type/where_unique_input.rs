@@ -26,7 +26,7 @@ pub fn where_unique_unique_input_def<'src>(
         description: Some(
             "The where unique filter which can match at-most 1 object.".to_string(),
         ),
-        name: Name::new(FilterType::WhereUniqueInput.name(model_name)),
+        name: Name::new(FilterInputType::WhereUniqueInput.name(model_name)),
         directives: vec![],
         kind: TypeKind::InputObject(InputObjectType {
             fields: unique_field_filters,
@@ -53,10 +53,10 @@ fn unique_scalar_field_to_filter<'src>(
             r#type: primitive_type,
             ..
         } => match primitive_type {
-            sdml_ast::PrimitiveType::ShortStr if is_id_field => Ok(Type::new(
-                FIELD_TYPE_NAME_ID,
-                sdml_ast::FieldTypeMod::Optional,
-            )),
+            sdml_ast::PrimitiveType::ShortStr if is_id_field => {
+                Ok(open_crud::OpenCRUDType::Id
+                    .common_ty(sdml_ast::FieldTypeMod::Optional))
+            }
             sdml_prim_type => {
                 let graphql_ty_name =
                     Type::map_sdml_type_to_graphql_ty_name(sdml_prim_type);
@@ -86,7 +86,7 @@ fn unique_scalar_field_to_filter<'src>(
     Ok(InputValueDefinition {
         description: None,
         name: if is_id_field {
-            Name::new(FIELD_NAME_ID)
+            Name::new(open_crud::Field::Id.common_name())
         } else {
             let field_name = field
                 .name

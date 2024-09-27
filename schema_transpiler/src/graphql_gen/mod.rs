@@ -7,7 +7,7 @@ mod aux_type;
 mod enum_type;
 mod error;
 mod input_type;
-mod open_crud;
+pub mod open_crud;
 mod query_type;
 mod r#type;
 
@@ -15,26 +15,6 @@ use super::*;
 pub use error::ErrorGraphQLGen;
 use graphql_ast::*;
 use open_crud::*;
-
-// Predefined interfaces
-pub const INTERFACE_NODE_NAME: &str = "Node";
-
-// Predefined GraphQL fields & types
-pub const FIELD_NAME_ID: &str = "id";
-pub const FIELD_TYPE_NAME_ID: &str = "ID";
-pub const FIELD_TYPE_NAME_STRING: &str = "String";
-pub const FIELD_TYPE_NAME_INT: &str = "Int";
-pub const FIELD_TYPE_NAME_BOOL: &str = "Boolean";
-pub const FIELD_TYPE_NAME_FLOAT: &str = "Float";
-pub const FIELD_TYPE_SCALAR_DATETIME: &str = "DateTime";
-// Field args
-pub const FIELD_ARG_WHERE: &str = "where";
-pub const FIELD_ARG_ORDER_BY: &str = "orderBy";
-pub const FIELD_ARG_SKIP: &str = "skip";
-pub const FIELD_ARG_AFTER: &str = "after";
-pub const FIELD_ARG_BEFORE: &str = "before";
-pub const FIELD_ARG_FIRST: &str = "first";
-pub const FIELD_ARG_LAST: &str = "last";
 
 pub type GraphQLGenResult<T> = Result<T, ErrorGraphQLGen>;
 
@@ -86,15 +66,15 @@ fn interface_node_def() -> TypeDefinition {
         description: Some(
             "Node interface as per Relay GraphQL Global Object Identification Spec. https://relay.dev/docs/guides/graphql-server-specification/#object-identification".to_string(),
         ),
-        name: Name::new(INTERFACE_NODE_NAME),
+        name: Name::new(open_crud::QueryType::RootNode.common_name()),
         directives: vec![],
         kind: TypeKind::Interface(InterfaceType {
             implements: vec![],
             fields: vec![FieldDefinition {
                 description: Some("ID field with globally unique ID".to_string()),
-                name: Name::new("id"),
+                name: Name::new(open_crud::Field::Id.common_name()),
                 arguments: vec![],
-                ty: Type::new(FIELD_TYPE_NAME_ID, sdml_ast::FieldTypeMod::NonOptional),
+                ty: open_crud::OpenCRUDType::Id.common_ty(sdml_ast::FieldTypeMod::NonOptional),
                 directives: vec![ConstDirective {
                     name: Name::new("unique"),
                     arguments: vec![],

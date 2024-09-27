@@ -1,5 +1,5 @@
 //! Defines necessary abstractions to capture (OpenCRUD)[https://github.com/opencrud/opencrud]
-//! types and interfaces in rust.
+//! types and interfaces **names** in rust.
 //!
 //! **Terminology**
 //!
@@ -13,7 +13,7 @@ use super::Type;
 pub trait Named {
     /// For the given model name return OpenCRUD abstraction name(a.k.a identifier).
     /// ## Arguments
-    /// * `model_name` - name of the sdml model.
+    /// * `model_name` - name of the model from SDML.
     fn name(&self, model_name: &str) -> String;
     /// For the given model with name,
     /// return OpenCRUD abstraction identifier's GraphQL type.
@@ -23,24 +23,48 @@ pub trait Named {
     fn ty(&self, model_name: &str, type_mod: sdml_parser::ast::FieldTypeMod) -> Type {
         Type::new(&self.name(model_name), type_mod)
     }
+    /// Get *common* openCRUD abstraction name.
+    fn common_name(&self) -> String {
+        panic!("Common name for this abstraction is not available. This abstraction should be used in-conext of a specific model.");
+    }
+    /// Get *common* openCRUD abstraction type.
+    fn common_ty(&self, type_mod: sdml_parser::ast::FieldTypeMod) -> Type {
+        Type::new(&self.common_name(), type_mod)
+    }
 }
 
 /// Identifies various input types in OpenCRUD interface.
 #[derive(Debug, Clone, PartialEq)]
-pub enum InputType {
+pub enum OpenCRUDType {
+    Id,
+    Query(QueryType),
     Create(CreateInputType),
     Update(UpdateInputType),
-    Filter(FilterType),
-    OrderBy,
+    Filter(FilterInputType),
+    OrderByInput,
 }
 
-impl Named for InputType {
+impl Named for OpenCRUDType {
     fn name(&self, model_name: &str) -> String {
         match self {
-            InputType::Create(create_input_type) => create_input_type.name(model_name),
-            InputType::Update(update_input_type) => update_input_type.name(model_name),
-            InputType::Filter(filter_input_type) => filter_input_type.name(model_name),
-            InputType::OrderBy => format!("{model_name}OrderByInput"),
+            OpenCRUDType::Id => panic!("ID type is not model specific."),
+            OpenCRUDType::Query(query_type) => query_type.name(model_name),
+            OpenCRUDType::Create(create_input_type) => create_input_type.name(model_name),
+            OpenCRUDType::Update(update_input_type) => update_input_type.name(model_name),
+            OpenCRUDType::Filter(filter_input_type) => filter_input_type.name(model_name),
+            OpenCRUDType::OrderByInput => format!("{model_name}OrderByInput"),
+        }
+    }
+    fn common_name(&self) -> String {
+        match self {
+            OpenCRUDType::Id => "ID".to_string(),
+            OpenCRUDType::Query(query_type) => query_type.common_name(),
+            OpenCRUDType::Create(create_input_type) => create_input_type.common_name(),
+            OpenCRUDType::Update(update_input_type) => update_input_type.common_name(),
+            OpenCRUDType::Filter(filter_input_type) => filter_input_type.common_name(),
+            OpenCRUDType::OrderByInput => {
+                panic!("OrderBy should be used in-context of a model.")
+            }
         }
     }
 }
@@ -61,30 +85,20 @@ impl Named for AuxiliaryType {
     }
 }
 
-/// Trait exposing name of the OpenCRUD field.
-trait FieldNamed {
-    /// For the given model name return OpenCRUD field name.
-    /// ## Arguments
-    /// * `model_name` - name of the sdml model.
-    fn named(&self, model_name: &str) -> String;
-}
-
 #[derive(Debug, Clone, PartialEq)]
-pub enum Field {
-    Query(QueryField),
+pub enum QueryType {
+    RootNode,
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum QueryField {
-    Connection,
-}
-
-impl FieldNamed for QueryField {
-    fn named(&self, model_name: &str) -> String {
+impl Named for QueryType {
+    fn name(&self, _model_name: &str) -> String {
         match self {
-            QueryField::Connection => {
-                format!("{}sConnection", model_name.to_ascii_lowercase())
-            }
+            Self::RootNode => panic!("RootNode doesn't belong to any model."),
+        }
+    }
+    fn common_name(&self) -> String {
+        match self {
+            Self::RootNode => "Node".to_string(),
         }
     }
 }
@@ -139,7 +153,7 @@ pub enum UpdateInputType {
     UpdateManyInlineInput,
     /// Identifies the input type used to capture the data for one-side of the relation for updates.
     /// Ex. ProfileUpdateOneInlineInput is used inside UserUpdateInput to update the
-    /// profile blonging to the user who is being updated.
+    /// profile belonging to the user who is being updated.
     UpdateOneInlineInput,
     /// Used inside UpdateManyInlineInput::update field to capture the updates to the many side of the relation
     /// where each update is accompanied with a unique where condition.
@@ -183,18 +197,18 @@ impl Named for UpdateInputType {
 
 /// Identifies the input types used in filters
 #[derive(Debug, Clone, PartialEq)]
-pub enum FilterType {
+pub enum FilterInputType {
     /// Identifies where critera where it can match one or more objects.
     WhereInput,
     /// Idenifies the where critrial where it can match at most one object.
     WhereUniqueInput,
 }
 
-impl Named for FilterType {
+impl Named for FilterInputType {
     fn name(&self, model_name: &str) -> String {
         match self {
-            FilterType::WhereInput => format!("{model_name}WhereInput"),
-            FilterType::WhereUniqueInput => format!("{model_name}WhereUniqueInput"),
+            FilterInputType::WhereInput => format!("{model_name}WhereInput"),
+            FilterInputType::WhereUniqueInput => format!("{model_name}WhereUniqueInput"),
         }
     }
 }

@@ -30,7 +30,7 @@ fn type_def<'src>(model: &sdml_ast::ModelDecl<'src>) -> GraphQLGenResult<TypeDef
         name: Name::new(model_name),
         directives: vec![],
         kind: TypeKind::Object(ObjectType {
-            implements: vec![Name::new(INTERFACE_NODE_NAME)],
+            implements: vec![Name::new(open_crud::QueryType::RootNode.common_name())],
             fields,
         }),
     })
@@ -77,7 +77,8 @@ fn non_relation_field_def<'src>(
     let mut field_name = field
         .name
         .try_get_ident_name()
-        .map_err(ErrorGraphQLGen::new_sdml_error)?;
+        .map_err(ErrorGraphQLGen::new_sdml_error)?
+        .to_string();
     let mut directives = vec![];
     if field.has_id_attrib() {
         directives.push(ConstDirective {
@@ -87,7 +88,7 @@ fn non_relation_field_def<'src>(
                 ConstValue::String(field_name.to_string()),
             )],
         });
-        field_name = FIELD_NAME_ID; // Note:Rename the field to "id".
+        field_name = open_crud::Field::Id.common_name(); // Note:Rename the field to "id".
         directives.push(ConstDirective {
             name: Name::new("unique"),
             arguments: vec![],
@@ -116,7 +117,7 @@ pub fn array_field_args<'src>(
     args.push(InputValueDefinition {
         description: None,
         name: Name::new(FIELD_ARG_WHERE),
-        ty: open_crud::FilterType::WhereInput
+        ty: open_crud::FilterInputType::WhereInput
             .ty(referenced_model_name, sdml_ast::FieldTypeMod::Optional),
         default_value: None,
         directives: vec![],
@@ -124,7 +125,7 @@ pub fn array_field_args<'src>(
     args.push(InputValueDefinition {
         description: None,
         name: Name::new(FIELD_ARG_ORDER_BY),
-        ty: open_crud::InputType::OrderBy
+        ty: open_crud::OpenCRUDType::OrderByInput
             .ty(referenced_model_name, sdml_ast::FieldTypeMod::Optional),
         default_value: None,
         directives: vec![],
@@ -139,14 +140,14 @@ pub fn array_field_args<'src>(
     args.push(InputValueDefinition {
         description: None,
         name: Name::new(FIELD_ARG_AFTER),
-        ty: Type::new(FIELD_TYPE_NAME_ID, sdml_ast::FieldTypeMod::Optional),
+        ty: open_crud::OpenCRUDType::Id.common_ty(sdml_ast::FieldTypeMod::Optional),
         default_value: None,
         directives: vec![],
     });
     args.push(InputValueDefinition {
         description: None,
         name: Name::new(FIELD_ARG_BEFORE),
-        ty: Type::new(FIELD_TYPE_NAME_ID, sdml_ast::FieldTypeMod::Optional),
+        ty: open_crud::OpenCRUDType::Id.common_ty(sdml_ast::FieldTypeMod::Optional),
         default_value: None,
         directives: vec![],
     });
