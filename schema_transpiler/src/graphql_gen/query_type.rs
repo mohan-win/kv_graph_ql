@@ -42,9 +42,6 @@ fn root_query_fields<'src>(
     let model_name = model_name
         .try_get_ident_name()
         .map_err(ErrorGraphQLGen::new_sdml_error)?;
-    let model_name_plural_lc = pluralizer::pluralize(model_name, 2, false)
-        .to_ascii_lowercase()
-        .to_string();
     let mut root_query_fields = vec![];
 
     root_query_fields.push(
@@ -69,7 +66,11 @@ fn root_query_fields<'src>(
         // Query array of objects.
         FieldDefinition {
             description: None,
-            name: Name::new(&model_name_plural_lc),
+            name: Name::new(
+                &pluralizer::pluralize(model_name, 2, false)
+                    .to_ascii_lowercase()
+                    .to_string(),
+            ),
             arguments: r#type::array_field_args(model_name)?,
             ty: Type::new(model_name, sdml_ast::FieldTypeMod::Array),
             directives: vec![],
@@ -80,9 +81,9 @@ fn root_query_fields<'src>(
         // Query object connection for multiple objects.
         FieldDefinition {
             description: None,
-            name: Name::new(&model_name_plural_lc),
+            name: Name::new(open_crud::QueryField::Connection.named(model_name)),
             arguments: r#type::array_field_args(model_name)?,
-            ty: open_crud::OpenCRUDType::Filter(FilterInputType::WhereInput)
+            ty: open_crud::QueryType::Auxiliary(AuxiliaryType::Connection)
                 .ty(model_name, sdml_ast::FieldTypeMod::NonOptional),
             directives: vec![],
         },

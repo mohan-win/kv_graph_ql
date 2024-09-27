@@ -45,7 +45,8 @@ impl FieldNamed for QueryField {
         match self {
             QueryField::RootNode => panic!("Root node field is common for all models"),
             QueryField::Connection => {
-                format!("{}Connection", model_name.to_ascii_lowercase())
+                let model_name_plural_lc = pluralizer::pluralize(model_name, 2, false);
+                format!("{}Connection", model_name_plural_lc)
             }
         }
     }

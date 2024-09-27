@@ -90,11 +90,13 @@ pub enum QueryType {
     RootNode,
     PageInfo,
     Aggregate,
+    Auxiliary(AuxiliaryType),
 }
 
 impl Named for QueryType {
-    fn name(&self, _model_name: &str) -> String {
+    fn name(&self, model_name: &str) -> String {
         match self {
+            Self::Auxiliary(aux_type) => aux_type.name(model_name),
             _ => panic!("{:#?} doesn't belong to any model.", self),
         }
     }
@@ -103,6 +105,7 @@ impl Named for QueryType {
             Self::RootNode => "Node".to_string(),
             Self::PageInfo => "PageInfo".to_string(),
             Self::Aggregate => "Aggregate".to_string(),
+            _ => panic!("{:#?} should be used in model context", self),
         }
     }
 }
