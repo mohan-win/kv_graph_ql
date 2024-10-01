@@ -33,7 +33,7 @@ pub fn order_by_input_enum_def<'src>(
     Ok(TypeDefinition {
         extend: false,
         description: Some(format!("Order by input for {model_name}'s scalar fields")),
-        name: Name::new(OpenCRUDType::OrderByInput.name(model_name)),
+        name: OpenCRUDType::OrderByInput.name(model_name),
         directives: vec![],
         kind: TypeKind::Enum(EnumType {
             values: order_by_elements,

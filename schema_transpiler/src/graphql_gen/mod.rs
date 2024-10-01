@@ -66,13 +66,13 @@ fn interface_node_def() -> TypeDefinition {
         description: Some(
             "Node interface as per Relay GraphQL Global Object Identification Spec. https://relay.dev/docs/guides/graphql-server-specification/#object-identification".to_string(),
         ),
-        name: Name::new(open_crud::QueryType::RootNode.common_name()),
+        name: open_crud::QueryType::RootNode.common_name(),
         directives: vec![],
         kind: TypeKind::Interface(InterfaceType {
             implements: vec![],
             fields: vec![FieldDefinition {
                 description: Some("ID field with globally unique ID".to_string()),
-                name: Name::new(open_crud::Field::Id.common_name()),
+                name: open_crud::Field::Id.common_name(),
                 arguments: vec![],
                 ty: open_crud::OpenCRUDType::Id.common_ty(sdml_ast::FieldTypeMod::NonOptional),
                 directives: vec![ConstDirective {

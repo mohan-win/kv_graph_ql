@@ -26,7 +26,7 @@ pub fn where_unique_unique_input_def<'src>(
         description: Some(
             "The where unique filter which can match at-most 1 object.".to_string(),
         ),
-        name: Name::new(FilterInputType::WhereUniqueInput.name(model_name)),
+        name: FilterInputType::WhereUniqueInput.name(model_name),
         directives: vec![],
         kind: TypeKind::InputObject(InputObjectType {
             fields: unique_field_filters,
@@ -86,7 +86,7 @@ fn unique_scalar_field_to_filter<'src>(
     Ok(InputValueDefinition {
         description: None,
         name: if is_id_field {
-            Name::new(open_crud::Field::Id.common_name())
+            open_crud::Field::Id.common_name()
         } else {
             let field_name = field
                 .name

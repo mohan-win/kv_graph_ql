@@ -26,7 +26,7 @@ pub fn where_input_def<'src>(
         description: Some(
             "The where filter which can match zero or more objects".to_string(),
         ),
-        name: Name::new(FilterInputType::WhereInput.name(model_name)),
+        name: FilterInputType::WhereInput.name(model_name),
         directives: vec![],
         kind: TypeKind::InputObject(InputObjectType { fields: filters }),
     })

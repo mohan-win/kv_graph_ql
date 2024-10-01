@@ -30,7 +30,7 @@ fn type_def<'src>(model: &sdml_ast::ModelDecl<'src>) -> GraphQLGenResult<TypeDef
         name: Name::new(model_name),
         directives: vec![],
         kind: TypeKind::Object(ObjectType {
-            implements: vec![Name::new(open_crud::QueryType::RootNode.common_name())],
+            implements: vec![open_crud::QueryType::RootNode.common_name()],
             fields,
         }),
     })
@@ -88,7 +88,7 @@ fn non_relation_field_def<'src>(
                 ConstValue::String(field_name.to_string()),
             )],
         });
-        field_name = open_crud::Field::Id.common_name(); // Note:Rename the field to "id".
+        field_name = open_crud::Field::Id.common_name().to_string(); // Note:Rename the field to "id".
         directives.push(ConstDirective {
             name: Name::new("unique"),
             arguments: vec![],

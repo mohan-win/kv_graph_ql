@@ -15,7 +15,7 @@ pub fn connection_types_def<'src>(
     result.push(TypeDefinition {
         extend: false,
         description: None,
-        name: Name::new(AuxiliaryType::Connection.name(model_name)),
+        name: AuxiliaryType::Connection.name(model_name),
         directives: vec![],
         kind: TypeKind::Object(ObjectType {
             implements: vec![],
@@ -59,7 +59,7 @@ fn edge_type_def<'src>(
     Ok(TypeDefinition {
         extend: false,
         description: None,
-        name: Name::new(AuxiliaryType::Edge.name(model_name)),
+        name: AuxiliaryType::Edge.name(model_name),
         directives: vec![],
         kind: TypeKind::Object(ObjectType {
             implements: vec![],
@@ -90,7 +90,7 @@ pub fn page_info_type_def<'src>() -> GraphQLGenResult<TypeDefinition> {
     Ok(TypeDefinition {
         extend: false,
         description: None,
-        name: Name::new(open_crud::QueryType::PageInfo.common_name()),
+        name: open_crud::QueryType::PageInfo.common_name(),
         directives: vec![],
         kind: TypeKind::Object(ObjectType {
             implements: vec![],
@@ -159,7 +159,7 @@ pub fn aggregage_type_def<'src>() -> GraphQLGenResult<TypeDefinition> {
     Ok(TypeDefinition {
         extend: false,
         description: None,
-        name: Name::new(open_crud::QueryType::Aggregate.common_name()),
+        name: open_crud::QueryType::Aggregate.common_name(),
         directives: vec![],
         kind: TypeKind::Object(ObjectType {
             implements: vec![],
