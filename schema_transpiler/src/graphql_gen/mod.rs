@@ -8,7 +8,7 @@ mod enum_type;
 mod error;
 mod input_type;
 pub mod open_crud;
-mod query_type;
+mod root_query_type;
 mod r#type;
 
 use super::*;

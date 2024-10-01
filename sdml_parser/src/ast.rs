@@ -107,11 +107,45 @@ impl<'src> DataModel<'src> {
     pub fn configs(&self) -> &HashMap<&'src str, ConfigDecl<'src>> {
         &self.configs
     }
+    /// Configs sorted by its name in chronogical order.
+    pub fn configs_sorted(&self) -> Vec<&ConfigDecl<'src>> {
+        let mut config_names = self.enums.keys().collect::<Vec<&&'src str>>();
+        config_names.sort();
+        config_names
+            .into_iter()
+            .rfold(Vec::new(), |mut acc, config_name| {
+                acc.push(self.configs.get(config_name).unwrap());
+                acc
+            })
+    }
+
     pub fn enums(&self) -> &HashMap<&'src str, EnumDecl<'src>> {
         &self.enums
     }
+    /// Enums sorted by its name in chronogical order.
+    pub fn enums_sorted(&self) -> Vec<&EnumDecl<'src>> {
+        let mut enum_names = self.enums.keys().collect::<Vec<&&'src str>>();
+        enum_names.sort();
+        enum_names
+            .into_iter()
+            .rfold(Vec::new(), |mut acc, enum_name| {
+                acc.push(self.enums.get(enum_name).unwrap());
+                acc
+            })
+    }
     pub fn models(&self) -> &HashMap<&'src str, ModelDecl<'src>> {
         &self.models
+    }
+    /// Models sorted by its name in chronogical order.
+    pub fn models_sorted(&self) -> Vec<&ModelDecl<'src>> {
+        let mut model_names = self.models.keys().collect::<Vec<&&'src str>>();
+        model_names.sort();
+        model_names
+            .into_iter()
+            .rfold(Vec::new(), |mut acc, model_name| {
+                acc.push(self.models.get(model_name).unwrap());
+                acc
+            })
     }
     pub fn relations(
         &self,

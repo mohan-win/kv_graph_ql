@@ -10,21 +10,34 @@ use pluralizer;
 /// * models - array of models in sdml.
 /// ## Returns
 /// Root level query type definition.
-pub fn query_type_def<'src>(
-    models: &Vec<ModelDecl<'src>>,
+pub fn root_query_type_def<'src>(
+    models: &Vec<&ModelDecl<'src>>,
 ) -> GraphQLGenResult<TypeDefinition> {
-    unimplemented!()
+    let mut fields = Vec::new();
+    fields.push(root_node_field()?);
+    let fields = models.iter().try_fold(fields, |mut acc, model| {
+        acc.extend(root_query_fields(&model.name)?);
+        Ok(acc)
+    })?;
+    Ok(TypeDefinition {
+        extend: false,
+        description: None,
+        name: open_crud::QueryType::RootQuery.common_name(),
+        directives: vec![],
+        kind: TypeKind::Object(ObjectType {
+            implements: vec![],
+            fields,
+        }),
+    })
 }
 
 fn root_node_field() -> GraphQLGenResult<FieldDefinition> {
     Ok(FieldDefinition {
         description: None,
-        name: Name::new(
-            open_crud::OpenCRUDType::Query(QueryType::RootNode).common_name(),
-        ),
+        name: open_crud::OpenCRUDType::Query(QueryType::RootNode).common_name(),
         arguments: vec![InputValueDefinition {
             description: None,
-            name: Name::new(open_crud::Field::Id.common_name()),
+            name: open_crud::Field::Id.common_name(),
             ty: open_crud::OpenCRUDType::Id
                 .common_ty(sdml_ast::FieldTypeMod::NonOptional),
             default_value: None,
@@ -90,4 +103,39 @@ fn root_query_fields<'src>(
     );
 
     Ok(root_query_fields)
+}
+
+#[cfg(test)]
+mod test {
+    use chumsky::prelude::*;
+    use sdml_parser::parser;
+
+    use std::fs;
+    #[test]
+    fn test_root_query_type_def() {
+        let sdml_str = fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/test_root_query_type_def.sdml"
+        ))
+        .unwrap();
+        let mut expected_graphql_str = fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/test_root_query_type_def.graphql"
+        ))
+        .unwrap();
+        expected_graphql_str.retain(|c| !c.is_whitespace());
+
+        let sdml_ast = parser::delcarations()
+            .parse(&sdml_str)
+            .into_result()
+            .expect("It should be a valid sdml file");
+        let sdml_ast = parser::semantic_analysis(sdml_ast)
+            .expect("Semantic analysis should succeed!");
+        let root_query_type =
+            super::root_query_type_def(&sdml_ast.models_sorted()).unwrap();
+        let mut actual_graphql_str = root_query_type.to_string();
+        eprintln!("{}", actual_graphql_str);
+        actual_graphql_str.retain(|c| !c.is_whitespace());
+        assert_eq!(expected_graphql_str, actual_graphql_str);
+    }
 }

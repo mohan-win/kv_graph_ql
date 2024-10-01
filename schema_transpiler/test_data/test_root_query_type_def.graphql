@@ -1,0 +1,79 @@
+type Query {
+  Node(id: ID!): Node
+  User(User: UserWhereUniqueInput!): User
+  users(
+    where: UserWhereInput
+    orderBy: UserOrderByInput
+    skip: Int
+    after: ID
+    before: ID
+    first: Int
+    last: Int
+  ): [User!]!
+  UsersConnection(
+    where: UserWhereInput
+    orderBy: UserOrderByInput
+    skip: Int
+    after: ID
+    before: ID
+    first: Int
+    last: Int
+  ): UserConnection!
+  Profile(Profile: ProfileWhereUniqueInput!): Profile
+  profiles(
+    where: ProfileWhereInput
+    orderBy: ProfileOrderByInput
+    skip: Int
+    after: ID
+    before: ID
+    first: Int
+    last: Int
+  ): [Profile!]!
+  ProfilesConnection(
+    where: ProfileWhereInput
+    orderBy: ProfileOrderByInput
+    skip: Int
+    after: ID
+    before: ID
+    first: Int
+    last: Int
+  ): ProfileConnection!
+  Post(Post: PostWhereUniqueInput!): Post
+  posts(
+    where: PostWhereInput
+    orderBy: PostOrderByInput
+    skip: Int
+    after: ID
+    before: ID
+    first: Int
+    last: Int
+  ): [Post!]!
+  PostsConnection(
+    where: PostWhereInput
+    orderBy: PostOrderByInput
+    skip: Int
+    after: ID
+    before: ID
+    first: Int
+    last: Int
+  ): PostConnection!
+  Category(Category: CategoryWhereUniqueInput!): Category
+  categories(
+    where: CategoryWhereInput
+    orderBy: CategoryOrderByInput
+    skip: Int
+    after: ID
+    before: ID
+    first: Int
+    last: Int
+  ): [Category!]!
+  CategoriesConnection(
+    where: CategoryWhereInput
+    orderBy: CategoryOrderByInput
+    skip: Int
+    after: ID
+    before: ID
+    first: Int
+    last: Int
+  ): CategoryConnection!
+}
