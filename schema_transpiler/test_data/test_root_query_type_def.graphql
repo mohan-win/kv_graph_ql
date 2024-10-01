@@ -1,6 +1,6 @@
 type Query {
-  Node(id: ID!): Node
-  User(User: UserWhereUniqueInput!): User
+  node(id: ID!): Node
+  user(where: UserWhereUniqueInput!): User
   users(
     where: UserWhereInput
     orderBy: UserOrderByInput
@@ -10,7 +10,7 @@ type Query {
     first: Int
     last: Int
   ): [User!]!
-  UsersConnection(
+  usersConnection(
     where: UserWhereInput
     orderBy: UserOrderByInput
     skip: Int
@@ -19,7 +19,7 @@ type Query {
     first: Int
     last: Int
   ): UserConnection!
-  Profile(Profile: ProfileWhereUniqueInput!): Profile
+  profile(where: ProfileWhereUniqueInput!): Profile
   profiles(
     where: ProfileWhereInput
     orderBy: ProfileOrderByInput
@@ -29,7 +29,7 @@ type Query {
     first: Int
     last: Int
   ): [Profile!]!
-  ProfilesConnection(
+  profilesConnection(
     where: ProfileWhereInput
     orderBy: ProfileOrderByInput
     skip: Int
@@ -38,7 +38,7 @@ type Query {
     first: Int
     last: Int
   ): ProfileConnection!
-  Post(Post: PostWhereUniqueInput!): Post
+  post(where: PostWhereUniqueInput!): Post
   posts(
     where: PostWhereInput
     orderBy: PostOrderByInput
@@ -48,7 +48,7 @@ type Query {
     first: Int
     last: Int
   ): [Post!]!
-  PostsConnection(
+  postsConnection(
     where: PostWhereInput
     orderBy: PostOrderByInput
     skip: Int
@@ -57,7 +57,7 @@ type Query {
     first: Int
     last: Int
   ): PostConnection!
-  Category(Category: CategoryWhereUniqueInput!): Category
+  category(where: CategoryWhereUniqueInput!): Category
   categories(
     where: CategoryWhereInput
     orderBy: CategoryOrderByInput
@@ -67,7 +67,7 @@ type Query {
     first: Int
     last: Int
   ): [Category!]!
-  CategoriesConnection(
+  categoriesConnection(
     where: CategoryWhereInput
     orderBy: CategoryOrderByInput
     skip: Int

@@ -2,7 +2,6 @@
 use sdml_ast::ModelDecl;
 
 use super::*;
-use pluralizer;
 
 /// Code-gen root Query type with required OpenCRUD fields
 /// to query information for all the models.
@@ -34,7 +33,7 @@ pub fn root_query_type_def<'src>(
 fn root_node_field() -> GraphQLGenResult<FieldDefinition> {
     Ok(FieldDefinition {
         description: None,
-        name: open_crud::OpenCRUDType::Query(QueryType::RootNode).common_name(),
+        name: open_crud::QueryField::RootNode.common_name(),
         arguments: vec![InputValueDefinition {
             description: None,
             name: open_crud::Field::Id.common_name(),
@@ -61,10 +60,10 @@ fn root_query_fields<'src>(
         // Query unique object.
         FieldDefinition {
             description: None,
-            name: Name::new(model_name),
+            name: open_crud::QueryField::RootField.name(model_name),
             arguments: vec![InputValueDefinition {
                 description: None,
-                name: Name::new(model_name),
+                name: Name::new(FIELD_ARG_WHERE),
                 ty: open_crud::FilterInputType::WhereUniqueInput
                     .ty(model_name, sdml_ast::FieldTypeMod::NonOptional),
                 default_value: None,
@@ -79,11 +78,7 @@ fn root_query_fields<'src>(
         // Query array of objects.
         FieldDefinition {
             description: None,
-            name: Name::new(
-                &pluralizer::pluralize(model_name, 2, false)
-                    .to_ascii_lowercase()
-                    .to_string(),
-            ),
+            name: open_crud::QueryField::RootFieldArray.name(model_name),
             arguments: r#type::array_field_args(model_name)?,
             ty: Type::new(model_name, sdml_ast::FieldTypeMod::Array),
             directives: vec![],
@@ -94,7 +89,7 @@ fn root_query_fields<'src>(
         // Query object connection for multiple objects.
         FieldDefinition {
             description: None,
-            name: Name::new(open_crud::QueryField::Connection.named(model_name)),
+            name: open_crud::QueryField::RootFieldConnection.name(model_name),
             arguments: r#type::array_field_args(model_name)?,
             ty: open_crud::QueryType::Auxiliary(AuxiliaryType::Connection)
                 .ty(model_name, sdml_ast::FieldTypeMod::NonOptional),

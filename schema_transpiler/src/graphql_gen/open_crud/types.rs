@@ -7,9 +7,14 @@
 //! will have auto-generated CRUD interface comforming to OpenCRUD.
 //! - Instance of a model entity is called object.
 
+use convert_case::Casing;
+
 use super::{Name, Type};
 
 /// Trait exposing the name & type of the OpenCRUD abstraction.
+/// ** Note **
+/// * Do not implement this trait for exposing OpenCRUDType name,
+/// instead implement the trait *NamedUnformatted*
 pub trait Named {
     /// For the given model name return OpenCRUD abstraction name(a.k.a identifier).
     /// ## Arguments
@@ -24,12 +29,37 @@ pub trait Named {
         Type::new(&self.name(model_name), type_mod)
     }
     /// Get *common* openCRUD abstraction name.
-    fn common_name(&self) -> Name {
-        panic!("Common name for this abstraction is not available. This abstraction should be used in-conext of a specific model.");
-    }
+    fn common_name(&self) -> Name;
     /// Get *common* openCRUD abstraction type.
     fn common_ty(&self, type_mod: sdml_parser::ast::FieldTypeMod) -> Type {
         Type::new(&self.common_name(), type_mod)
+    }
+}
+
+impl<T> Named for T
+where
+    T: NamedUnformatted,
+{
+    fn name(&self, model_name: &str) -> Name {
+        Name::new(self.name_str(&model_name.to_case(convert_case::Case::Pascal)))
+    }
+    fn common_name(&self) -> Name {
+        Name::new(self.common_name_str())
+    }
+}
+
+/// Trait exposing the name of the OpenCRUD abstraction.
+/// ** Note **
+/// * This is a private trait.
+/// * Properly formatted OpenCRUD Type names are exposed via *Named* trait
+/// which is automatically implemented for all OpenCRUDType(s) which implements
+/// this trait.
+trait NamedUnformatted {
+    /// Return the name of the OpenCRUDType for the given
+    /// `model_name_pc` (model name in *Pascal Case*).
+    fn name_str(&self, model_name_pc: &str) -> String;
+    fn common_name_str(&self) -> String {
+        panic!("Common name for this abstraction is not available. This abstraction should be used in-conext of a specific model.");
     }
 }
 
@@ -44,24 +74,38 @@ pub enum OpenCRUDType {
     OrderByInput,
 }
 
-impl Named for OpenCRUDType {
-    fn name(&self, model_name: &str) -> Name {
+impl NamedUnformatted for OpenCRUDType {
+    fn name_str(&self, model_name_pc: &str) -> String {
         match self {
             OpenCRUDType::Id => panic!("ID type is not model specific."),
-            OpenCRUDType::Query(query_type) => query_type.name(model_name),
-            OpenCRUDType::Create(create_input_type) => create_input_type.name(model_name),
-            OpenCRUDType::Update(update_input_type) => update_input_type.name(model_name),
-            OpenCRUDType::Filter(filter_input_type) => filter_input_type.name(model_name),
-            OpenCRUDType::OrderByInput => Name::new(format!("{model_name}OrderByInput")),
+            OpenCRUDType::Query(query_type) => query_type.name_str(model_name_pc),
+            OpenCRUDType::Create(create_input_type) => {
+                create_input_type.name_str(model_name_pc)
+            }
+            OpenCRUDType::Update(update_input_type) => {
+                update_input_type.name_str(model_name_pc)
+            }
+            OpenCRUDType::Filter(filter_input_type) => {
+                filter_input_type.name_str(model_name_pc)
+            }
+            OpenCRUDType::OrderByInput => {
+                format!("{model_name_pc}OrderByInput")
+            }
         }
     }
-    fn common_name(&self) -> Name {
+    fn common_name_str(&self) -> String {
         match self {
-            OpenCRUDType::Id => Name::new("ID"),
-            OpenCRUDType::Query(query_type) => query_type.common_name(),
-            OpenCRUDType::Create(create_input_type) => create_input_type.common_name(),
-            OpenCRUDType::Update(update_input_type) => update_input_type.common_name(),
-            OpenCRUDType::Filter(filter_input_type) => filter_input_type.common_name(),
+            OpenCRUDType::Id => "ID".to_string(),
+            OpenCRUDType::Query(query_type) => query_type.common_name_str(),
+            OpenCRUDType::Create(create_input_type) => {
+                create_input_type.common_name_str()
+            }
+            OpenCRUDType::Update(update_input_type) => {
+                update_input_type.common_name_str()
+            }
+            OpenCRUDType::Filter(filter_input_type) => {
+                filter_input_type.common_name_str()
+            }
             OpenCRUDType::OrderByInput => {
                 panic!("OrderBy should be used in-context of a model.")
             }
@@ -76,11 +120,11 @@ pub enum AuxiliaryType {
     Connection,
 }
 
-impl Named for AuxiliaryType {
-    fn name(&self, model_name: &str) -> Name {
+impl NamedUnformatted for AuxiliaryType {
+    fn name_str(&self, model_name_pc: &str) -> String {
         match self {
-            AuxiliaryType::Edge => Name::new(format!("{model_name}Edge")),
-            AuxiliaryType::Connection => Name::new(format!("{model_name}Connection")),
+            AuxiliaryType::Edge => format!("{model_name_pc}Edge"),
+            AuxiliaryType::Connection => format!("{model_name_pc}Connection"),
         }
     }
 }
@@ -94,19 +138,19 @@ pub enum QueryType {
     Auxiliary(AuxiliaryType),
 }
 
-impl Named for QueryType {
-    fn name(&self, model_name: &str) -> Name {
+impl NamedUnformatted for QueryType {
+    fn name_str(&self, model_name_pc: &str) -> String {
         match self {
-            Self::Auxiliary(aux_type) => aux_type.name(model_name),
+            Self::Auxiliary(aux_type) => aux_type.name_str(model_name_pc),
             _ => panic!("{:#?} doesn't belong to any model.", self),
         }
     }
-    fn common_name(&self) -> Name {
+    fn common_name_str(&self) -> String {
         match self {
-            Self::RootQuery => Name::new("Query"),
-            Self::RootNode => Name::new("Node"),
-            Self::PageInfo => Name::new("PageInfo"),
-            Self::Aggregate => Name::new("Aggregate"),
+            Self::RootQuery => "Query".to_string(),
+            Self::RootNode => "Node".to_string(),
+            Self::PageInfo => "PageInfo".to_string(),
+            Self::Aggregate => "Aggregate".to_string(),
             _ => panic!("{:#?} should be used in model context", self),
         }
     }
@@ -130,15 +174,15 @@ pub enum CreateInputType {
     CreateOneInlineInput,
 }
 
-impl Named for CreateInputType {
-    fn name(&self, model_name: &str) -> Name {
+impl NamedUnformatted for CreateInputType {
+    fn name_str(&self, model_name_pc: &str) -> String {
         match self {
-            CreateInputType::CreateInput => Name::new(format!("{model_name}CreateInput")),
+            CreateInputType::CreateInput => format!("{model_name_pc}CreateInput"),
             CreateInputType::CreateManyInlineInput => {
-                Name::new(format!("{model_name}CreateManyInlineInput"))
+                format!("{model_name_pc}CreateManyInlineInput")
             }
             CreateInputType::CreateOneInlineInput => {
-                Name::new(format!("{model_name}CreateOneInlineInput"))
+                format!("{model_name_pc}CreateOneInlineInput")
             }
         }
     }
@@ -180,25 +224,29 @@ pub enum UpdateInputType {
     ConnectInput,
 }
 
-impl Named for UpdateInputType {
-    fn name(&self, model_name: &str) -> Name {
+impl NamedUnformatted for UpdateInputType {
+    fn name_str(&self, model_name_pc: &str) -> String {
         match self {
-            UpdateInputType::UpdateInput => Name::new(format!("{model_name}UpdateInput")),
-            UpdateInputType::UpsertInput => Name::new(format!("{model_name}UpsertInput")),
+            UpdateInputType::UpdateInput => {
+                format!("{model_name_pc}UpdateInput")
+            }
+            UpdateInputType::UpsertInput => {
+                format!("{model_name_pc}UpsertInput")
+            }
             UpdateInputType::UpdateManyInlineInput => {
-                Name::new(format!("{model_name}UpdateManyInlineInput"))
+                format!("{model_name_pc}UpdateManyInlineInput")
             }
             UpdateInputType::UpdateOneInlineInput => {
-                Name::new(format!("{model_name}UpdateOneInlineInput"))
+                format!("{model_name_pc}UpdateOneInlineInput")
             }
             UpdateInputType::UpdateWithNestedWhereUniqueInput => {
-                Name::new(format!("{model_name}UpdateWithNestedWhereUniqueInput"))
+                format!("{model_name_pc}UpdateWithNestedWhereUniqueInput")
             }
             UpdateInputType::UpsertWithNestedWhereUniqueInput => {
-                Name::new(format!("{model_name}UpsertWithNestedWhereUniqueInput"))
+                format!("{model_name_pc}UpsertWithNestedWhereUniqueInput")
             }
             UpdateInputType::ConnectInput => {
-                Name::new(format!("{model_name}ConnectInput"))
+                format!("{model_name_pc}ConnectInput")
             }
         }
     }
@@ -213,12 +261,12 @@ pub enum FilterInputType {
     WhereUniqueInput,
 }
 
-impl Named for FilterInputType {
-    fn name(&self, model_name: &str) -> Name {
+impl NamedUnformatted for FilterInputType {
+    fn name_str(&self, model_name_pc: &str) -> String {
         match self {
-            FilterInputType::WhereInput => Name::new(format!("{model_name}WhereInput")),
+            FilterInputType::WhereInput => format!("{model_name_pc}WhereInput"),
             FilterInputType::WhereUniqueInput => {
-                Name::new(format!("{model_name}WhereUniqueInput"))
+                format!("{model_name_pc}WhereUniqueInput")
             }
         }
     }
