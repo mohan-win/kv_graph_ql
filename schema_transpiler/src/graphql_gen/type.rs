@@ -5,8 +5,6 @@ use aux_type::connection_types_def;
 /// Code-gen GraphQL type and its auxiliary types for the given model.
 pub fn type_and_aux_types_def<'src>(
     model: &sdml_ast::ModelDecl<'src>,
-    pg_info: &TypeDefinition,
-    aggregate: &TypeDefinition,
 ) -> GraphQLGenResult<Vec<TypeDefinition>> {
     let mut result = vec![];
     result.push(type_def(model)?);
@@ -285,13 +283,8 @@ mod tests {
             .models()
             .get("User")
             .expect("User model should exist in the SDML.");
-        let pg_info =
-            aux_type::page_info_type_def().expect("pg_info can't fail to generate");
-        let aggregage =
-            aux_type::aggregage_type_def().expect("aggregate can't fail to generate");
-        let user_types_graphql_ast =
-            type_and_aux_types_def(user_model_sdml_ast, &pg_info, &aggregage)
-                .expect("It should return User and their aux types!");
+        let user_types_graphql_ast = type_and_aux_types_def(user_model_sdml_ast)
+            .expect("It should return User and their aux types!");
 
         let mut user_types_graphql = user_types_graphql_ast
             .into_iter()
