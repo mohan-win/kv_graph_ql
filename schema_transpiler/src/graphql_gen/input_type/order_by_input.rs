@@ -11,7 +11,7 @@ pub fn order_by_input_enum_def<'src>(
                 .try_get_ident_name()
                 .map_err(ErrorGraphQLGen::new_sdml_error)?
         } else {
-            &open_crud::Field::Id.common_name()
+            &open_crud_name::Field::Id.common_name()
         };
 
         acc.push(EnumValueDefinition {

@@ -1115,7 +1115,7 @@ reason: String = "No longer supported"
                     description: None,
                     name: Name::new("reason"),
                     ty: Type::new_from_str(
-                        crate::graphql_gen::open_crud::FIELD_TYPE_NAME_STRING,
+                        crate::graphql_gen::open_crud_name::FIELD_TYPE_NAME_STRING,
                     )
                     .unwrap(),
                     default_value: Some(ConstValue::String(

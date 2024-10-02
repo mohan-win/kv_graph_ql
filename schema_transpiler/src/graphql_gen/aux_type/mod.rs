@@ -24,7 +24,7 @@ pub fn connection_types_def<'src>(
                     description: None,
                     name: Name::new("pageInfo"),
                     arguments: vec![],
-                    ty: open_crud::QueryType::PageInfo
+                    ty: open_crud_name::QueryType::PageInfo
                         .common_ty(sdml_ast::FieldTypeMod::NonOptional),
                     directives: vec![],
                 },
@@ -39,7 +39,7 @@ pub fn connection_types_def<'src>(
                     description: None,
                     name: Name::new("aggregate"),
                     arguments: vec![],
-                    ty: open_crud::QueryType::Aggregate
+                    ty: open_crud_name::QueryType::Aggregate
                         .common_ty(sdml_ast::FieldTypeMod::NonOptional),
                     directives: vec![],
                 },
@@ -90,7 +90,7 @@ pub fn page_info_type_def<'src>() -> GraphQLGenResult<TypeDefinition> {
     Ok(TypeDefinition {
         extend: false,
         description: None,
-        name: open_crud::QueryType::PageInfo.common_name(),
+        name: open_crud_name::QueryType::PageInfo.common_name(),
         directives: vec![],
         kind: TypeKind::Object(ObjectType {
             implements: vec![],
@@ -159,7 +159,7 @@ pub fn aggregage_type_def<'src>() -> GraphQLGenResult<TypeDefinition> {
     Ok(TypeDefinition {
         extend: false,
         description: None,
-        name: open_crud::QueryType::Aggregate.common_name(),
+        name: open_crud_name::QueryType::Aggregate.common_name(),
         directives: vec![],
         kind: TypeKind::Object(ObjectType {
             implements: vec![],

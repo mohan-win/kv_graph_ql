@@ -7,14 +7,14 @@ mod aux_type;
 mod enum_type;
 mod error;
 mod input_type;
-pub mod open_crud;
+pub mod open_crud_name;
 mod root_query_type;
 mod r#type;
 
 use super::*;
 pub use error::ErrorGraphQLGen;
 use graphql_ast::*;
-use open_crud::*;
+use open_crud_name::*;
 
 pub type GraphQLGenResult<T> = Result<T, ErrorGraphQLGen>;
 
@@ -66,15 +66,15 @@ fn interface_node_def() -> TypeDefinition {
         description: Some(
             "Node interface as per Relay GraphQL Global Object Identification Spec. https://relay.dev/docs/guides/graphql-server-specification/#object-identification".to_string(),
         ),
-        name: open_crud::QueryType::RootNode.common_name(),
+        name: open_crud_name::QueryType::RootNode.common_name(),
         directives: vec![],
         kind: TypeKind::Interface(InterfaceType {
             implements: vec![],
             fields: vec![FieldDefinition {
                 description: Some("ID field with globally unique ID".to_string()),
-                name: open_crud::Field::Id.common_name(),
+                name: open_crud_name::Field::Id.common_name(),
                 arguments: vec![],
-                ty: open_crud::OpenCRUDType::Id.common_ty(sdml_ast::FieldTypeMod::NonOptional),
+                ty: open_crud_name::OpenCRUDType::Id.common_ty(sdml_ast::FieldTypeMod::NonOptional),
                 directives: vec![ConstDirective {
                     name: Name::new("unique"),
                     arguments: vec![],

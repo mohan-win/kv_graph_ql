@@ -21,7 +21,7 @@ pub fn root_query_type_def<'src>(
     Ok(TypeDefinition {
         extend: false,
         description: None,
-        name: open_crud::QueryType::RootQuery.common_name(),
+        name: open_crud_name::QueryType::RootQuery.common_name(),
         directives: vec![],
         kind: TypeKind::Object(ObjectType {
             implements: vec![],
@@ -33,16 +33,16 @@ pub fn root_query_type_def<'src>(
 fn root_node_field() -> GraphQLGenResult<FieldDefinition> {
     Ok(FieldDefinition {
         description: None,
-        name: open_crud::QueryField::RootNode.common_name(),
+        name: open_crud_name::QueryField::RootNode.common_name(),
         arguments: vec![InputValueDefinition {
             description: None,
-            name: open_crud::Field::Id.common_name(),
-            ty: open_crud::OpenCRUDType::Id
+            name: open_crud_name::Field::Id.common_name(),
+            ty: open_crud_name::OpenCRUDType::Id
                 .common_ty(sdml_ast::FieldTypeMod::NonOptional),
             default_value: None,
             directives: vec![],
         }],
-        ty: open_crud::QueryType::RootNode.common_ty(sdml_ast::FieldTypeMod::Optional),
+        ty: open_crud_name::QueryType::RootNode.common_ty(sdml_ast::FieldTypeMod::Optional),
         directives: vec![],
     })
 }
@@ -60,11 +60,11 @@ fn root_query_fields<'src>(
         // Query unique object.
         FieldDefinition {
             description: None,
-            name: open_crud::QueryField::RootField.name(model_name),
+            name: open_crud_name::QueryField::RootField.name(model_name),
             arguments: vec![InputValueDefinition {
                 description: None,
                 name: Name::new(FIELD_ARG_WHERE),
-                ty: open_crud::FilterInputType::WhereUniqueInput
+                ty: open_crud_name::FilterInputType::WhereUniqueInput
                     .ty(model_name, sdml_ast::FieldTypeMod::NonOptional),
                 default_value: None,
                 directives: vec![],
@@ -78,7 +78,7 @@ fn root_query_fields<'src>(
         // Query array of objects.
         FieldDefinition {
             description: None,
-            name: open_crud::QueryField::RootFieldArray.name(model_name),
+            name: open_crud_name::QueryField::RootFieldArray.name(model_name),
             arguments: r#type::array_field_args(model_name)?,
             ty: Type::new(model_name, sdml_ast::FieldTypeMod::Array),
             directives: vec![],
@@ -89,9 +89,9 @@ fn root_query_fields<'src>(
         // Query object connection for multiple objects.
         FieldDefinition {
             description: None,
-            name: open_crud::QueryField::RootFieldConnection.name(model_name),
+            name: open_crud_name::QueryField::RootFieldConnection.name(model_name),
             arguments: r#type::array_field_args(model_name)?,
-            ty: open_crud::QueryType::Auxiliary(AuxiliaryType::Connection)
+            ty: open_crud_name::QueryType::Auxiliary(AuxiliaryType::Connection)
                 .ty(model_name, sdml_ast::FieldTypeMod::NonOptional),
             directives: vec![],
         },

@@ -54,7 +54,7 @@ fn unique_scalar_field_to_filter<'src>(
             ..
         } => match primitive_type {
             sdml_ast::PrimitiveType::ShortStr if is_id_field => {
-                Ok(open_crud::OpenCRUDType::Id
+                Ok(open_crud_name::OpenCRUDType::Id
                     .common_ty(sdml_ast::FieldTypeMod::Optional))
             }
             sdml_prim_type => {
@@ -86,7 +86,7 @@ fn unique_scalar_field_to_filter<'src>(
     Ok(InputValueDefinition {
         description: None,
         name: if is_id_field {
-            open_crud::Field::Id.common_name()
+            open_crud_name::Field::Id.common_name()
         } else {
             let field_name = field
                 .name

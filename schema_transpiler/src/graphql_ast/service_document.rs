@@ -282,7 +282,7 @@ impl Type {
     pub(crate) fn map_sdml_type_to_graphql_ty_name(
         r#type: &sdml_parser::ast::PrimitiveType,
     ) -> String {
-        use crate::graphql_gen::open_crud::{
+        use crate::graphql_gen::open_crud_name::{
             FIELD_TYPE_NAME_BOOL, FIELD_TYPE_NAME_INT, FIELD_TYPE_NAME_STRING,
             FIELD_TYPE_SCALAR_DATETIME,
         };

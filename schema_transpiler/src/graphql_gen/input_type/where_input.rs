@@ -77,7 +77,7 @@ fn id_field_def<'src>(
     field_name: &sdml_ast::Token<'src>,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
     string_field_def(&sdml_ast::Token::Ident(
-        &open_crud::Field::Id.common_name(),
+        &open_crud_name::Field::Id.common_name(),
         field_name.span(),
     ))
 }
@@ -241,7 +241,7 @@ fn relation_field_def<'src>(
         .try_get_ident_name()
         .map_err(ErrorGraphQLGen::new_sdml_error)?;
     let relation_where_filter =
-        open_crud::FilterInputType::WhereInput.name(&related_model_name);
+        open_crud_name::FilterInputType::WhereInput.name(&related_model_name);
     // Many side of the relation
     if target_relation.is_array() {
         Ok(vec![

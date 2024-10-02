@@ -1,3 +1,4 @@
+//! OpenCRUD type, field and field arg names.
 mod fields;
 mod types;
 
