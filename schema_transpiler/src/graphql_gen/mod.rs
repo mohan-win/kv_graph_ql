@@ -7,7 +7,8 @@ mod aux_type;
 mod enum_type;
 mod error;
 mod input_type;
-pub mod open_crud_name;
+pub(crate) mod open_crud_name;
+mod query_api;
 mod root_query_type;
 mod r#type;
 
@@ -83,16 +84,6 @@ fn interface_node_def() -> TypeDefinition {
         }),
     }
 }
-
-/**
- * Generate filters for individual types
- * - WhereInput, WhereUniqueInput   
- * - OrderByInput
- * - Gererate GrapQL enums for all SDML enums.
- * - Generate GraphQL Type for the SDML model.
- * - Create & Update types.
- * - Root fields in Query & Mutation.
- */
 
 #[cfg(test)]
 mod tests {

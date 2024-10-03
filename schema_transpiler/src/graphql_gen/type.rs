@@ -3,7 +3,7 @@ use super::*;
 use aux_type::connection_types_def;
 
 /// Code-gen GraphQL type and its auxiliary types for the given model.
-pub fn type_and_aux_types_def<'src>(
+pub(in crate::graphql_gen) fn type_and_aux_types_def<'src>(
     model: &sdml_ast::ModelDecl<'src>,
 ) -> GraphQLGenResult<Vec<TypeDefinition>> {
     let mut result = vec![];
@@ -108,7 +108,7 @@ fn non_relation_field_def<'src>(
 }
 
 /// Returns field arguments for the `relation` array field.
-pub fn array_field_args<'src>(
+pub(in crate::graphql_gen) fn array_field_args<'src>(
     referenced_model_name: &'src str,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
     let mut args = vec![];

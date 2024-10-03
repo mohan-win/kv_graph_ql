@@ -1,7 +1,7 @@
 use super::*;
 
 /// Generates the GraphQL enum type for the given SDML enum.
-pub fn enum_def<'src>(
+pub(in crate::graphql_gen) fn enum_def<'src>(
     r#enum: &sdml_ast::EnumDecl<'src>,
 ) -> GraphQLGenResult<TypeDefinition> {
     let enum_name = r#enum
