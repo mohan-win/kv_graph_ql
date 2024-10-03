@@ -59,7 +59,11 @@ fn non_relation_field_def<'src>(
 
     let ty_name_str = match &*field.field_type.r#type() {
         sdml_ast::Type::Primitive { r#type, .. } => {
-            Ok(Type::map_sdml_type_to_graphql_ty_name(r#type))
+            if !field.has_id_attrib() {
+                Ok(Type::map_sdml_type_to_graphql_ty_name(r#type))
+            } else {
+                Ok(open_crud_name::OpenCRUDType::Id.common_name().to_string())
+            }
         }
         sdml_ast::Type::Enum { enum_ty_name } => Ok(enum_ty_name
             .ident_name()

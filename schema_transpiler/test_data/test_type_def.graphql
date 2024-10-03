@@ -2,7 +2,7 @@
 User
 """
 type User implements Node {
-  id: String! @map(name: "userId") @unique
+  id: ID! @map(name: "userId") @unique
   email: String! @unique
   name: String
   nickNames: [String!]!
