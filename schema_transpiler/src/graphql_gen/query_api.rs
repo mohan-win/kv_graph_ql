@@ -69,9 +69,9 @@ mod tests {
             "/test_data/test_query_api_def.sdml"
         ))
         .unwrap();
-        let mut expected_graphql_str = fs::read_to_string(concat!(
+        let expected_graphql_str = fs::read_to_string(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/test_data/test_query_api_def.graphqll"
+            "/test_data/test_query_api_def.graphql"
         ))
         .unwrap();
 
@@ -81,12 +81,10 @@ mod tests {
             .unwrap();
         let sdml_ast = parser::semantic_analysis(sdml_decls).unwrap();
         let query_api = query_api_def(&sdml_ast).unwrap();
-        let mut actual_query_api_graphql_str =
+        let actual_query_api_graphql_str =
             query_api.iter().fold("".to_string(), |acc, graphql_ty| {
                 format!("{}{}", acc, graphql_ty.to_string())
             });
-        eprintln!("{}", actual_query_api_graphql_str);
-
         assert_eq!(expected_graphql_str, actual_query_api_graphql_str);
     }
 }
