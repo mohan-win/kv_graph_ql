@@ -30,10 +30,10 @@ pub(in crate::graphql_gen) fn query_api_def<'src>(
     data_model.models_sorted().iter().try_for_each(|model| {
         // Filters & Order_By
         api_type_defs.push(TypeSystemDefinition::Type(
-            input_type::where_input::where_input_def(model)?,
+            input_type::filter::r#where::where_input_def(model)?,
         ));
         api_type_defs.push(TypeSystemDefinition::Type(
-            input_type::where_unique_input::where_unique_unique_input_def(model)?,
+            input_type::filter::where_unique::where_unique_unique_input_def(model)?,
         ));
         api_type_defs.push(TypeSystemDefinition::Type(
             input_type::order_by_input::order_by_input_enum_def(model)?,

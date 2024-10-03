@@ -9,7 +9,7 @@ use super::*;
 /// * models - array of models in sdml.
 /// ## Returns
 /// Root level query type definition.
-pub fn root_query_type_def<'src>(
+pub(in crate::graphql_gen) fn root_query_type_def<'src>(
     models: &Vec<&ModelDecl<'src>>,
 ) -> GraphQLGenResult<TypeDefinition> {
     let mut fields = Vec::new();
@@ -42,7 +42,8 @@ fn root_node_field() -> GraphQLGenResult<FieldDefinition> {
             default_value: None,
             directives: vec![],
         }],
-        ty: open_crud_name::QueryType::RootNode.common_ty(sdml_ast::FieldTypeMod::Optional),
+        ty: open_crud_name::QueryType::RootNode
+            .common_ty(sdml_ast::FieldTypeMod::Optional),
         directives: vec![],
     })
 }
