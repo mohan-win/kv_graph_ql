@@ -60,7 +60,7 @@ mod tests {
     use super::*;
     use chumsky::prelude::*;
     use sdml_parser::parser;
-    use std::{fs, os::unix::process::parent_id};
+    use std::fs;
 
     #[test]
     fn test_query_api_def() {
@@ -71,10 +71,9 @@ mod tests {
         .unwrap();
         let mut expected_graphql_str = fs::read_to_string(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/test_data/test_query_api_def.graphql"
+            "/test_data/test_query_api_def.graphqll"
         ))
         .unwrap();
-        expected_graphql_str.retain(|c| !c.is_whitespace());
 
         let sdml_decls = parser::delcarations()
             .parse(&sdml_str)
@@ -87,7 +86,6 @@ mod tests {
                 format!("{}{}", acc, graphql_ty.to_string())
             });
         eprintln!("{}", actual_query_api_graphql_str);
-        actual_query_api_graphql_str.retain(|c| !c.is_whitespace());
 
         assert_eq!(expected_graphql_str, actual_query_api_graphql_str);
     }
