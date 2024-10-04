@@ -65,6 +65,205 @@ type Aggregate {
 """
 The where filter which can match zero or more objects
 """
+input UserProfileWhereInput {
+  """
+  Logical AND on all given filters.
+  """
+  AND: [UserProfileWhereInput!]
+  """
+  Logical OR on all given filters.
+  """
+  OR: [UserProfileWhereInput!]
+  """
+  Logical NOT on all given filters combined by AND.
+  """
+  NOT: [UserProfileWhereInput!]
+  """
+  equals
+  """
+  id: String
+  """
+  not equals
+  """
+  id_not: String
+  """
+  contains substring
+  """
+  id_contains: String
+  """
+  doesn't contain substring
+  """
+  id_not_contains: String
+  id_starts_with: String
+  id_not_starts_with: String
+  id_ends_with: String
+  id_not_ends_with: String
+  """
+  less than
+  """
+  id_lt: String
+  """
+  less than or equals
+  """
+  id_lte: String
+  """
+  greater than
+  """
+  id_gt: String
+  """
+  greater than or equals
+  """
+  id_gte: String
+  """
+  in list
+  """
+  id_in: [String]
+  """
+  not in list
+  """
+  id_not_in: [String]
+  """
+  equals
+  """
+  bio: String
+  """
+  not equals
+  """
+  bio_not: String
+  """
+  contains substring
+  """
+  bio_contains: String
+  """
+  doesn't contain substring
+  """
+  bio_not_contains: String
+  bio_starts_with: String
+  bio_not_starts_with: String
+  bio_ends_with: String
+  bio_not_ends_with: String
+  """
+  less than
+  """
+  bio_lt: String
+  """
+  less than or equals
+  """
+  bio_lte: String
+  """
+  greater than
+  """
+  bio_gt: String
+  """
+  greater than or equals
+  """
+  bio_gte: String
+  """
+  in list
+  """
+  bio_in: [String]
+  """
+  not in list
+  """
+  bio_not_in: [String]
+  """
+  condition must be true for related node
+  """
+  user: UserWhereInput
+  """
+  is the relation field null
+  """
+  user_is_null: Boolean
+  """
+  equals
+  """
+  userEmail: String
+  """
+  not equals
+  """
+  userEmail_not: String
+  """
+  contains substring
+  """
+  userEmail_contains: String
+  """
+  doesn't contain substring
+  """
+  userEmail_not_contains: String
+  userEmail_starts_with: String
+  userEmail_not_starts_with: String
+  userEmail_ends_with: String
+  userEmail_not_ends_with: String
+  """
+  less than
+  """
+  userEmail_lt: String
+  """
+  less than or equals
+  """
+  userEmail_lte: String
+  """
+  greater than
+  """
+  userEmail_gt: String
+  """
+  greater than or equals
+  """
+  userEmail_gte: String
+  """
+  in list
+  """
+  userEmail_in: [String]
+  """
+  not in list
+  """
+  userEmail_not_in: [String]
+}
+
+"""
+The where unique filter which can match at-most 1 object.
+"""
+input UserProfileWhereUniqueInput {
+  id: ID
+  userEmail: String
+}
+
+"""
+Order by input for UserProfile's scalar fields
+"""
+enum UserProfileOrderByInput {
+  id_ASC
+  id_DSC
+  bio_ASC
+  bio_DSC
+  userEmail_ASC
+  userEmail_DSC
+}
+
+"""
+UserProfile
+"""
+type UserProfile implements Node {
+  id: ID! @map(name: "profileId") @unique
+  bio: String
+  user: User!
+  userEmail: String! @unique
+}
+
+type UserProfileEdge {
+  node: UserProfile!
+  cursor: String!
+}
+
+type UserProfileConnection {
+  pageInfo: PageInfo!
+  edges: [UserProfileEdge!]!
+  aggregate: Aggregate!
+}
+
+"""
+The where filter which can match zero or more objects
+"""
 input UserWhereInput {
   """
   Logical AND on all given filters.
@@ -393,7 +592,7 @@ input UserWhereInput {
   """
   condition must be true for related node
   """
-  profile: ProfileWhereInput
+  profile: UserProfileWhereInput
   """
   is the relation field null
   """
@@ -474,7 +673,7 @@ type User implements Node {
   mentorEmail: String
   spouse: User
   spouseUserId: String @unique
-  profile: Profile
+  profile: UserProfile
   posts(
     where: PostWhereInput
     orderBy: PostOrderByInput
@@ -509,19 +708,19 @@ type UserConnection {
 """
 The where filter which can match zero or more objects
 """
-input ProfileWhereInput {
+input PostCategoryWhereInput {
   """
   Logical AND on all given filters.
   """
-  AND: [ProfileWhereInput!]
+  AND: [PostCategoryWhereInput!]
   """
   Logical OR on all given filters.
   """
-  OR: [ProfileWhereInput!]
+  OR: [PostCategoryWhereInput!]
   """
   Logical NOT on all given filters combined by AND.
   """
-  NOT: [ProfileWhereInput!]
+  NOT: [PostCategoryWhereInput!]
   """
   equals
   """
@@ -569,139 +768,161 @@ input ProfileWhereInput {
   """
   equals
   """
-  bio: String
+  name: String
   """
   not equals
   """
-  bio_not: String
+  name_not: String
   """
   contains substring
   """
-  bio_contains: String
+  name_contains: String
   """
   doesn't contain substring
   """
-  bio_not_contains: String
-  bio_starts_with: String
-  bio_not_starts_with: String
-  bio_ends_with: String
-  bio_not_ends_with: String
+  name_not_contains: String
+  name_starts_with: String
+  name_not_starts_with: String
+  name_ends_with: String
+  name_not_ends_with: String
   """
   less than
   """
-  bio_lt: String
+  name_lt: String
   """
   less than or equals
   """
-  bio_lte: String
+  name_lte: String
   """
   greater than
   """
-  bio_gt: String
+  name_gt: String
   """
   greater than or equals
   """
-  bio_gte: String
+  name_gte: String
   """
   in list
   """
-  bio_in: [String]
+  name_in: [String]
   """
   not in list
   """
-  bio_not_in: [String]
-  """
-  condition must be true for related node
-  """
-  user: UserWhereInput
-  """
-  is the relation field null
-  """
-  user_is_null: Boolean
+  name_not_in: [String]
   """
   equals
   """
-  userEmail: String
+  postIDs: String
   """
   not equals
   """
-  userEmail_not: String
+  postIDs_not: String
   """
   contains substring
   """
-  userEmail_contains: String
+  postIDs_contains: String
   """
   doesn't contain substring
   """
-  userEmail_not_contains: String
-  userEmail_starts_with: String
-  userEmail_not_starts_with: String
-  userEmail_ends_with: String
-  userEmail_not_ends_with: String
+  postIDs_not_contains: String
+  postIDs_starts_with: String
+  postIDs_not_starts_with: String
+  postIDs_ends_with: String
+  postIDs_not_ends_with: String
   """
   less than
   """
-  userEmail_lt: String
+  postIDs_lt: String
   """
   less than or equals
   """
-  userEmail_lte: String
+  postIDs_lte: String
   """
   greater than
   """
-  userEmail_gt: String
+  postIDs_gt: String
   """
   greater than or equals
   """
-  userEmail_gte: String
+  postIDs_gte: String
   """
   in list
   """
-  userEmail_in: [String]
+  postIDs_in: [String]
   """
   not in list
   """
-  userEmail_not_in: [String]
+  postIDs_not_in: [String]
+  """
+  condition must be true for all nodes
+  """
+  posts_every: PostWhereInput
+  """
+  condition must be true for at least 1 node
+  """
+  posts_some: PostWhereInput
+  """
+  condition must be false for all nodes
+  """
+  posts_none: PostWhereInput
+  """
+  is the relation field empty
+  """
+  posts_is_empty: Boolean
 }
 
 """
 The where unique filter which can match at-most 1 object.
 """
-input ProfileWhereUniqueInput {
+input PostCategoryWhereUniqueInput {
   id: ID
-  userEmail: String
 }
 
 """
-Order by input for Profile's scalar fields
+Order by input for PostCategory's scalar fields
 """
-enum ProfileOrderByInput {
+enum PostCategoryOrderByInput {
   id_ASC
   id_DSC
-  bio_ASC
-  bio_DSC
-  userEmail_ASC
-  userEmail_DSC
+  name_ASC
+  name_DSC
 }
 
 """
-Profile
+PostCategory
 """
-type Profile implements Node {
-  id: ID! @map(name: "profileId") @unique
-  bio: String
-  user: User!
-  userEmail: String! @unique
+type PostCategory implements Node {
+  id: ID! @map(name: "categoryId") @unique
+  name: String!
+  postIDs: [String!]!
+  posts(
+    where: PostWhereInput
+    orderBy: PostOrderByInput
+    skip: Int
+    after: ID
+    before: ID
+    first: Int
+    last: Int
+  ): [Post!]!
+  postsConnection(
+    where: PostWhereInput
+    orderBy: PostOrderByInput
+    skip: Int
+    after: ID
+    before: ID
+    first: Int
+    last: Int
+  ): [PostConnection!]!
 }
 
-type ProfileEdge {
-  node: Profile!
+type PostCategoryEdge {
+  node: PostCategory!
   cursor: String!
 }
 
-type ProfileConnection {
+type PostCategoryConnection {
   pageInfo: PageInfo!
-  edges: [ProfileEdge!]!
+  edges: [PostCategoryEdge!]!
   aggregate: Aggregate!
 }
 
@@ -980,15 +1201,15 @@ input PostWhereInput {
   """
   condition must be true for all nodes
   """
-  category_every: CategoryWhereInput
+  category_every: PostCategoryWhereInput
   """
   condition must be true for at least 1 node
   """
-  category_some: CategoryWhereInput
+  category_some: PostCategoryWhereInput
   """
   condition must be false for all nodes
   """
-  category_none: CategoryWhereInput
+  category_none: PostCategoryWhereInput
   """
   is the relation field empty
   """
@@ -1033,23 +1254,23 @@ type Post implements Node {
   authorId: String!
   categoryIds: [String!]!
   category(
-    where: CategoryWhereInput
-    orderBy: CategoryOrderByInput
+    where: PostCategoryWhereInput
+    orderBy: PostCategoryOrderByInput
     skip: Int
     after: ID
     before: ID
     first: Int
     last: Int
-  ): [Category!]!
+  ): [PostCategory!]!
   categoryConnection(
-    where: CategoryWhereInput
-    orderBy: CategoryOrderByInput
+    where: PostCategoryWhereInput
+    orderBy: PostCategoryOrderByInput
     skip: Int
     after: ID
     before: ID
     first: Int
     last: Int
-  ): [CategoryConnection!]!
+  ): [PostCategoryConnection!]!
 }
 
 type PostEdge {
@@ -1063,229 +1284,27 @@ type PostConnection {
   aggregate: Aggregate!
 }
 
-"""
-The where filter which can match zero or more objects
-"""
-input CategoryWhereInput {
-  """
-  Logical AND on all given filters.
-  """
-  AND: [CategoryWhereInput!]
-  """
-  Logical OR on all given filters.
-  """
-  OR: [CategoryWhereInput!]
-  """
-  Logical NOT on all given filters combined by AND.
-  """
-  NOT: [CategoryWhereInput!]
-  """
-  equals
-  """
-  id: String
-  """
-  not equals
-  """
-  id_not: String
-  """
-  contains substring
-  """
-  id_contains: String
-  """
-  doesn't contain substring
-  """
-  id_not_contains: String
-  id_starts_with: String
-  id_not_starts_with: String
-  id_ends_with: String
-  id_not_ends_with: String
-  """
-  less than
-  """
-  id_lt: String
-  """
-  less than or equals
-  """
-  id_lte: String
-  """
-  greater than
-  """
-  id_gt: String
-  """
-  greater than or equals
-  """
-  id_gte: String
-  """
-  in list
-  """
-  id_in: [String]
-  """
-  not in list
-  """
-  id_not_in: [String]
-  """
-  equals
-  """
-  name: String
-  """
-  not equals
-  """
-  name_not: String
-  """
-  contains substring
-  """
-  name_contains: String
-  """
-  doesn't contain substring
-  """
-  name_not_contains: String
-  name_starts_with: String
-  name_not_starts_with: String
-  name_ends_with: String
-  name_not_ends_with: String
-  """
-  less than
-  """
-  name_lt: String
-  """
-  less than or equals
-  """
-  name_lte: String
-  """
-  greater than
-  """
-  name_gt: String
-  """
-  greater than or equals
-  """
-  name_gte: String
-  """
-  in list
-  """
-  name_in: [String]
-  """
-  not in list
-  """
-  name_not_in: [String]
-  """
-  equals
-  """
-  postIDs: String
-  """
-  not equals
-  """
-  postIDs_not: String
-  """
-  contains substring
-  """
-  postIDs_contains: String
-  """
-  doesn't contain substring
-  """
-  postIDs_not_contains: String
-  postIDs_starts_with: String
-  postIDs_not_starts_with: String
-  postIDs_ends_with: String
-  postIDs_not_ends_with: String
-  """
-  less than
-  """
-  postIDs_lt: String
-  """
-  less than or equals
-  """
-  postIDs_lte: String
-  """
-  greater than
-  """
-  postIDs_gt: String
-  """
-  greater than or equals
-  """
-  postIDs_gte: String
-  """
-  in list
-  """
-  postIDs_in: [String]
-  """
-  not in list
-  """
-  postIDs_not_in: [String]
-  """
-  condition must be true for all nodes
-  """
-  posts_every: PostWhereInput
-  """
-  condition must be true for at least 1 node
-  """
-  posts_some: PostWhereInput
-  """
-  condition must be false for all nodes
-  """
-  posts_none: PostWhereInput
-  """
-  is the relation field empty
-  """
-  posts_is_empty: Boolean
-}
-
-"""
-The where unique filter which can match at-most 1 object.
-"""
-input CategoryWhereUniqueInput {
-  id: ID
-}
-
-"""
-Order by input for Category's scalar fields
-"""
-enum CategoryOrderByInput {
-  id_ASC
-  id_DSC
-  name_ASC
-  name_DSC
-}
-
-"""
-Category
-"""
-type Category implements Node {
-  id: ID! @map(name: "categoryId") @unique
-  name: String!
-  postIDs: [String!]!
-  posts(
-    where: PostWhereInput
-    orderBy: PostOrderByInput
-    skip: Int
-    after: ID
-    before: ID
-    first: Int
-    last: Int
-  ): [Post!]!
-  postsConnection(
-    where: PostWhereInput
-    orderBy: PostOrderByInput
-    skip: Int
-    after: ID
-    before: ID
-    first: Int
-    last: Int
-  ): [PostConnection!]!
-}
-
-type CategoryEdge {
-  node: Category!
-  cursor: String!
-}
-
-type CategoryConnection {
-  pageInfo: PageInfo!
-  edges: [CategoryEdge!]!
-  aggregate: Aggregate!
-}
-
 type Query {
   node(id: ID!): Node
+  userProfile(where: UserProfileWhereUniqueInput!): UserProfile
+  userProfiles(
+    where: UserProfileWhereInput
+    orderBy: UserProfileOrderByInput
+    skip: Int
+    after: ID
+    before: ID
+    first: Int
+    last: Int
+  ): [UserProfile!]!
+  userProfilesConnection(
+    where: UserProfileWhereInput
+    orderBy: UserProfileOrderByInput
+    skip: Int
+    after: ID
+    before: ID
+    first: Int
+    last: Int
+  ): UserProfileConnection!
   user(where: UserWhereUniqueInput!): User
   users(
     where: UserWhereInput
@@ -1305,25 +1324,25 @@ type Query {
     first: Int
     last: Int
   ): UserConnection!
-  profile(where: ProfileWhereUniqueInput!): Profile
-  profiles(
-    where: ProfileWhereInput
-    orderBy: ProfileOrderByInput
+  postCategory(where: PostCategoryWhereUniqueInput!): PostCategory
+  postCategories(
+    where: PostCategoryWhereInput
+    orderBy: PostCategoryOrderByInput
     skip: Int
     after: ID
     before: ID
     first: Int
     last: Int
-  ): [Profile!]!
-  profilesConnection(
-    where: ProfileWhereInput
-    orderBy: ProfileOrderByInput
+  ): [PostCategory!]!
+  postCategoriesConnection(
+    where: PostCategoryWhereInput
+    orderBy: PostCategoryOrderByInput
     skip: Int
     after: ID
     before: ID
     first: Int
     last: Int
-  ): ProfileConnection!
+  ): PostCategoryConnection!
   post(where: PostWhereUniqueInput!): Post
   posts(
     where: PostWhereInput
@@ -1343,23 +1362,4 @@ type Query {
     first: Int
     last: Int
   ): PostConnection!
-  category(where: CategoryWhereUniqueInput!): Category
-  categories(
-    where: CategoryWhereInput
-    orderBy: CategoryOrderByInput
-    skip: Int
-    after: ID
-    before: ID
-    first: Int
-    last: Int
-  ): [Category!]!
-  categoriesConnection(
-    where: CategoryWhereInput
-    orderBy: CategoryOrderByInput
-    skip: Int
-    after: ID
-    before: ID
-    first: Int
-    last: Int
-  ): CategoryConnection!
 }
