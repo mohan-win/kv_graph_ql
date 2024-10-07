@@ -1,0 +1,14 @@
+input UserCreateInput {
+  email: String!
+  name: String
+  nickNames: [String!]!
+  """
+  Default value 'USER' will be assigned if no value is passed to this input arg.
+  """
+  role: Role
+  mentees: UserCreateManyInlineInput!
+  mentor: UserCreateOneInlineInput
+  spouse: UserCreateOneInlineInput
+  profile: UserProfileCreateOneInlineInput
+  posts: PostCreateManyInlineInput!
+}

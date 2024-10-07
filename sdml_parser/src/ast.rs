@@ -262,38 +262,29 @@ pub struct FieldDecl<'src> {
 impl<'src> FieldDecl<'src> {
     /// Is this an auto-generated id field ?
     pub fn is_auto_gen_id(&self) -> bool {
-        let id_attrib = self
-            .attributes
-            .iter()
-            .filter(|attrib| {
-                if let Token::Ident(semantic_analysis::ATTRIB_NAME_ID, _span) =
-                    attrib.name
-                {
-                    true
-                } else {
-                    false
-                }
-            })
-            .next();
-        id_attrib.map_or(false, |id_attrib| {
-            id_attrib
-                .arg
-                .as_ref()
-                .map_or(false, |attrib_arg| match attrib_arg {
-                    AttribArg::Function(fn_name) => {
-                        if let Token::Ident(
-                            semantic_analysis::ATTRIB_ARG_FN_AUTO,
-                            _span,
-                        ) = fn_name
-                        {
-                            true
-                        } else {
-                            false
+        if self.has_id_attrib() {
+            self.default_attribute().map_or(false, |default_attrib| {
+                default_attrib
+                    .arg
+                    .as_ref()
+                    .map_or(false, |attrib_arg| match attrib_arg {
+                        AttribArg::Function(fn_name) => {
+                            if let Token::Ident(
+                                semantic_analysis::ATTRIB_ARG_FN_AUTO,
+                                _span,
+                            ) = fn_name
+                            {
+                                true
+                            } else {
+                                false
+                            }
                         }
-                    }
-                    _ => false,
-                })
-        })
+                        _ => false,
+                    })
+            })
+        } else {
+            false
+        }
     }
     /// Returns true if this field has @id attribute.
     pub fn has_id_attrib(&self) -> bool {
@@ -557,6 +548,31 @@ pub enum AttribArg<'src> {
     Args(Vec<NamedArg<'src>>),
     Function(Token<'src>),
     Ident(Token<'src>),
+}
+
+impl<'src> std::fmt::Display for AttribArg<'src> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AttribArg::Args(args) => {
+                let disp_str = args.iter().fold("".to_string(), |acc, arg| {
+                    format!(
+                        "{} {}:{}",
+                        acc,
+                        arg.arg_name.ident_name().unwrap(),
+                        // Note: arg_value should be either an ident or a string, and nothing else.
+                        arg.arg_value.ident_name().or(arg.arg_value.str()).unwrap()
+                    )
+                });
+                write!(f, "{}", disp_str)
+            }
+            AttribArg::Function(fn_name) => {
+                write!(f, "{}", fn_name.ident_name().unwrap())
+            }
+            AttribArg::Ident(v) => {
+                write!(f, "{}", v.ident_name().unwrap())
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
