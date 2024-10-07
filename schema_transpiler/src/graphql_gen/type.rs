@@ -106,7 +106,7 @@ fn non_relation_field_def<'src>(
         description: None,
         name: Name::new(field_name),
         arguments: vec![],
-        ty: Type::new(&ty_name_str, field.field_type.type_mod),
+        ty: Type::new(&ty_name_str, field.field_type.type_mod.into()),
         directives,
     })
 }
@@ -120,7 +120,7 @@ pub(in crate::graphql_gen) fn array_field_args<'src>(
         description: None,
         name: Name::new(FIELD_ARG_WHERE),
         ty: open_crud_name::FilterInputType::WhereInput
-            .ty(referenced_model_name, sdml_ast::FieldTypeMod::Optional),
+            .ty(referenced_model_name, TypeMod::Optional),
         default_value: None,
         directives: vec![],
     });
@@ -128,42 +128,42 @@ pub(in crate::graphql_gen) fn array_field_args<'src>(
         description: None,
         name: Name::new(FIELD_ARG_ORDER_BY),
         ty: open_crud_name::OpenCRUDType::OrderByInput
-            .ty(referenced_model_name, sdml_ast::FieldTypeMod::Optional),
+            .ty(referenced_model_name, TypeMod::Optional),
         default_value: None,
         directives: vec![],
     });
     args.push(InputValueDefinition {
         description: None,
         name: Name::new(FIELD_ARG_SKIP),
-        ty: Type::new(FIELD_TYPE_NAME_INT, sdml_ast::FieldTypeMod::Optional),
+        ty: Type::new(FIELD_TYPE_NAME_INT, TypeMod::Optional),
         default_value: None,
         directives: vec![],
     });
     args.push(InputValueDefinition {
         description: None,
         name: Name::new(FIELD_ARG_AFTER),
-        ty: open_crud_name::OpenCRUDType::Id.common_ty(sdml_ast::FieldTypeMod::Optional),
+        ty: open_crud_name::OpenCRUDType::Id.common_ty(TypeMod::Optional),
         default_value: None,
         directives: vec![],
     });
     args.push(InputValueDefinition {
         description: None,
         name: Name::new(FIELD_ARG_BEFORE),
-        ty: open_crud_name::OpenCRUDType::Id.common_ty(sdml_ast::FieldTypeMod::Optional),
+        ty: open_crud_name::OpenCRUDType::Id.common_ty(TypeMod::Optional),
         default_value: None,
         directives: vec![],
     });
     args.push(InputValueDefinition {
         description: None,
         name: Name::new(FIELD_ARG_FIRST),
-        ty: Type::new(FIELD_TYPE_NAME_INT, sdml_ast::FieldTypeMod::Optional),
+        ty: Type::new(FIELD_TYPE_NAME_INT, TypeMod::Optional),
         default_value: None,
         directives: vec![],
     });
     args.push(InputValueDefinition {
         description: None,
         name: Name::new(FIELD_ARG_LAST),
-        ty: Type::new(FIELD_TYPE_NAME_INT, sdml_ast::FieldTypeMod::Optional),
+        ty: Type::new(FIELD_TYPE_NAME_INT, TypeMod::Optional),
         default_value: None,
         directives: vec![],
     });
@@ -188,7 +188,7 @@ fn relation_field_def<'src>(
         .referenced_model_name()
         .try_get_ident_name()
         .map_err(ErrorGraphQLGen::new_sdml_error)?;
-    let field_type = Type::new(referenced_model_name, field.field_type.type_mod);
+    let field_type = Type::new(referenced_model_name, field.field_type.type_mod.into());
 
     if field.field_type.is_array() {
         Ok(vec![
@@ -207,7 +207,7 @@ fn relation_field_def<'src>(
                 name: Name::new(format!("{field_name}Connection")),
                 arguments: array_field_args(referenced_model_name)?,
                 ty: open_crud_name::AuxiliaryType::Connection
-                    .ty(referenced_model_name, field.field_type.type_mod),
+                    .ty(referenced_model_name, field.field_type.type_mod.into()),
                 directives: vec![],
             },
         ])

@@ -9,7 +9,7 @@
 
 use convert_case::Casing;
 
-use super::{Name, Type};
+use super::{Name, Type, TypeMod};
 
 /// Trait exposing the name & type of the OpenCRUD abstraction.
 /// ** Note **
@@ -25,13 +25,13 @@ pub trait Named {
     /// ## Arguments
     /// * `model_name` - name of the sdml model.
     /// * `type_mod` - type modifier.
-    fn ty(&self, model_name: &str, type_mod: sdml_parser::ast::FieldTypeMod) -> Type {
+    fn ty(&self, model_name: &str, type_mod: TypeMod) -> Type {
         Type::new(&self.name(model_name), type_mod)
     }
     /// Get *common* openCRUD abstraction name.
     fn common_name(&self) -> Name;
     /// Get *common* openCRUD abstraction type.
-    fn common_ty(&self, type_mod: sdml_parser::ast::FieldTypeMod) -> Type {
+    fn common_ty(&self, type_mod: TypeMod) -> Type {
         Type::new(&self.common_name(), type_mod)
     }
 }

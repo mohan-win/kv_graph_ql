@@ -47,23 +47,19 @@ fn unique_scalar_field_to_filter<'src>(
             let ty_name = enum_ty_name
                 .try_get_ident_name()
                 .map_err(ErrorGraphQLGen::new_sdml_error)?;
-            Ok(Type::new(ty_name, sdml_ast::FieldTypeMod::Optional))
+            Ok(Type::new(ty_name, TypeMod::Optional))
         }
         sdml_ast::Type::Primitive {
             r#type: primitive_type,
             ..
         } => match primitive_type {
             sdml_ast::PrimitiveType::ShortStr if is_id_field => {
-                Ok(open_crud_name::OpenCRUDType::Id
-                    .common_ty(sdml_ast::FieldTypeMod::Optional))
+                Ok(open_crud_name::OpenCRUDType::Id.common_ty(TypeMod::Optional))
             }
             sdml_prim_type => {
                 let graphql_ty_name =
                     Type::map_sdml_type_to_graphql_ty_name(sdml_prim_type);
-                Ok(Type::new(
-                    &graphql_ty_name,
-                    sdml_ast::FieldTypeMod::Optional,
-                ))
+                Ok(Type::new(&graphql_ty_name, TypeMod::Optional))
             }
         },
         other_type => {

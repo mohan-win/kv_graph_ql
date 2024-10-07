@@ -1,8 +1,20 @@
 use super::*;
 
+/// Code-gen create input types for the given model.
+/// It generates {ModelName}CreateInput, {ModelName}CreateOneInlineInput, {ModelName}CreateManyInlineInput.
+pub(in crate::graphql_gen) fn create_input_types_def<'src>(
+    model: &sdml_ast::ModelDecl<'src>,
+) -> GraphQLGenResult<Vec<TypeDefinition>> {
+    Ok(vec![
+        create_input_def(model)?,
+        create_one_inline_input_def(model)?,
+        create_many_inline_input_def(model)?,
+    ])
+}
+
 /// Input type used to create a new object.
 /// Ex. UserCreateInput creates a new user.
-pub(in crate::graphql_gen) fn create_input_def<'src>(
+fn create_input_def<'src>(
     model: &sdml_ast::ModelDecl<'src>,
 ) -> GraphQLGenResult<TypeDefinition> {
     let mut non_relation_fields = vec![];
@@ -83,7 +95,7 @@ fn non_relation_field_input_def<'src>(
     }?;
     let mut description = None;
     let default_attribute = field.default_attribute();
-    let type_mod = if default_attribute.is_some() {
+    let type_mod: TypeMod = if default_attribute.is_some() {
         description = Some(format!(
             "Default value '{}' will be assigned if no value is passed to this input arg.",
             default_attribute.unwrap().arg.as_ref().unwrap()
@@ -95,7 +107,7 @@ fn non_relation_field_input_def<'src>(
         sdml_ast::FieldTypeMod::Optional
     } else {
         field.field_type.type_mod
-    };
+    }.into();
 
     Ok(InputValueDefinition {
         description,
@@ -124,13 +136,13 @@ fn relation_field_input_def<'src>(
             .map_err(ErrorGraphQLGen::new_sdml_error)?;
         let field_ty = if field.field_type.is_array() {
             open_crud_name::CreateInputType::CreateManyInlineInput
-                .ty(referenced_model_name, sdml_ast::FieldTypeMod::NonOptional)
+                .ty(referenced_model_name, TypeMod::NonOptional)
         } else if field.field_type.is_optional() {
             open_crud_name::CreateInputType::CreateOneInlineInput
-                .ty(referenced_model_name, sdml_ast::FieldTypeMod::Optional)
+                .ty(referenced_model_name, TypeMod::Optional)
         } else {
             open_crud_name::CreateInputType::CreateOneInlineInput
-                .ty(referenced_model_name, sdml_ast::FieldTypeMod::NonOptional)
+                .ty(referenced_model_name, TypeMod::NonOptional)
         };
         Ok(InputValueDefinition {
             description: None,
@@ -151,20 +163,78 @@ fn relation_field_input_def<'src>(
 /// in a nested create.
 /// Ex. ProfileCreateOneInlineInput will be used inside UserCreateInput
 /// to create user profile inline when creating a new user.
-pub(in crate::graphql_gen) fn create_one_inline_input_def<'src>(
+fn create_one_inline_input_def<'src>(
     model: &sdml_ast::ModelDecl<'src>,
 ) -> GraphQLGenResult<TypeDefinition> {
-    unimplemented!()
+    let model_name = model
+        .name
+        .try_get_ident_name()
+        .map_err(ErrorGraphQLGen::new_sdml_error)?;
+    let create_field = InputValueDefinition {
+        description: None,
+        name: open_crud_name::CreateInputField::Create.common_name(),
+        ty: open_crud_name::CreateInputType::CreateInput
+            .ty(model_name, TypeMod::Optional),
+        default_value: None,
+        directives: vec![],
+    };
+    let connect_field = InputValueDefinition {
+        description: None,
+        name: open_crud_name::CreateInputField::Connect.common_name(),
+        ty: open_crud_name::FilterInputType::WhereUniqueInput
+            .ty(model_name, TypeMod::Optional),
+        default_value: None,
+        directives: vec![],
+    };
+
+    Ok(TypeDefinition {
+        extend: false,
+        description: None,
+        name: open_crud_name::CreateInputType::CreateOneInlineInput.name(model_name),
+        directives: vec![],
+        kind: TypeKind::InputObject(InputObjectType {
+            fields: vec![create_field, connect_field],
+        }),
+    })
 }
 
 /// Input type used to create the many objects in a relation
 /// in a nested create.
 /// Ex. PostCreateManyInlineInput will be used inside UserCreateInput
 /// to create posts inline when creating a new user.
-pub(in crate::graphql_gen) fn create_many_inline_input_def<'src>(
+fn create_many_inline_input_def<'src>(
     model: &sdml_ast::ModelDecl<'src>,
 ) -> GraphQLGenResult<TypeDefinition> {
-    unimplemented!()
+    let model_name = model
+        .name
+        .try_get_ident_name()
+        .map_err(ErrorGraphQLGen::new_sdml_error)?;
+    let create_field = InputValueDefinition {
+        description: None,
+        name: open_crud_name::CreateInputField::Create.common_name(),
+        ty: open_crud_name::CreateInputType::CreateInput
+            .ty(model_name, TypeMod::ArrayOptional),
+        default_value: None,
+        directives: vec![],
+    };
+    let connect_field = InputValueDefinition {
+        description: None,
+        name: open_crud_name::CreateInputField::Connect.common_name(),
+        ty: open_crud_name::FilterInputType::WhereUniqueInput
+            .ty(model_name, TypeMod::ArrayOptional),
+        default_value: None,
+        directives: vec![],
+    };
+
+    Ok(TypeDefinition {
+        extend: false,
+        description: None,
+        name: open_crud_name::CreateInputType::CreateManyInlineInput.name(model_name),
+        directives: vec![],
+        kind: TypeKind::InputObject(InputObjectType {
+            fields: vec![create_field, connect_field],
+        }),
+    })
 }
 
 #[cfg(test)]

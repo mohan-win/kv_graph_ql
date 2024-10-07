@@ -25,14 +25,14 @@ pub(in crate::graphql_gen) fn connection_types_def<'src>(
                     name: Name::new("pageInfo"),
                     arguments: vec![],
                     ty: open_crud_name::QueryType::PageInfo
-                        .common_ty(sdml_ast::FieldTypeMod::NonOptional),
+                        .common_ty(TypeMod::NonOptional),
                     directives: vec![],
                 },
                 FieldDefinition {
                     description: None,
                     name: Name::new("edges"),
                     arguments: vec![],
-                    ty: Type::new(&edge_type_name, sdml_ast::FieldTypeMod::Array),
+                    ty: Type::new(&edge_type_name, TypeMod::Array),
                     directives: vec![],
                 },
                 FieldDefinition {
@@ -40,7 +40,7 @@ pub(in crate::graphql_gen) fn connection_types_def<'src>(
                     name: Name::new("aggregate"),
                     arguments: vec![],
                     ty: open_crud_name::QueryType::Aggregate
-                        .common_ty(sdml_ast::FieldTypeMod::NonOptional),
+                        .common_ty(TypeMod::NonOptional),
                     directives: vec![],
                 },
             ],
@@ -68,17 +68,14 @@ fn edge_type_def<'src>(
                     description: None,
                     name: Name::new("node"),
                     arguments: vec![],
-                    ty: Type::new(model_name, sdml_ast::FieldTypeMod::NonOptional),
+                    ty: Type::new(model_name, TypeMod::NonOptional),
                     directives: vec![],
                 },
                 FieldDefinition {
                     description: None,
                     name: Name::new("cursor"),
                     arguments: vec![],
-                    ty: Type::new(
-                        FIELD_TYPE_NAME_STRING,
-                        sdml_ast::FieldTypeMod::NonOptional,
-                    ),
+                    ty: Type::new(FIELD_TYPE_NAME_STRING, TypeMod::NonOptional),
                     directives: vec![],
                 },
             ],
@@ -102,10 +99,7 @@ pub(in crate::graphql_gen) fn page_info_type_def<'src>(
                     ),
                     name: Name::new("hasNextPage"),
                     arguments: vec![],
-                    ty: Type::new(
-                        FIELD_TYPE_NAME_BOOL,
-                        sdml_ast::FieldTypeMod::NonOptional,
-                    ),
+                    ty: Type::new(FIELD_TYPE_NAME_BOOL, TypeMod::NonOptional),
                     directives: vec![],
                 },
                 FieldDefinition {
@@ -114,10 +108,7 @@ pub(in crate::graphql_gen) fn page_info_type_def<'src>(
                     ),
                     name: Name::new("hasPreviousPage"),
                     arguments: vec![],
-                    ty: Type::new(
-                        FIELD_TYPE_NAME_BOOL,
-                        sdml_ast::FieldTypeMod::NonOptional,
-                    ),
+                    ty: Type::new(FIELD_TYPE_NAME_BOOL, TypeMod::NonOptional),
                     directives: vec![],
                 },
                 FieldDefinition {
@@ -126,10 +117,7 @@ pub(in crate::graphql_gen) fn page_info_type_def<'src>(
                     ),
                     name: Name::new("startCursor"),
                     arguments: vec![],
-                    ty: Type::new(
-                        FIELD_TYPE_NAME_STRING,
-                        sdml_ast::FieldTypeMod::Optional,
-                    ),
+                    ty: Type::new(FIELD_TYPE_NAME_STRING, TypeMod::Optional),
                     directives: vec![],
                 },
                 FieldDefinition {
@@ -138,17 +126,14 @@ pub(in crate::graphql_gen) fn page_info_type_def<'src>(
                     ),
                     name: Name::new("endCursor"),
                     arguments: vec![],
-                    ty: Type::new(
-                        FIELD_TYPE_NAME_STRING,
-                        sdml_ast::FieldTypeMod::Optional,
-                    ),
+                    ty: Type::new(FIELD_TYPE_NAME_STRING, TypeMod::Optional),
                     directives: vec![],
                 },
                 FieldDefinition {
                     description: Some("Number of items in current page.".to_string()),
                     name: Name::new("pageSize"),
                     arguments: vec![],
-                    ty: Type::new(FIELD_TYPE_NAME_INT, sdml_ast::FieldTypeMod::Optional),
+                    ty: Type::new(FIELD_TYPE_NAME_INT, TypeMod::Optional),
                     directives: vec![],
                 },
             ],
@@ -169,7 +154,7 @@ pub(in crate::graphql_gen) fn aggregage_type_def<'src>(
                 description: None,
                 name: Name::new("count"),
                 arguments: vec![],
-                ty: Type::new(FIELD_TYPE_NAME_INT, sdml_ast::FieldTypeMod::NonOptional),
+                ty: Type::new(FIELD_TYPE_NAME_INT, TypeMod::NonOptional),
                 directives: vec![],
             }],
         }),

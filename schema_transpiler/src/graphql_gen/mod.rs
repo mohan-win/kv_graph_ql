@@ -40,7 +40,7 @@ fn directive_map_def() -> DirectiveDefinition {
         arguments: vec![InputValueDefinition {
             description: Some("SDML model field name".to_string()),
             name: Name::new("name"),
-            ty: Type::new(FIELD_TYPE_NAME_STRING, sdml_ast::FieldTypeMod::NonOptional),
+            ty: Type::new(FIELD_TYPE_NAME_STRING, TypeMod::NonOptional),
             default_value: None,
             directives: vec![],
         }],
@@ -75,7 +75,7 @@ fn interface_node_def() -> TypeDefinition {
                 description: Some("ID field with globally unique ID".to_string()),
                 name: open_crud_name::Field::Id.common_name(),
                 arguments: vec![],
-                ty: open_crud_name::OpenCRUDType::Id.common_ty(sdml_ast::FieldTypeMod::NonOptional),
+                ty: open_crud_name::OpenCRUDType::Id.common_ty(TypeMod::NonOptional),
                 directives: vec![ConstDirective {
                     name: Name::new("unique"),
                     arguments: vec![],

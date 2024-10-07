@@ -237,6 +237,28 @@ pub enum DirectiveLocation {
     InputFieldDefinition,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum TypeMod {
+    /// Non-optional type modifier. Type!
+    NonOptional,
+    /// Optional type modifier. Type
+    Optional,
+    /// Array type modifier. [ElementType!]!
+    Array,
+    /// Optional Array with, Non-optional elements. [ElementType!]
+    ArrayOptional,
+}
+
+impl From<sdml_parser::ast::FieldTypeMod> for TypeMod {
+    fn from(value: sdml_parser::ast::FieldTypeMod) -> Self {
+        match value {
+            sdml_parser::ast::FieldTypeMod::NonOptional => TypeMod::NonOptional,
+            sdml_parser::ast::FieldTypeMod::Optional => TypeMod::Optional,
+            sdml_parser::ast::FieldTypeMod::Array => TypeMod::Array,
+        }
+    }
+}
+
 /// A GraphQL type, for example `String` or `[String!]!`.
 ///
 /// [Reference](https://spec.graphql.org/October2021/#Type).
@@ -249,11 +271,12 @@ pub struct Type {
 }
 
 impl Type {
-    pub fn new(ty: &str, type_mod: sdml_parser::ast::FieldTypeMod) -> Type {
+    pub fn new(ty: &str, type_mod: TypeMod) -> Type {
         let ty = match type_mod {
-            sdml_parser::ast::FieldTypeMod::NonOptional => format!("{ty}!"),
-            sdml_parser::ast::FieldTypeMod::Optional => ty.to_string(),
-            sdml_parser::ast::FieldTypeMod::Array => format!("[{ty}!]!"),
+            TypeMod::NonOptional => format!("{ty}!"),
+            TypeMod::Optional => ty.to_string(),
+            TypeMod::Array => format!("[{ty}!]!"),
+            TypeMod::ArrayOptional => format!("[{ty}!]"),
         };
 
         Type::new_from_str(&ty).expect("Pass a valid type name!")

@@ -37,13 +37,11 @@ fn root_node_field() -> GraphQLGenResult<FieldDefinition> {
         arguments: vec![InputValueDefinition {
             description: None,
             name: open_crud_name::Field::Id.common_name(),
-            ty: open_crud_name::OpenCRUDType::Id
-                .common_ty(sdml_ast::FieldTypeMod::NonOptional),
+            ty: open_crud_name::OpenCRUDType::Id.common_ty(TypeMod::NonOptional),
             default_value: None,
             directives: vec![],
         }],
-        ty: open_crud_name::QueryType::RootNode
-            .common_ty(sdml_ast::FieldTypeMod::Optional),
+        ty: open_crud_name::QueryType::RootNode.common_ty(TypeMod::Optional),
         directives: vec![],
     })
 }
@@ -66,11 +64,11 @@ fn root_query_fields<'src>(
                 description: None,
                 name: Name::new(FIELD_ARG_WHERE),
                 ty: open_crud_name::FilterInputType::WhereUniqueInput
-                    .ty(model_name, sdml_ast::FieldTypeMod::NonOptional),
+                    .ty(model_name, TypeMod::NonOptional),
                 default_value: None,
                 directives: vec![],
             }],
-            ty: Type::new(model_name, sdml_ast::FieldTypeMod::Optional),
+            ty: Type::new(model_name, TypeMod::Optional),
             directives: vec![],
         },
     );
@@ -81,7 +79,7 @@ fn root_query_fields<'src>(
             description: None,
             name: open_crud_name::QueryField::RootFieldArray.name(model_name),
             arguments: r#type::array_field_args(model_name)?,
-            ty: Type::new(model_name, sdml_ast::FieldTypeMod::Array),
+            ty: Type::new(model_name, TypeMod::Array),
             directives: vec![],
         },
     );
@@ -93,7 +91,7 @@ fn root_query_fields<'src>(
             name: open_crud_name::QueryField::RootFieldConnection.name(model_name),
             arguments: r#type::array_field_args(model_name)?,
             ty: open_crud_name::QueryType::Auxiliary(AuxiliaryType::Connection)
-                .ty(model_name, sdml_ast::FieldTypeMod::NonOptional),
+                .ty(model_name, TypeMod::NonOptional),
             directives: vec![],
         },
     );

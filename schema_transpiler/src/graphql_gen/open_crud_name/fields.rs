@@ -44,18 +44,21 @@ trait FieldNamedUnformatted {
 pub enum Field {
     Id,
     Query(QueryField),
+    Create(CreateInputField),
 }
 
 impl FieldNamedUnformatted for Field {
     fn name_str(&self, model_name: &str) -> String {
         match self {
             Self::Query(query_fld) => query_fld.name_str(model_name),
+            Self::Create(create_input_field) => create_input_field.name_str(model_name),
             _ => panic!("These are common fields, doesn't belong to a model."),
         }
     }
     fn common_name_str(&self) -> String {
         match self {
             Self::Id => "id".to_string(),
+            Self::Create(create_input_field) => create_input_field.common_name_str(),
             _ => panic!("These fields needs to be used in-context of a model."),
         }
     }
@@ -87,6 +90,27 @@ impl FieldNamedUnformatted for QueryField {
         match self {
             QueryField::RootNode => "node".to_string(),
             fld => panic!("{:?} should be used in-context of a model.", fld),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum CreateInputField {
+    Create,
+    Connect,
+}
+
+impl FieldNamedUnformatted for CreateInputField {
+    fn name_str(&self, _model_name: &str) -> String {
+        match self {
+            fld => panic!("{:?} shouldn't be used in context of a model", fld),
+        }
+    }
+
+    fn common_name_str(&self) -> String {
+        match self {
+            Self::Create => "create".to_string(),
+            Self::Connect => "connect".to_string(),
         }
     }
 }
