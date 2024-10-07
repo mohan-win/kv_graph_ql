@@ -239,24 +239,24 @@ fn create_many_inline_input_def<'src>(
 
 #[cfg(test)]
 mod tests {
-    use super::create_input_def;
+    use super::create_input_types_def;
 
     use chumsky::prelude::*;
     use sdml_parser::parser;
     use std::fs;
 
     #[test]
-    fn test_user_create_input_def() {
+    fn test_user_create_input_types_def() {
         let mut expected_graphql_str = fs::read_to_string(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/test_data/test_create_user_input_def.graphql"
+            "/test_data/test_user_create_input_types_def.graphql"
         ))
         .unwrap();
         expected_graphql_str.retain(|c| !c.is_whitespace());
 
         let sdml_str = fs::read_to_string(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/test_data/test_create_user_input_def.sdml"
+            "/test_data/test_user_create_input_types_def.sdml"
         ))
         .unwrap();
         let sdml_declarations = parser::delcarations()
@@ -270,10 +270,14 @@ mod tests {
             .get("User")
             .expect("User model should exist in the SDML.");
         let create_user_input_type_graphql_ast =
-            create_input_def(user_model_sdml_ast).expect("It should return User");
+            create_input_types_def(user_model_sdml_ast)
+                .expect("It should return all 'create user input types'.");
 
-        let mut create_user_input_type_graphql_str =
-            create_user_input_type_graphql_ast.to_string();
+        let mut create_user_input_type_graphql_str = create_user_input_type_graphql_ast
+            .into_iter()
+            .fold("".to_string(), |acc, input_ty| {
+                format!("{}{}", acc, input_ty.to_string())
+            });
         eprintln!("{}", create_user_input_type_graphql_str);
 
         create_user_input_type_graphql_str.retain(|c| !c.is_whitespace());

@@ -12,3 +12,13 @@ input UserCreateInput {
   profile: UserProfileCreateOneInlineInput
   posts: PostCreateManyInlineInput!
 }
+
+input UserCreateOneInlineInput {
+  create: UserCreateInput
+  connect: UserWhereUniqueInput
+}
+
+input UserCreateManyInlineInput {
+  create: [UserCreateInput!]
+  connect: [UserWhereUniqueInput!]
+}
