@@ -239,6 +239,8 @@ fn create_many_inline_input_def<'src>(
 
 #[cfg(test)]
 mod tests {
+    use crate::graphql_gen::TypeDefinition;
+
     use super::create_input_types_def;
 
     use chumsky::prelude::*;
@@ -278,9 +280,44 @@ mod tests {
             .fold("".to_string(), |acc, input_ty| {
                 format!("{}{}", acc, input_ty.to_string())
             });
-        eprintln!("{}", create_user_input_type_graphql_str);
 
         create_user_input_type_graphql_str.retain(|c| !c.is_whitespace());
         assert_eq!(expected_graphql_str, create_user_input_type_graphql_str)
+    }
+
+    #[test]
+    fn test_create_input_types_def() {
+        let mut expected_graphql_str = fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/test_create_input_types_def.graphql"
+        ))
+        .unwrap();
+        expected_graphql_str.retain(|c| !c.is_whitespace());
+
+        let sdml_str = fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/test_create_input_types_def.sdml"
+        ))
+        .unwrap();
+        let sdml_declarations = parser::delcarations()
+            .parse(&sdml_str)
+            .into_output()
+            .expect("It should be a valid SDML.");
+        let data_model = parser::semantic_analysis(sdml_declarations)
+            .expect("A valid SDML file shouldn't fail in parsing.");
+        let create_input_types_def_graphql_ast = data_model
+            .models_sorted()
+            .iter()
+            .flat_map(|model| create_input_types_def(model).expect("create_input_types_def should return with all input types for the model."))
+            .collect::<Vec<TypeDefinition>>();
+
+        let mut create_input_types_def_graphql_str = create_input_types_def_graphql_ast
+            .into_iter()
+            .fold("".to_string(), |acc, input_ty| {
+                format!("{}{}", acc, input_ty.to_string())
+            });
+
+        create_input_types_def_graphql_str.retain(|c| !c.is_whitespace());
+        assert_eq!(expected_graphql_str, create_input_types_def_graphql_str)
     }
 }

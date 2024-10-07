@@ -1,0 +1,79 @@
+input UserProfileCreateInput {
+  bio: String
+  user: UserCreateOneInlineInput!
+}
+
+input UserProfileCreateOneInlineInput {
+  create: UserProfileCreateInput
+  connect: UserProfileWhereUniqueInput
+}
+
+input UserProfileCreateManyInlineInput {
+  create: [UserProfileCreateInput!]
+  connect: [UserProfileWhereUniqueInput!]
+}
+
+input UserCreateInput {
+  email: String!
+  name: String
+  nickNames: [String!]!
+  """
+  Default value 'USER' will be assigned if no value is passed to this input arg.
+  """
+  role: Role
+  mentees: UserCreateManyInlineInput!
+  mentor: UserCreateOneInlineInput
+  spouse: UserCreateOneInlineInput
+  profile: UserProfileCreateOneInlineInput
+  posts: PostCreateManyInlineInput!
+}
+
+input UserCreateOneInlineInput {
+  create: UserCreateInput
+  connect: UserWhereUniqueInput
+}
+
+input UserCreateManyInlineInput {
+  create: [UserCreateInput!]
+  connect: [UserWhereUniqueInput!]
+}
+
+input PostCategoryCreateInput {
+  name: String!
+  posts: PostCreateManyInlineInput!
+}
+
+input PostCategoryCreateOneInlineInput {
+  create: PostCategoryCreateInput
+  connect: PostCategoryWhereUniqueInput
+}
+
+input PostCategoryCreateManyInlineInput {
+  create: [PostCategoryCreateInput!]
+  connect: [PostCategoryWhereUniqueInput!]
+}
+
+input PostCreateInput {
+  """
+  Default value 'now' will be assigned if no value is passed to this input arg.
+  """
+  createdAt: DateTime
+  updatedAt: DateTime!
+  title: String!
+  """
+  Default value 'false' will be assigned if no value is passed to this input arg.
+  """
+  published: Boolean
+  author: UserCreateOneInlineInput!
+  category: PostCategoryCreateManyInlineInput!
+}
+
+input PostCreateOneInlineInput {
+  create: PostCreateInput
+  connect: PostWhereUniqueInput
+}
+
+input PostCreateManyInlineInput {
+  create: [PostCreateInput!]
+  connect: [PostWhereUniqueInput!]
+}
