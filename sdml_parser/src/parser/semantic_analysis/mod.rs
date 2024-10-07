@@ -8,8 +8,10 @@ use std::{
 
 /// Error Module
 pub mod err;
-pub use attribute::ATTRIB_NAME_ID;
-pub use attribute::ATTRIB_NAME_UNIQUE;
+pub(crate) use attribute::ATTRIB_ARG_FN_AUTO;
+pub(crate) use attribute::ATTRIB_NAME_DEFAULT;
+pub(crate) use attribute::ATTRIB_NAME_ID;
+pub(crate) use attribute::ATTRIB_NAME_UNIQUE;
 use err::SemanticError;
 use relation::RelationMap;
 

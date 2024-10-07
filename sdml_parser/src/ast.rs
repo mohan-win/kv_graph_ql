@@ -2,6 +2,7 @@
 
 use std::{cell::RefCell, collections::HashMap};
 
+use crate::parser::semantic_analysis;
 use chumsky::span::SimpleSpan;
 
 pub type Span = SimpleSpan<usize>;
@@ -259,41 +260,70 @@ pub struct FieldDecl<'src> {
 }
 
 impl<'src> FieldDecl<'src> {
-    /// Returns true if this field has @id attribute.
-    pub fn has_id_attrib(&self) -> bool {
-        self.attributes
+    /// Is this an auto-generated id field ?
+    pub fn is_auto_gen_id(&self) -> bool {
+        let id_attrib = self
+            .attributes
             .iter()
             .filter(|attrib| {
-                if let Token::Ident(
-                    crate::parser::semantic_analysis::ATTRIB_NAME_ID,
-                    _span,
-                ) = attrib.name
+                if let Token::Ident(semantic_analysis::ATTRIB_NAME_ID, _span) =
+                    attrib.name
                 {
                     true
                 } else {
                     false
                 }
             })
-            .next()
+            .next();
+        id_attrib.map_or(false, |id_attrib| {
+            id_attrib
+                .arg
+                .as_ref()
+                .map_or(false, |attrib_arg| match attrib_arg {
+                    AttribArg::Function(fn_name) => {
+                        if let Token::Ident(
+                            semantic_analysis::ATTRIB_ARG_FN_AUTO,
+                            _span,
+                        ) = fn_name
+                        {
+                            true
+                        } else {
+                            false
+                        }
+                    }
+                    _ => false,
+                })
+        })
+    }
+    /// Returns true if this field has @id attribute.
+    pub fn has_id_attrib(&self) -> bool {
+        self.get_attribute(semantic_analysis::ATTRIB_NAME_ID)
             .is_some()
     }
     /// Returns true if this field has @unique attribute.
     pub fn has_unique_attrib(&self) -> bool {
+        self.get_attribute(semantic_analysis::ATTRIB_NAME_UNIQUE)
+            .is_some()
+    }
+    pub fn has_default_attrib(&self) -> bool {
+        self.default_attribute().is_some()
+    }
+    pub fn default_attribute(&self) -> Option<&Attribute<'src>> {
+        self.get_attribute(semantic_analysis::ATTRIB_NAME_DEFAULT)
+    }
+
+    #[inline]
+    fn get_attribute(&self, attrib_ident_name: &str) -> Option<&Attribute<'src>> {
         self.attributes
             .iter()
             .filter(|attrib| {
-                if let Token::Ident(
-                    crate::parser::semantic_analysis::ATTRIB_NAME_UNIQUE,
-                    _span,
-                ) = attrib.name
-                {
-                    true
+                if let Token::Ident(ident_name_str, _span) = attrib.name {
+                    attrib_ident_name == ident_name_str
                 } else {
                     false
                 }
             })
             .next()
-            .is_some()
     }
 }
 
@@ -450,6 +480,21 @@ impl<'src> RelationEdge<'src> {
         }
     }
 
+    pub fn scalar_field_name(&self) -> Option<&Token<'src>> {
+        match self {
+            Self::OneSideRelation { .. } => None,
+            Self::OneSideRelationRight {
+                scalar_field_name, ..
+            } => Some(scalar_field_name),
+            Self::ManySideRelation {
+                scalar_field_name, ..
+            } => Some(scalar_field_name),
+            Self::SelfOneToOneRelation {
+                scalar_field_name, ..
+            } => Some(scalar_field_name),
+        }
+    }
+
     pub fn referenced_model_name(&self) -> &Token<'src> {
         match self {
             Self::OneSideRelation {
@@ -468,6 +513,24 @@ impl<'src> RelationEdge<'src> {
                 referenced_model_name,
                 ..
             } => referenced_model_name,
+        }
+    }
+
+    pub fn referenced_model_field_name(&self) -> Option<&Token<'src>> {
+        match self {
+            Self::OneSideRelation { .. } => None,
+            Self::OneSideRelationRight {
+                referenced_field_name,
+                ..
+            } => Some(referenced_field_name),
+            Self::ManySideRelation {
+                referenced_field_name,
+                ..
+            } => Some(referenced_field_name),
+            Self::SelfOneToOneRelation {
+                referenced_field_name,
+                ..
+            } => Some(referenced_field_name),
         }
     }
 }
