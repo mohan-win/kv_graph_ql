@@ -45,6 +45,7 @@ pub enum Field {
     Id,
     Query(QueryField),
     Create(CreateInputField),
+    Update(UpdateInputField),
 }
 
 impl FieldNamedUnformatted for Field {
@@ -52,6 +53,7 @@ impl FieldNamedUnformatted for Field {
         match self {
             Self::Query(query_fld) => query_fld.name_str(model_name),
             Self::Create(create_input_field) => create_input_field.name_str(model_name),
+            Self::Update(update_input_field) => update_input_field.name_str(model_name),
             _ => panic!("These are common fields, doesn't belong to a model."),
         }
     }
@@ -59,6 +61,7 @@ impl FieldNamedUnformatted for Field {
         match self {
             Self::Id => "id".to_string(),
             Self::Create(create_input_field) => create_input_field.common_name_str(),
+            Self::Update(update_input_field) => update_input_field.common_name_str(),
             _ => panic!("These fields needs to be used in-context of a model."),
         }
     }
@@ -103,7 +106,7 @@ pub enum CreateInputField {
 impl FieldNamedUnformatted for CreateInputField {
     fn name_str(&self, _model_name: &str) -> String {
         match self {
-            fld => panic!("{:?} shouldn't be used in context of a model", fld),
+            fld => panic!("{:?} common for all the model. Doesn't changes its name based on model name.", fld),
         }
     }
 
@@ -111,6 +114,43 @@ impl FieldNamedUnformatted for CreateInputField {
         match self {
             Self::Create => "create".to_string(),
             Self::Connect => "connect".to_string(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum UpdateInputField {
+    Create,
+    Connect,
+    Disconnect,
+    Set,
+    Update,
+    Upsert,
+    Delete,
+    Where,
+    Data,
+    ConnectPosition,
+}
+
+impl FieldNamedUnformatted for UpdateInputField {
+    fn name_str(&self, _model_name: &str) -> String {
+        match self {
+            fld => panic!("{:?} common for all the model. Doesn't changes its name based on model name.", fld),
+        }
+    }
+
+    fn common_name_str(&self) -> String {
+        match self {
+            Self::Create => "create".to_string(),
+            Self::Connect => "connect".to_string(),
+            Self::Disconnect => "disconnect".to_string(),
+            Self::Set => "set".to_string(),
+            Self::Update => "update".to_string(),
+            Self::Upsert => "upsert".to_string(),
+            Self::Delete => "delete".to_string(),
+            Self::Where => "where".to_string(),
+            Self::Data => "data".to_string(),
+            Self::ConnectPosition => "position".to_string(),
         }
     }
 }

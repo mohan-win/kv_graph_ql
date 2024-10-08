@@ -58,19 +58,142 @@ fn update_input_def<'src>(
 fn upsert_input_def<'src>(
     model_name: &sdml_ast::Token<'src>,
 ) -> GraphQLGenResult<TypeDefinition> {
-    unimplemented!()
+    let model_name = model_name
+        .try_get_ident_name()
+        .map_err(ErrorGraphQLGen::new_sdml_error)?;
+    let fields = vec![
+        // create
+        InputValueDefinition {
+            description: None,
+            name: open_crud_name::UpdateInputField::Create.common_name(),
+            ty: open_crud_name::CreateInputType::CreateInput
+                .ty(model_name, TypeMod::NonOptional), // Note: Non-Optional
+            default_value: None,
+            directives: vec![],
+        },
+        // update
+        InputValueDefinition {
+            description: None,
+            name: open_crud_name::UpdateInputField::Update.common_name(),
+            ty: open_crud_name::UpdateInputType::UpdateInput
+                .ty(model_name, TypeMod::NonOptional), // Note:Non-Optional
+            default_value: None,
+            directives: vec![],
+        },
+    ];
+    Ok(TypeDefinition {
+        extend: false,
+        description: None,
+        name: open_crud_name::UpdateInputType::UpsertInput.name(model_name),
+        directives: vec![],
+        kind: TypeKind::InputObject(InputObjectType { fields }),
+    })
 }
 
+/// Code-gen the input type used to update many objects in one go..
+/// Ex. UserUpdateManyInput is used to capture data to update many objects.
 fn update_many_input_def<'src>(
     model: &sdml_ast::ModelDecl<'src>,
 ) -> GraphQLGenResult<TypeDefinition> {
-    unimplemented!()
+    let model_fields = helpers::get_model_fields(
+        model,
+        // Note: Filter out relation_scalar fields & auto generated ids.
+        // Because they are not updatable directly.
+        true, true,
+    );
+
+    let non_relation_input_field_defs = model_fields
+        .non_relation_fields
+        .into_iter()
+        .map(non_relation_field_input_def)
+        .collect::<GraphQLGenResult<Vec<InputValueDefinition>>>()?;
+    // Note: relation_input_fields can't be present in UpdateManyInput.
+
+    let model_name = model
+        .name
+        .try_get_ident_name()
+        .map_err(ErrorGraphQLGen::new_sdml_error)?;
+    Ok(TypeDefinition {
+        extend: false,
+        description: None,
+        name: open_crud_name::UpdateInputType::UpdateManyInput.name(model_name),
+        directives: vec![],
+        kind: TypeKind::InputObject(InputObjectType {
+            fields: non_relation_input_field_defs,
+        }),
+    })
 }
 
 fn update_one_inline_input_def<'src>(
     model_name: &sdml_ast::Token<'src>,
 ) -> GraphQLGenResult<TypeDefinition> {
-    unimplemented!()
+    let model_name = model_name
+        .try_get_ident_name()
+        .map_err(ErrorGraphQLGen::new_sdml_error)?;
+    let fields = vec![
+        // create
+        InputValueDefinition {
+            description: Some(format!(
+                "Create and connect a new '{}' object.",
+                model_name
+            )),
+            name: open_crud_name::UpdateInputField::Create.common_name(),
+            ty: open_crud_name::CreateInputType::CreateInput
+                .ty(model_name, TypeMod::Optional),
+            default_value: None,
+            directives: vec![],
+        },
+        // update
+        InputValueDefinition {
+            description: Some(format!("Update '{}' object if exists.", model_name)),
+            name: open_crud_name::UpdateInputField::Update.common_name(),
+            ty: open_crud_name::UpdateInputType::UpdateWithNestedWhereUniqueInput
+                .ty(model_name, TypeMod::Optional),
+            default_value: None,
+            directives: vec![],
+        },
+        // upsert
+        InputValueDefinition {
+            description: Some(format!("Upsert '{}' object.", model_name)),
+            name: open_crud_name::UpdateInputField::Upsert.common_name(),
+            ty: open_crud_name::UpdateInputType::UpsertWithNestedWhereUniqueInput
+                .ty(model_name, TypeMod::Optional),
+            default_value: None,
+            directives: vec![],
+        },
+        // connect
+        InputValueDefinition {
+            description: Some(format!("Connect an existing '{}' object.", model_name)),
+            name: open_crud_name::UpdateInputField::Connect.common_name(),
+            ty: open_crud_name::FilterInputType::WhereUniqueInput
+                .ty(model_name, TypeMod::Optional),
+            default_value: None,
+            directives: vec![],
+        },
+        // disconnect
+        InputValueDefinition {
+            description: Some(format!("Disconnect '{}' object.", model_name)),
+            name: open_crud_name::UpdateInputField::Disconnect.common_name(),
+            ty: Type::new_from_str(FIELD_TYPE_NAME_BOOL).unwrap(),
+            default_value: None,
+            directives: vec![],
+        },
+        // delete
+        InputValueDefinition {
+            description: Some(format!("Delete '{}' object.", model_name)),
+            name: open_crud_name::UpdateInputField::Delete.common_name(),
+            ty: Type::new_from_str(FIELD_TYPE_NAME_BOOL).unwrap(),
+            default_value: None,
+            directives: vec![],
+        },
+    ];
+    Ok(TypeDefinition {
+        extend: false,
+        description: None,
+        name: open_crud_name::UpdateInputType::UpsertInput.name(model_name),
+        directives: vec![],
+        kind: TypeKind::InputObject(InputObjectType { fields }),
+    })
 }
 
 fn update_many_inline_input_def<'src>(

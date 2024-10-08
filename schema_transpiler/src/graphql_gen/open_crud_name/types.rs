@@ -195,6 +195,10 @@ pub enum UpdateInputType {
     /// Ex. UserUpdateInput is used to capture
     /// the *complete data* to update a single user object including contained relations.
     UpdateInput,
+    /// Identifies the input type used to update many objects in one go..
+    /// Ex. UserUpdateManyInput is used to capture
+    /// the non-relation, non-id data to update many objects.
+    UpdateManyInput,
     /// Identifies the input type used to upsert a object.
     /// Ex. UserUpsertInput is used to capture the required data
     /// to update the *complete record* of a user including its contained relations,
@@ -232,6 +236,9 @@ impl NamedUnformatted for UpdateInputType {
             }
             UpdateInputType::UpsertInput => {
                 format!("{model_name_pc}UpsertInput")
+            }
+            UpdateInputType::UpdateManyInput => {
+                format!("{model_name_pc}UpdateManyInput")
             }
             UpdateInputType::UpdateManyInlineInput => {
                 format!("{model_name_pc}UpdateManyInlineInput")
