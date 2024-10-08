@@ -1,18 +1,3 @@
-input UserProfileCreateInput {
-  bio: String
-  user: UserCreateOneInlineInput!
-}
-
-input UserProfileCreateOneInlineInput {
-  create: UserProfileCreateInput
-  connect: UserProfileWhereUniqueInput
-}
-
-input UserProfileCreateManyInlineInput {
-  create: [UserProfileCreateInput!]
-  connect: [UserProfileWhereUniqueInput!]
-}
-
 input UserCreateInput {
   email: String!
   name: String
@@ -24,7 +9,7 @@ input UserCreateInput {
   mentees: UserCreateManyInlineInput!
   mentor: UserCreateOneInlineInput
   spouse: UserCreateOneInlineInput
-  profile: UserProfileCreateOneInlineInput
+  profile: ProfileCreateOneInlineInput
   posts: PostCreateManyInlineInput!
 }
 
@@ -38,19 +23,19 @@ input UserCreateManyInlineInput {
   connect: [UserWhereUniqueInput!]
 }
 
-input PostCategoryCreateInput {
-  name: String!
-  posts: PostCreateManyInlineInput!
+input ProfileCreateInput {
+  bio: String
+  user: UserCreateOneInlineInput!
 }
 
-input PostCategoryCreateOneInlineInput {
-  create: PostCategoryCreateInput
-  connect: PostCategoryWhereUniqueInput
+input ProfileCreateOneInlineInput {
+  create: ProfileCreateInput
+  connect: ProfileWhereUniqueInput
 }
 
-input PostCategoryCreateManyInlineInput {
-  create: [PostCategoryCreateInput!]
-  connect: [PostCategoryWhereUniqueInput!]
+input ProfileCreateManyInlineInput {
+  create: [ProfileCreateInput!]
+  connect: [ProfileWhereUniqueInput!]
 }
 
 input PostCreateInput {
@@ -65,7 +50,7 @@ input PostCreateInput {
   """
   published: Boolean
   author: UserCreateOneInlineInput!
-  category: PostCategoryCreateManyInlineInput!
+  category: CategoryCreateManyInlineInput!
 }
 
 input PostCreateOneInlineInput {
@@ -76,4 +61,19 @@ input PostCreateOneInlineInput {
 input PostCreateManyInlineInput {
   create: [PostCreateInput!]
   connect: [PostWhereUniqueInput!]
+}
+
+input CategoryCreateInput {
+  name: String!
+  posts: PostCreateManyInlineInput!
+}
+
+input CategoryCreateOneInlineInput {
+  create: CategoryCreateInput
+  connect: CategoryWhereUniqueInput
+}
+
+input CategoryCreateManyInlineInput {
+  create: [CategoryCreateInput!]
+  connect: [CategoryWhereUniqueInput!]
 }

@@ -9,7 +9,7 @@ input UserCreateInput {
   mentees: UserCreateManyInlineInput!
   mentor: UserCreateOneInlineInput
   spouse: UserCreateOneInlineInput
-  profile: UserProfileCreateOneInlineInput
+  profile: ProfileCreateOneInlineInput
   posts: PostCreateManyInlineInput!
 }
 
