@@ -5,7 +5,7 @@ use super::*;
 
 /// Code-gen root Query type with required OpenCRUD fields
 /// to query information for all the models.
-/// ## Arguments
+/// ### Arguments
 /// * models - array of models in sdml.
 /// ## Returns
 /// Root level query type definition.

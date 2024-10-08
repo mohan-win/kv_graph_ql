@@ -297,7 +297,7 @@ fn relation_field_def<'src>(
 }
 
 /// Returns logical operation filters for where input type for the given model.
-/// ## Arguments
+/// ### Arguments
 /// * `model_name` - name of the model.
 fn logical_operations_def<'src>(
     model_name: &sdml_ast::Token<'src>,
@@ -334,7 +334,7 @@ fn logical_operations_def<'src>(
 }
 
 /// Generates where input filters for the given field.
-/// ## Arguments
+/// ### Arguments
 ///
 /// * `field_name` - field name token from sdml ast.
 /// * `field_type_name` - field's graphQL type name. Ex. "String"

@@ -8,7 +8,7 @@ use graphql_value::Name;
 /// **Note** Do not implement this trait, instead implement *FieldNamedUnformatted* trait.
 pub trait FieldNamed {
     /// For the given model name return OpenCRUD field name.
-    /// ## Arguments
+    /// ### Arguments
     /// * `model_name` - name of the sdml model.
     fn name(&self, model_name: &str) -> Name;
     /// Return the openCRUD field name.

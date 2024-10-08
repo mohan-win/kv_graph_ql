@@ -1,0 +1,11 @@
+input UserUpdateInput {
+  email: String
+  name: String
+  nickNames: [String!]
+  role: Role
+  mentees: UserUpdateManyInlineInput
+  mentor: UserUpdateOneInlineInput
+  spouse: UserUpdateOneInlineInput
+  profile: ProfileUpdateOneInlineInput
+  posts: PostUpdateManyInlineInput
+}

@@ -17,12 +17,12 @@ use super::{Name, Type, TypeMod};
 /// instead implement the trait *NamedUnformatted*
 pub trait Named {
     /// For the given model name return OpenCRUD abstraction name(a.k.a identifier).
-    /// ## Arguments
+    /// ### Arguments
     /// * `model_name` - name of the model from SDML.
     fn name(&self, model_name: &str) -> Name;
     /// For the given model with name,
     /// return OpenCRUD abstraction identifier's GraphQL type.
-    /// ## Arguments
+    /// ### Arguments
     /// * `model_name` - name of the sdml model.
     /// * `type_mod` - type modifier.
     fn ty(&self, model_name: &str, type_mod: TypeMod) -> Type {
