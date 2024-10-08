@@ -199,7 +199,96 @@ fn update_one_inline_input_def<'src>(
 fn update_many_inline_input_def<'src>(
     model_name: &sdml_ast::Token<'src>,
 ) -> GraphQLGenResult<TypeDefinition> {
-    unimplemented!()
+    let model_name = model_name
+        .try_get_ident_name()
+        .map_err(ErrorGraphQLGen::new_sdml_error)?;
+    let fields = vec![
+        // create
+        InputValueDefinition {
+            description: Some(format!(
+                "Create and connect multiple new '{}' objects.",
+                model_name
+            )),
+            name: open_crud_name::UpdateInputField::Create.common_name(),
+            ty: open_crud_name::CreateInputType::CreateInput
+                .ty(model_name, TypeMod::ArrayOptional),
+            default_value: None,
+            directives: vec![],
+        },
+        // update
+        InputValueDefinition {
+            description: Some(format!(
+                "Update multiple '{}' objects if exists.",
+                model_name
+            )),
+            name: open_crud_name::UpdateInputField::Update.common_name(),
+            ty: open_crud_name::UpdateInputType::UpdateWithNestedWhereUniqueInput
+                .ty(model_name, TypeMod::ArrayOptional),
+            default_value: None,
+            directives: vec![],
+        },
+        // upsert
+        InputValueDefinition {
+            description: Some(format!("Upsert multiple '{}' objects.", model_name)),
+            name: open_crud_name::UpdateInputField::Upsert.common_name(),
+            ty: open_crud_name::UpdateInputType::UpsertWithNestedWhereUniqueInput
+                .ty(model_name, TypeMod::ArrayOptional),
+            default_value: None,
+            directives: vec![],
+        },
+        // connect
+        InputValueDefinition {
+            description: Some(format!(
+                "Connect multiple existing '{}' objects.",
+                model_name
+            )),
+            name: open_crud_name::UpdateInputField::Connect.common_name(),
+            ty: open_crud_name::UpdateInputType::ConnectInput
+                .ty(model_name, TypeMod::ArrayOptional),
+            default_value: None,
+            directives: vec![],
+        },
+        // set
+        InputValueDefinition {
+            description: Some(format!(
+                "Replace existing relation with multiple '{}' objects.",
+                model_name
+            )),
+            name: open_crud_name::UpdateInputField::Set.common_name(),
+            ty: open_crud_name::FilterInputType::WhereUniqueInput
+                .ty(model_name, TypeMod::ArrayOptional),
+            default_value: None,
+            directives: vec![],
+        },
+        // disconnect
+        InputValueDefinition {
+            description: Some(format!(
+                "Disconnect multiple '{}' objects from relation.",
+                model_name
+            )),
+            name: open_crud_name::UpdateInputField::Disconnect.common_name(),
+            ty: open_crud_name::FilterInputType::WhereUniqueInput
+                .ty(model_name, TypeMod::ArrayOptional),
+            default_value: None,
+            directives: vec![],
+        },
+        // delete
+        InputValueDefinition {
+            description: Some(format!("Delete multiple '{}' objects.", model_name)),
+            name: open_crud_name::UpdateInputField::Delete.common_name(),
+            ty: open_crud_name::FilterInputType::WhereUniqueInput
+                .ty(model_name, TypeMod::ArrayOptional),
+            default_value: None,
+            directives: vec![],
+        },
+    ];
+    Ok(TypeDefinition {
+        extend: false,
+        description: None,
+        name: open_crud_name::UpdateInputType::UpsertInput.name(model_name),
+        directives: vec![],
+        kind: TypeKind::InputObject(InputObjectType { fields }),
+    })
 }
 
 fn update_with_nested_where_unique_input_def<'src>(
