@@ -128,7 +128,6 @@ mod test {
         let root_query_type =
             super::root_query_type_def(&sdml_ast.models_sorted()).unwrap();
         let mut actual_graphql_str = root_query_type.to_string();
-        eprintln!("{}", actual_graphql_str);
         actual_graphql_str.retain(|c| !c.is_whitespace());
         assert_eq!(expected_graphql_str, actual_graphql_str);
     }

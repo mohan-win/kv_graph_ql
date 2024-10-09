@@ -565,7 +565,6 @@ mod tests {
             .fold("".to_string(), |acc, graphql_ast| {
                 format!("{}{}", acc, graphql_ast)
             });
-        eprintln!("{}", update_user_input_graphql_str);
         update_user_input_graphql_str.retain(|c| !c.is_whitespace());
         assert_eq!(expected_graphql_str, update_user_input_graphql_str)
     }
@@ -581,7 +580,6 @@ mod tests {
 
         let mut connect_position_graphql_str =
             connect_position_input_def().unwrap().to_string();
-        eprintln!("{}", connect_position_graphql_str);
         connect_position_graphql_str.retain(|c| !c.is_whitespace());
 
         assert_eq!(expected_graphql_str, connect_position_graphql_str);
