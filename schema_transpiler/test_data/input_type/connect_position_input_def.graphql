@@ -1,0 +1,18 @@
+input ConnectPositionInput {
+  """
+  Connect after the speficied ID.
+  """
+  after: ID
+  """
+  Connect before the speficied ID.
+  """
+  before: ID
+  """
+  Connect at the first position.
+  """
+  start: Boolean
+  """
+  Connect at the last position [default].
+  """
+  end: Boolean
+}

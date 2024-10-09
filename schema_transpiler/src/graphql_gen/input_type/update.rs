@@ -406,12 +406,12 @@ fn connect_input_def<'src>(
     })
 }
 
-pub(in crate::graphql_gen) fn connection_position_input_def(
+pub(in crate::graphql_gen) fn connect_position_input_def(
 ) -> GraphQLGenResult<TypeDefinition> {
     let fields = vec![
         // after
         InputValueDefinition {
-            description: Some("Connect after the speficied ID".to_string()),
+            description: Some("Connect after the speficied ID.".to_string()),
             name: open_crud_name::ConnectPositionInputField::After.common_name(),
             ty: open_crud_name::OpenCRUDType::Id.common_ty(TypeMod::Optional),
             default_value: None,
@@ -419,7 +419,7 @@ pub(in crate::graphql_gen) fn connection_position_input_def(
         },
         // before
         InputValueDefinition {
-            description: Some("Connect before the speficied ID".to_string()),
+            description: Some("Connect before the speficied ID.".to_string()),
             name: open_crud_name::ConnectPositionInputField::Before.common_name(),
             ty: open_crud_name::OpenCRUDType::Id.common_ty(TypeMod::Optional),
             default_value: None,
@@ -427,7 +427,7 @@ pub(in crate::graphql_gen) fn connection_position_input_def(
         },
         // start
         InputValueDefinition {
-            description: Some("Connect at the first position".to_string()),
+            description: Some("Connect at the first position.".to_string()),
             name: open_crud_name::ConnectPositionInputField::Start.common_name(),
             ty: Type::new(FIELD_TYPE_NAME_BOOL, TypeMod::Optional),
             default_value: None,
@@ -435,7 +435,7 @@ pub(in crate::graphql_gen) fn connection_position_input_def(
         },
         // end
         InputValueDefinition {
-            description: Some("Connect at the last position".to_string()),
+            description: Some("Connect at the last position [default].".to_string()),
             name: open_crud_name::ConnectPositionInputField::End.common_name(),
             ty: Type::new(FIELD_TYPE_NAME_BOOL, TypeMod::Optional),
             default_value: None,
@@ -526,6 +526,7 @@ fn relation_field_input_def<'src>(
 
 #[cfg(test)]
 mod tests {
+    use super::connect_position_input_def;
     use super::update_input_types_def;
 
     use chumsky::prelude::*;
@@ -567,5 +568,22 @@ mod tests {
         eprintln!("{}", update_user_input_graphql_str);
         update_user_input_graphql_str.retain(|c| !c.is_whitespace());
         assert_eq!(expected_graphql_str, update_user_input_graphql_str)
+    }
+
+    #[test]
+    fn test_connect_position_input_def() {
+        let mut expected_graphql_str = fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/input_type/connect_position_input_def.graphql"
+        ))
+        .unwrap();
+        expected_graphql_str.retain(|c| !c.is_whitespace());
+
+        let mut connect_position_graphql_str =
+            connect_position_input_def().unwrap().to_string();
+        eprintln!("{}", connect_position_graphql_str);
+        connect_position_graphql_str.retain(|c| !c.is_whitespace());
+
+        assert_eq!(expected_graphql_str, connect_position_graphql_str);
     }
 }
