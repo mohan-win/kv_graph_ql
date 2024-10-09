@@ -15,7 +15,7 @@ pub(in crate::graphql_gen) fn connection_types_def<'src>(
     result.push(TypeDefinition {
         extend: false,
         description: None,
-        name: AuxiliaryType::Connection.name(model_name),
+        name: open_crud_name::types::AuxiliaryType::Connection.name(model_name),
         directives: vec![],
         kind: TypeKind::Object(ObjectType {
             implements: vec![],
@@ -24,7 +24,7 @@ pub(in crate::graphql_gen) fn connection_types_def<'src>(
                     description: None,
                     name: Name::new("pageInfo"),
                     arguments: vec![],
-                    ty: open_crud_name::QueryType::PageInfo
+                    ty: open_crud_name::types::QueryType::PageInfo
                         .common_ty(TypeMod::NonOptional),
                     directives: vec![],
                 },
@@ -39,7 +39,7 @@ pub(in crate::graphql_gen) fn connection_types_def<'src>(
                     description: None,
                     name: Name::new("aggregate"),
                     arguments: vec![],
-                    ty: open_crud_name::QueryType::Aggregate
+                    ty: open_crud_name::types::QueryType::Aggregate
                         .common_ty(TypeMod::NonOptional),
                     directives: vec![],
                 },
@@ -59,7 +59,7 @@ fn edge_type_def<'src>(
     Ok(TypeDefinition {
         extend: false,
         description: None,
-        name: AuxiliaryType::Edge.name(model_name),
+        name: open_crud_name::types::AuxiliaryType::Edge.name(model_name),
         directives: vec![],
         kind: TypeKind::Object(ObjectType {
             implements: vec![],
@@ -88,7 +88,7 @@ pub(in crate::graphql_gen) fn page_info_type_def<'src>(
     Ok(TypeDefinition {
         extend: false,
         description: None,
-        name: open_crud_name::QueryType::PageInfo.common_name(),
+        name: open_crud_name::types::QueryType::PageInfo.common_name(),
         directives: vec![],
         kind: TypeKind::Object(ObjectType {
             implements: vec![],
@@ -146,7 +146,7 @@ pub(in crate::graphql_gen) fn aggregage_type_def<'src>(
     Ok(TypeDefinition {
         extend: false,
         description: None,
-        name: open_crud_name::QueryType::Aggregate.common_name(),
+        name: open_crud_name::types::QueryType::Aggregate.common_name(),
         directives: vec![],
         kind: TypeKind::Object(ObjectType {
             implements: vec![],

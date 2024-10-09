@@ -43,10 +43,10 @@ trait FieldNamedUnformatted {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Field {
     Id,
-    Query(QueryField),
-    Create(CreateInputField),
-    Update(UpdateInputField),
-    ConnectPos(ConnectPositionInputField),
+    Query(QueryTypeField),
+    Create(CreateInputArg),
+    Update(UpdateInputArg),
+    ConnectPos(ConnectPositionInputArg),
 }
 
 impl FieldNamedUnformatted for Field {
@@ -75,7 +75,7 @@ impl FieldNamedUnformatted for Field {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum QueryField {
+pub enum QueryTypeField {
     RootNode,
     /// Root query field.
     RootField,
@@ -85,32 +85,34 @@ pub enum QueryField {
     RootFieldConnection,
 }
 
-impl FieldNamedUnformatted for QueryField {
+impl FieldNamedUnformatted for QueryTypeField {
     fn name_str(&self, model_name: &str) -> String {
         match self {
-            QueryField::RootNode => panic!("Root node field is common for all models"),
-            QueryField::RootField => model_name.to_string(),
-            QueryField::RootFieldArray => pluralizer::pluralize(model_name, 2, false),
-            QueryField::RootFieldConnection => {
+            QueryTypeField::RootNode => {
+                panic!("Root node field is common for all models")
+            }
+            QueryTypeField::RootField => model_name.to_string(),
+            QueryTypeField::RootFieldArray => pluralizer::pluralize(model_name, 2, false),
+            QueryTypeField::RootFieldConnection => {
                 format!("{}Connection", pluralizer::pluralize(model_name, 2, false))
             }
         }
     }
     fn common_name_str(&self) -> String {
         match self {
-            QueryField::RootNode => "node".to_string(),
+            QueryTypeField::RootNode => "node".to_string(),
             fld => panic!("{:?} should be used in-context of a model.", fld),
         }
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum CreateInputField {
+pub enum CreateInputArg {
     Create,
     Connect,
 }
 
-impl FieldNamedUnformatted for CreateInputField {
+impl FieldNamedUnformatted for CreateInputArg {
     fn name_str(&self, _model_name: &str) -> String {
         match self {
             fld => panic!("{:?} common for all the model. Doesn't changes its name based on model name.", fld),
@@ -126,7 +128,7 @@ impl FieldNamedUnformatted for CreateInputField {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum UpdateInputField {
+pub enum UpdateInputArg {
     Create,
     Connect,
     Disconnect,
@@ -139,7 +141,7 @@ pub enum UpdateInputField {
     ConnectPosition,
 }
 
-impl FieldNamedUnformatted for UpdateInputField {
+impl FieldNamedUnformatted for UpdateInputArg {
     fn name_str(&self, _model_name: &str) -> String {
         match self {
             fld => panic!("{:?} common for all the model. Doesn't changes its name based on model name.", fld),
@@ -163,7 +165,7 @@ impl FieldNamedUnformatted for UpdateInputField {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum ConnectPositionInputField {
+pub enum ConnectPositionInputArg {
     // Identifies the field to connect after the speficied ID
     After,
     // Identifies the field to connect before the specified ID
@@ -174,7 +176,7 @@ pub enum ConnectPositionInputField {
     End,
 }
 
-impl FieldNamedUnformatted for ConnectPositionInputField {
+impl FieldNamedUnformatted for ConnectPositionInputArg {
     fn name_str(&self, _model_name: &str) -> String {
         match self {
             fld => panic!("{:?} common for all the model. Doesn't changes its name based on model name.", fld),

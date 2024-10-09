@@ -26,7 +26,7 @@ pub(in crate::graphql_gen) fn where_input_def<'src>(
         description: Some(
             "The where filter which can match zero or more objects".to_string(),
         ),
-        name: FilterInputType::WhereInput.name(model_name),
+        name: open_crud_name::types::FilterInput::Where.name(model_name),
         directives: vec![],
         kind: TypeKind::InputObject(InputObjectType { fields: filters }),
     })
@@ -77,7 +77,7 @@ fn id_field_def<'src>(
     field_name: &sdml_ast::Token<'src>,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
     string_field_def(&sdml_ast::Token::Ident(
-        &open_crud_name::Field::Id.common_name(),
+        &open_crud_name::fields::Field::Id.common_name(),
         field_name.span(),
     ))
 }
@@ -241,7 +241,7 @@ fn relation_field_def<'src>(
         .try_get_ident_name()
         .map_err(ErrorGraphQLGen::new_sdml_error)?;
     let relation_where_filter =
-        open_crud_name::FilterInputType::WhereInput.name(&related_model_name);
+        open_crud_name::types::FilterInput::Where.name(&related_model_name);
     // Many side of the relation
     if target_relation.is_array() {
         Ok(vec![
@@ -305,7 +305,7 @@ fn logical_operations_def<'src>(
     let model_name = model_name
         .try_get_ident_name()
         .map_err(ErrorGraphQLGen::new_sdml_error)?;
-    let where_input_ty_name = FilterInputType::WhereInput.name(model_name);
+    let where_input_ty_name = open_crud_name::types::FilterInput::Where.name(model_name);
     Ok(vec![
         InputValueDefinition {
             description: Some("Logical AND on all given filters.".to_string()),

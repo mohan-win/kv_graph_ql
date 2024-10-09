@@ -28,7 +28,7 @@ fn type_def<'src>(model: &sdml_ast::ModelDecl<'src>) -> GraphQLGenResult<TypeDef
         name: Name::new(model_name),
         directives: vec![],
         kind: TypeKind::Object(ObjectType {
-            implements: vec![open_crud_name::QueryType::RootNode.common_name()],
+            implements: vec![open_crud_name::types::QueryType::RootNode.common_name()],
             fields,
         }),
     })
@@ -62,7 +62,9 @@ fn non_relation_field_def<'src>(
             if !field.has_id_attrib() {
                 Ok(Type::map_sdml_type_to_graphql_ty_name(r#type))
             } else {
-                Ok(open_crud_name::OpenCRUDType::Id.common_name().to_string())
+                Ok(open_crud_name::types::OpenCRUDType::IdType
+                    .common_name()
+                    .to_string())
             }
         }
         sdml_ast::Type::Enum { enum_ty_name } => Ok(enum_ty_name
@@ -90,7 +92,7 @@ fn non_relation_field_def<'src>(
                 ConstValue::String(field_name.to_string()),
             )],
         });
-        field_name = open_crud_name::Field::Id.common_name().to_string(); // Note:Rename the field to "id".
+        field_name = open_crud_name::fields::Field::Id.common_name().to_string(); // Note:Rename the field to "id".
         directives.push(ConstDirective {
             name: Name::new("unique"),
             arguments: vec![],
@@ -119,7 +121,7 @@ pub(in crate::graphql_gen) fn array_field_args<'src>(
     args.push(InputValueDefinition {
         description: None,
         name: Name::new(FIELD_ARG_WHERE),
-        ty: open_crud_name::FilterInputType::WhereInput
+        ty: open_crud_name::types::FilterInput::Where
             .ty(referenced_model_name, TypeMod::Optional),
         default_value: None,
         directives: vec![],
@@ -127,7 +129,7 @@ pub(in crate::graphql_gen) fn array_field_args<'src>(
     args.push(InputValueDefinition {
         description: None,
         name: Name::new(FIELD_ARG_ORDER_BY),
-        ty: open_crud_name::OpenCRUDType::OrderByInput
+        ty: open_crud_name::types::OpenCRUDType::OrderByInput
             .ty(referenced_model_name, TypeMod::Optional),
         default_value: None,
         directives: vec![],
@@ -142,14 +144,14 @@ pub(in crate::graphql_gen) fn array_field_args<'src>(
     args.push(InputValueDefinition {
         description: None,
         name: Name::new(FIELD_ARG_AFTER),
-        ty: open_crud_name::OpenCRUDType::Id.common_ty(TypeMod::Optional),
+        ty: open_crud_name::types::OpenCRUDType::IdType.common_ty(TypeMod::Optional),
         default_value: None,
         directives: vec![],
     });
     args.push(InputValueDefinition {
         description: None,
         name: Name::new(FIELD_ARG_BEFORE),
-        ty: open_crud_name::OpenCRUDType::Id.common_ty(TypeMod::Optional),
+        ty: open_crud_name::types::OpenCRUDType::IdType.common_ty(TypeMod::Optional),
         default_value: None,
         directives: vec![],
     });
@@ -206,7 +208,7 @@ fn relation_field_def<'src>(
                 // This is because, model.field_name from sdml file should be the name of the field in GraphQL.
                 name: Name::new(format!("{field_name}Connection")),
                 arguments: array_field_args(referenced_model_name)?,
-                ty: open_crud_name::AuxiliaryType::Connection
+                ty: open_crud_name::types::AuxiliaryType::Connection
                     .ty(referenced_model_name, field.field_type.type_mod.into()),
                 directives: vec![],
             },

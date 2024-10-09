@@ -49,7 +49,7 @@ fn create_input_def<'src>(
     Ok(TypeDefinition {
         extend: false,
         description: None,
-        name: open_crud_name::CreateInputType::CreateInput.name(model_name),
+        name: open_crud_name::types::CreateInput::Create.name(model_name),
         directives: vec![],
         kind: TypeKind::InputObject(InputObjectType {
             fields: input_field_defs,
@@ -118,13 +118,13 @@ fn relation_field_input_def<'src>(
             .try_get_ident_name()
             .map_err(ErrorGraphQLGen::new_sdml_error)?;
         let field_ty = if field.field_type.is_array() {
-            open_crud_name::CreateInputType::CreateManyInlineInput
+            open_crud_name::types::CreateInput::CreateManyInline
                 .ty(referenced_model_name, TypeMod::NonOptional)
         } else if field.field_type.is_optional() {
-            open_crud_name::CreateInputType::CreateOneInlineInput
+            open_crud_name::types::CreateInput::CreateOneInline
                 .ty(referenced_model_name, TypeMod::Optional)
         } else {
-            open_crud_name::CreateInputType::CreateOneInlineInput
+            open_crud_name::types::CreateInput::CreateOneInline
                 .ty(referenced_model_name, TypeMod::NonOptional)
         };
         Ok(InputValueDefinition {
@@ -155,16 +155,15 @@ fn create_one_inline_input_def<'src>(
         .map_err(ErrorGraphQLGen::new_sdml_error)?;
     let create_field = InputValueDefinition {
         description: None,
-        name: open_crud_name::CreateInputField::Create.common_name(),
-        ty: open_crud_name::CreateInputType::CreateInput
-            .ty(model_name, TypeMod::Optional),
+        name: open_crud_name::fields::CreateInputArg::Create.common_name(),
+        ty: open_crud_name::types::CreateInput::Create.ty(model_name, TypeMod::Optional),
         default_value: None,
         directives: vec![],
     };
     let connect_field = InputValueDefinition {
         description: None,
-        name: open_crud_name::CreateInputField::Connect.common_name(),
-        ty: open_crud_name::FilterInputType::WhereUniqueInput
+        name: open_crud_name::fields::CreateInputArg::Connect.common_name(),
+        ty: open_crud_name::types::FilterInput::WhereUnique
             .ty(model_name, TypeMod::Optional),
         default_value: None,
         directives: vec![],
@@ -173,7 +172,7 @@ fn create_one_inline_input_def<'src>(
     Ok(TypeDefinition {
         extend: false,
         description: None,
-        name: open_crud_name::CreateInputType::CreateOneInlineInput.name(model_name),
+        name: open_crud_name::types::CreateInput::CreateOneInline.name(model_name),
         directives: vec![],
         kind: TypeKind::InputObject(InputObjectType {
             fields: vec![create_field, connect_field],
@@ -194,16 +193,16 @@ fn create_many_inline_input_def<'src>(
         .map_err(ErrorGraphQLGen::new_sdml_error)?;
     let create_field = InputValueDefinition {
         description: None,
-        name: open_crud_name::CreateInputField::Create.common_name(),
-        ty: open_crud_name::CreateInputType::CreateInput
+        name: open_crud_name::fields::CreateInputArg::Create.common_name(),
+        ty: open_crud_name::types::CreateInput::Create
             .ty(model_name, TypeMod::ArrayOptional),
         default_value: None,
         directives: vec![],
     };
     let connect_field = InputValueDefinition {
         description: None,
-        name: open_crud_name::CreateInputField::Connect.common_name(),
-        ty: open_crud_name::FilterInputType::WhereUniqueInput
+        name: open_crud_name::fields::CreateInputArg::Connect.common_name(),
+        ty: open_crud_name::types::FilterInput::WhereUnique
             .ty(model_name, TypeMod::ArrayOptional),
         default_value: None,
         directives: vec![],
@@ -212,7 +211,7 @@ fn create_many_inline_input_def<'src>(
     Ok(TypeDefinition {
         extend: false,
         description: None,
-        name: open_crud_name::CreateInputType::CreateManyInlineInput.name(model_name),
+        name: open_crud_name::types::CreateInput::CreateManyInline.name(model_name),
         directives: vec![],
         kind: TypeKind::InputObject(InputObjectType {
             fields: vec![create_field, connect_field],

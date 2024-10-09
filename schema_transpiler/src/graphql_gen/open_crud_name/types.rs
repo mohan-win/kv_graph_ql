@@ -66,18 +66,18 @@ trait NamedUnformatted {
 /// Identifies various input types in OpenCRUD interface.
 #[derive(Debug, Clone, PartialEq)]
 pub enum OpenCRUDType {
-    Id,
+    IdType,
     Query(QueryType),
-    Create(CreateInputType),
-    Update(UpdateInputType),
-    Filter(FilterInputType),
+    Create(CreateInput),
+    Update(UpdateInput),
+    Filter(FilterInput),
     OrderByInput,
 }
 
 impl NamedUnformatted for OpenCRUDType {
     fn name_str(&self, model_name_pc: &str) -> String {
         match self {
-            OpenCRUDType::Id => panic!("ID type is not model specific."),
+            OpenCRUDType::IdType => panic!("ID type is not model specific."),
             OpenCRUDType::Query(query_type) => query_type.name_str(model_name_pc),
             OpenCRUDType::Create(create_input_type) => {
                 create_input_type.name_str(model_name_pc)
@@ -95,7 +95,7 @@ impl NamedUnformatted for OpenCRUDType {
     }
     fn common_name_str(&self) -> String {
         match self {
-            OpenCRUDType::Id => "ID".to_string(),
+            OpenCRUDType::IdType => "ID".to_string(),
             OpenCRUDType::Query(query_type) => query_type.common_name_str(),
             OpenCRUDType::Create(create_input_type) => {
                 create_input_type.common_name_str()
@@ -158,30 +158,30 @@ impl NamedUnformatted for QueryType {
 
 /// Identifies input types used in create interfaces.
 #[derive(Debug, Clone, PartialEq)]
-pub enum CreateInputType {
+pub enum CreateInput {
     /// Identifies input type used to create a new object.
     /// Ex. UserCreateInput creates a new user.
-    CreateInput,
+    Create,
     /// Identifies the input type used to create the many objects in a relation
     /// in a nested create.
     /// Ex. PostCreateManyInlineInput will be used inside UserCreateInput
     /// to create posts inline when creating a new user.
-    CreateManyInlineInput,
+    CreateManyInline,
     /// Identifies the input type used to create one object in one side of the relation
     /// in a nested create.
     /// Ex. ProfileCreateOneInlineInput will be used inside UserCreateInput
     /// to create user profile inline when creating a new user.
-    CreateOneInlineInput,
+    CreateOneInline,
 }
 
-impl NamedUnformatted for CreateInputType {
+impl NamedUnformatted for CreateInput {
     fn name_str(&self, model_name_pc: &str) -> String {
         match self {
-            CreateInputType::CreateInput => format!("{model_name_pc}CreateInput"),
-            CreateInputType::CreateManyInlineInput => {
+            CreateInput::Create => format!("{model_name_pc}CreateInput"),
+            CreateInput::CreateManyInline => {
                 format!("{model_name_pc}CreateManyInlineInput")
             }
-            CreateInputType::CreateOneInlineInput => {
+            CreateInput::CreateOneInline => {
                 format!("{model_name_pc}CreateOneInlineInput")
             }
         }
@@ -190,81 +190,81 @@ impl NamedUnformatted for CreateInputType {
 
 /// Identifies input types used in update or upsert interfaces.
 #[derive(Debug, Clone, PartialEq)]
-pub enum UpdateInputType {
+pub enum UpdateInput {
     /// Identifies the input type use to update a object.
     /// Ex. UserUpdateInput is used to capture
     /// the *complete data* to update a single user object including contained relations.
-    UpdateInput,
+    Update,
     /// Identifies the input type used to update many objects in one go..
     /// Ex. UserUpdateManyInput is used to capture
     /// the non-relation, non-id data to update many objects.
-    UpdateManyInput,
+    UpdateMany,
     /// Identifies the input type used to upsert a object.
     /// Ex. UserUpsertInput is used to capture the required data
     /// to update the *complete record* of a user including its contained relations,
     /// if the user exists, or to create the user if user doesn't exists.
-    UpsertInput,
+    Upsert,
     /// Identifies the input type used to capture the data for many-side of the relation for updates.
     /// Ex. PostUpdateManyInlineInput[] is used inside UserUpdateInput to update many
     /// posts beloning to the user who is being updated.
-    UpdateManyInlineInput,
+    UpdateManyInline,
     /// Identifies the input type used to capture the data for one-side of the relation for updates.
     /// Ex. ProfileUpdateOneInlineInput is used inside UserUpdateInput to update the
     /// profile belonging to the user who is being updated.
-    UpdateOneInlineInput,
+    UpdateOneInline,
     /// Used inside UpdateManyInlineInput::update field to capture the updates to the many side of the relation
     /// where each update is accompanied with a unique where condition.
     /// Ex. UserUpdateWithNestedWhereUniqueInput is used inside UserUpdateManyInlineInput to update the
     /// user meeting the where unique condition when user is in a many side of the relationship.
-    UpdateWithNestedWhereUniqueInput,
+    UpdateWithNestedWhereUnique,
     /// Used inside UpdateManyInlineInput::upsert field to capture the upserts to the many side of the relation
     /// where each update is accompanied with a unique where condition.
     /// Ex. UserUpsertWithNestedWhereUniqueInput is used inside UserUpdateManyInlineInput to upsert the
     /// user meeting the where unique condition when user is in a many side of the relationship.
-    UpsertWithNestedWhereUniqueInput,
+    UpsertWithNestedWhereUnique,
     /// Identifies the input type specifying the existing object to connect to a relation.
     /// Ex. UserConnectInput is used inside UserUpdateManyInlineInput to connect existing users
     /// in a many side of relation.
-    ConnectInput,
+    Connect,
     /// Identifies the input type which specifies the position from the list of connected objects,
     /// by-defult will add it to end of the list.
-    ConnectPositionInput,
+    ConnectPosition,
 }
 
-impl NamedUnformatted for UpdateInputType {
+impl NamedUnformatted for UpdateInput {
     fn name_str(&self, model_name_pc: &str) -> String {
         match self {
-            UpdateInputType::UpdateInput => {
+            UpdateInput::Update => {
                 format!("{model_name_pc}UpdateInput")
             }
-            UpdateInputType::UpsertInput => {
+            UpdateInput::Upsert => {
                 format!("{model_name_pc}UpsertInput")
             }
-            UpdateInputType::UpdateManyInput => {
+            UpdateInput::UpdateMany => {
                 format!("{model_name_pc}UpdateManyInput")
             }
-            UpdateInputType::UpdateManyInlineInput => {
+            UpdateInput::UpdateManyInline => {
                 format!("{model_name_pc}UpdateManyInlineInput")
             }
-            UpdateInputType::UpdateOneInlineInput => {
+            UpdateInput::UpdateOneInline => {
                 format!("{model_name_pc}UpdateOneInlineInput")
             }
-            UpdateInputType::UpdateWithNestedWhereUniqueInput => {
+            UpdateInput::UpdateWithNestedWhereUnique => {
                 format!("{model_name_pc}UpdateWithNestedWhereUniqueInput")
             }
-            UpdateInputType::UpsertWithNestedWhereUniqueInput => {
+            UpdateInput::UpsertWithNestedWhereUnique => {
                 format!("{model_name_pc}UpsertWithNestedWhereUniqueInput")
             }
-            UpdateInputType::ConnectInput => {
+            UpdateInput::Connect => {
                 format!("{model_name_pc}ConnectInput")
             }
-            UpdateInputType::ConnectPositionInput => panic!("ConnectPositionInput is not specific to model, it is common for all models.")
+            UpdateInput::ConnectPosition => panic!("ConnectPositionInput is not specific to model, it is common for all models.")
         }
     }
 
     fn common_name_str(&self) -> String {
         match self {
-            Self::ConnectPositionInput => "ConnectPositionInput".to_string(),
+            Self::ConnectPosition => "ConnectPositionInput".to_string(),
             _ =>  panic!("Common name for this abstraction is not available. This abstraction should be used in-conext of a specific model.")
         }
     }
@@ -272,18 +272,18 @@ impl NamedUnformatted for UpdateInputType {
 
 /// Identifies the input types used in filters
 #[derive(Debug, Clone, PartialEq)]
-pub enum FilterInputType {
+pub enum FilterInput {
     /// Identifies where critera where it can match one or more objects.
-    WhereInput,
+    Where,
     /// Idenifies the where critrial where it can match at most one object.
-    WhereUniqueInput,
+    WhereUnique,
 }
 
-impl NamedUnformatted for FilterInputType {
+impl NamedUnformatted for FilterInput {
     fn name_str(&self, model_name_pc: &str) -> String {
         match self {
-            FilterInputType::WhereInput => format!("{model_name_pc}WhereInput"),
-            FilterInputType::WhereUniqueInput => {
+            FilterInput::Where => format!("{model_name_pc}WhereInput"),
+            FilterInput::WhereUnique => {
                 format!("{model_name_pc}WhereUniqueInput")
             }
         }

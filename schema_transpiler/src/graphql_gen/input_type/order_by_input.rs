@@ -11,7 +11,7 @@ pub(in crate::graphql_gen) fn order_by_input_enum_def<'src>(
                 .try_get_ident_name()
                 .map_err(ErrorGraphQLGen::new_sdml_error)?
         } else {
-            &open_crud_name::Field::Id.common_name()
+            &open_crud_name::fields::Field::Id.common_name()
         };
 
         acc.push(EnumValueDefinition {
@@ -33,7 +33,7 @@ pub(in crate::graphql_gen) fn order_by_input_enum_def<'src>(
     Ok(TypeDefinition {
         extend: false,
         description: Some(format!("Order by input for {model_name}'s scalar fields")),
-        name: OpenCRUDType::OrderByInput.name(model_name),
+        name: open_crud_name::types::OpenCRUDType::OrderByInput.name(model_name),
         directives: vec![],
         kind: TypeKind::Enum(EnumType {
             values: order_by_elements,

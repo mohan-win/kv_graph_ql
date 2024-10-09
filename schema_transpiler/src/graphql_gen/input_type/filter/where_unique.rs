@@ -26,7 +26,7 @@ pub(in crate::graphql_gen) fn where_unique_unique_input_def<'src>(
         description: Some(
             "The where unique filter which can match at-most 1 object.".to_string(),
         ),
-        name: FilterInputType::WhereUniqueInput.name(model_name),
+        name: open_crud_name::types::FilterInput::WhereUnique.name(model_name),
         directives: vec![],
         kind: TypeKind::InputObject(InputObjectType {
             fields: unique_field_filters,
@@ -54,7 +54,8 @@ fn unique_scalar_field_to_filter<'src>(
             ..
         } => match primitive_type {
             sdml_ast::PrimitiveType::ShortStr if is_id_field => {
-                Ok(open_crud_name::OpenCRUDType::Id.common_ty(TypeMod::Optional))
+                Ok(open_crud_name::types::OpenCRUDType::IdType
+                    .common_ty(TypeMod::Optional))
             }
             sdml_prim_type => {
                 let graphql_ty_name =
@@ -82,7 +83,7 @@ fn unique_scalar_field_to_filter<'src>(
     Ok(InputValueDefinition {
         description: None,
         name: if is_id_field {
-            open_crud_name::Field::Id.common_name()
+            open_crud_name::fields::Field::Id.common_name()
         } else {
             let field_name = field
                 .name

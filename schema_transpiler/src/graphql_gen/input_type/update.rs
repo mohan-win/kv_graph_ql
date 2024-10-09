@@ -58,7 +58,7 @@ fn update_input_def<'src>(
     Ok(TypeDefinition {
         extend: false,
         description: None,
-        name: open_crud_name::UpdateInputType::UpdateInput.name(model_name),
+        name: open_crud_name::types::UpdateInput::Update.name(model_name),
         directives: vec![],
         kind: TypeKind::InputObject(InputObjectType {
             fields: input_field_defs,
@@ -76,8 +76,8 @@ fn upsert_input_def<'src>(
         // create
         InputValueDefinition {
             description: None,
-            name: open_crud_name::UpdateInputField::Create.common_name(),
-            ty: open_crud_name::CreateInputType::CreateInput
+            name: open_crud_name::fields::UpdateInputArg::Create.common_name(),
+            ty: open_crud_name::types::CreateInput::Create
                 .ty(model_name, TypeMod::NonOptional), // Note: Non-Optional
             default_value: None,
             directives: vec![],
@@ -85,8 +85,8 @@ fn upsert_input_def<'src>(
         // update
         InputValueDefinition {
             description: None,
-            name: open_crud_name::UpdateInputField::Update.common_name(),
-            ty: open_crud_name::UpdateInputType::UpdateInput
+            name: open_crud_name::fields::UpdateInputArg::Update.common_name(),
+            ty: open_crud_name::types::UpdateInput::Update
                 .ty(model_name, TypeMod::NonOptional), // Note:Non-Optional
             default_value: None,
             directives: vec![],
@@ -95,7 +95,7 @@ fn upsert_input_def<'src>(
     Ok(TypeDefinition {
         extend: false,
         description: None,
-        name: open_crud_name::UpdateInputType::UpsertInput.name(model_name),
+        name: open_crud_name::types::UpdateInput::Upsert.name(model_name),
         directives: vec![],
         kind: TypeKind::InputObject(InputObjectType { fields }),
     })
@@ -130,7 +130,7 @@ fn update_many_input_def<'src>(
     Ok(TypeDefinition {
         extend: false,
         description: None,
-        name: open_crud_name::UpdateInputType::UpdateManyInput.name(model_name),
+        name: open_crud_name::types::UpdateInput::UpdateMany.name(model_name),
         directives: vec![],
         kind: TypeKind::InputObject(InputObjectType {
             fields: non_relation_input_field_defs,
@@ -151,8 +151,8 @@ fn update_one_inline_input_def<'src>(
                 "Create and connect a new '{}' object.",
                 model_name
             )),
-            name: open_crud_name::UpdateInputField::Create.common_name(),
-            ty: open_crud_name::CreateInputType::CreateInput
+            name: open_crud_name::fields::UpdateInputArg::Create.common_name(),
+            ty: open_crud_name::types::CreateInput::Create
                 .ty(model_name, TypeMod::Optional),
             default_value: None,
             directives: vec![],
@@ -160,8 +160,8 @@ fn update_one_inline_input_def<'src>(
         // update
         InputValueDefinition {
             description: Some(format!("Update '{}' object if exists.", model_name)),
-            name: open_crud_name::UpdateInputField::Update.common_name(),
-            ty: open_crud_name::UpdateInputType::UpdateWithNestedWhereUniqueInput
+            name: open_crud_name::fields::UpdateInputArg::Update.common_name(),
+            ty: open_crud_name::types::UpdateInput::UpdateWithNestedWhereUnique
                 .ty(model_name, TypeMod::Optional),
             default_value: None,
             directives: vec![],
@@ -169,8 +169,8 @@ fn update_one_inline_input_def<'src>(
         // upsert
         InputValueDefinition {
             description: Some(format!("Upsert '{}' object.", model_name)),
-            name: open_crud_name::UpdateInputField::Upsert.common_name(),
-            ty: open_crud_name::UpdateInputType::UpsertWithNestedWhereUniqueInput
+            name: open_crud_name::fields::UpdateInputArg::Upsert.common_name(),
+            ty: open_crud_name::types::UpdateInput::UpsertWithNestedWhereUnique
                 .ty(model_name, TypeMod::Optional),
             default_value: None,
             directives: vec![],
@@ -178,8 +178,8 @@ fn update_one_inline_input_def<'src>(
         // connect
         InputValueDefinition {
             description: Some(format!("Connect an existing '{}' object.", model_name)),
-            name: open_crud_name::UpdateInputField::Connect.common_name(),
-            ty: open_crud_name::FilterInputType::WhereUniqueInput
+            name: open_crud_name::fields::UpdateInputArg::Connect.common_name(),
+            ty: open_crud_name::types::FilterInput::WhereUnique
                 .ty(model_name, TypeMod::Optional),
             default_value: None,
             directives: vec![],
@@ -187,7 +187,7 @@ fn update_one_inline_input_def<'src>(
         // disconnect
         InputValueDefinition {
             description: Some(format!("Disconnect '{}' object.", model_name)),
-            name: open_crud_name::UpdateInputField::Disconnect.common_name(),
+            name: open_crud_name::fields::UpdateInputArg::Disconnect.common_name(),
             ty: Type::new_from_str(FIELD_TYPE_NAME_BOOL).unwrap(),
             default_value: None,
             directives: vec![],
@@ -195,7 +195,7 @@ fn update_one_inline_input_def<'src>(
         // delete
         InputValueDefinition {
             description: Some(format!("Delete '{}' object.", model_name)),
-            name: open_crud_name::UpdateInputField::Delete.common_name(),
+            name: open_crud_name::fields::UpdateInputArg::Delete.common_name(),
             ty: Type::new_from_str(FIELD_TYPE_NAME_BOOL).unwrap(),
             default_value: None,
             directives: vec![],
@@ -204,7 +204,7 @@ fn update_one_inline_input_def<'src>(
     Ok(TypeDefinition {
         extend: false,
         description: None,
-        name: open_crud_name::UpdateInputType::UpdateOneInlineInput.name(model_name),
+        name: open_crud_name::types::UpdateInput::UpdateOneInline.name(model_name),
         directives: vec![],
         kind: TypeKind::InputObject(InputObjectType { fields }),
     })
@@ -223,8 +223,8 @@ fn update_many_inline_input_def<'src>(
                 "Create and connect multiple new '{}' objects.",
                 model_name
             )),
-            name: open_crud_name::UpdateInputField::Create.common_name(),
-            ty: open_crud_name::CreateInputType::CreateInput
+            name: open_crud_name::fields::UpdateInputArg::Create.common_name(),
+            ty: open_crud_name::types::CreateInput::Create
                 .ty(model_name, TypeMod::ArrayOptional),
             default_value: None,
             directives: vec![],
@@ -235,8 +235,8 @@ fn update_many_inline_input_def<'src>(
                 "Update multiple '{}' objects if exists.",
                 model_name
             )),
-            name: open_crud_name::UpdateInputField::Update.common_name(),
-            ty: open_crud_name::UpdateInputType::UpdateWithNestedWhereUniqueInput
+            name: open_crud_name::fields::UpdateInputArg::Update.common_name(),
+            ty: open_crud_name::types::UpdateInput::UpdateWithNestedWhereUnique
                 .ty(model_name, TypeMod::ArrayOptional),
             default_value: None,
             directives: vec![],
@@ -244,8 +244,8 @@ fn update_many_inline_input_def<'src>(
         // upsert
         InputValueDefinition {
             description: Some(format!("Upsert multiple '{}' objects.", model_name)),
-            name: open_crud_name::UpdateInputField::Upsert.common_name(),
-            ty: open_crud_name::UpdateInputType::UpsertWithNestedWhereUniqueInput
+            name: open_crud_name::fields::UpdateInputArg::Upsert.common_name(),
+            ty: open_crud_name::types::UpdateInput::UpsertWithNestedWhereUnique
                 .ty(model_name, TypeMod::ArrayOptional),
             default_value: None,
             directives: vec![],
@@ -256,8 +256,8 @@ fn update_many_inline_input_def<'src>(
                 "Connect multiple existing '{}' objects.",
                 model_name
             )),
-            name: open_crud_name::UpdateInputField::Connect.common_name(),
-            ty: open_crud_name::UpdateInputType::ConnectInput
+            name: open_crud_name::fields::UpdateInputArg::Connect.common_name(),
+            ty: open_crud_name::types::UpdateInput::Connect
                 .ty(model_name, TypeMod::ArrayOptional),
             default_value: None,
             directives: vec![],
@@ -268,8 +268,8 @@ fn update_many_inline_input_def<'src>(
                 "Replace existing relation with multiple '{}' objects.",
                 model_name
             )),
-            name: open_crud_name::UpdateInputField::Set.common_name(),
-            ty: open_crud_name::FilterInputType::WhereUniqueInput
+            name: open_crud_name::fields::UpdateInputArg::Set.common_name(),
+            ty: open_crud_name::types::FilterInput::WhereUnique
                 .ty(model_name, TypeMod::ArrayOptional),
             default_value: None,
             directives: vec![],
@@ -280,8 +280,8 @@ fn update_many_inline_input_def<'src>(
                 "Disconnect multiple '{}' objects from relation.",
                 model_name
             )),
-            name: open_crud_name::UpdateInputField::Disconnect.common_name(),
-            ty: open_crud_name::FilterInputType::WhereUniqueInput
+            name: open_crud_name::fields::UpdateInputArg::Disconnect.common_name(),
+            ty: open_crud_name::types::FilterInput::WhereUnique
                 .ty(model_name, TypeMod::ArrayOptional),
             default_value: None,
             directives: vec![],
@@ -289,8 +289,8 @@ fn update_many_inline_input_def<'src>(
         // delete
         InputValueDefinition {
             description: Some(format!("Delete multiple '{}' objects.", model_name)),
-            name: open_crud_name::UpdateInputField::Delete.common_name(),
-            ty: open_crud_name::FilterInputType::WhereUniqueInput
+            name: open_crud_name::fields::UpdateInputArg::Delete.common_name(),
+            ty: open_crud_name::types::FilterInput::WhereUnique
                 .ty(model_name, TypeMod::ArrayOptional),
             default_value: None,
             directives: vec![],
@@ -299,7 +299,7 @@ fn update_many_inline_input_def<'src>(
     Ok(TypeDefinition {
         extend: false,
         description: None,
-        name: open_crud_name::UpdateInputType::UpdateManyInlineInput.name(model_name),
+        name: open_crud_name::types::UpdateInput::UpdateManyInline.name(model_name),
         directives: vec![],
         kind: TypeKind::InputObject(InputObjectType { fields }),
     })
@@ -315,8 +315,8 @@ fn update_with_nested_where_unique_input_def<'src>(
         // where
         InputValueDefinition {
             description: None,
-            name: open_crud_name::UpdateInputField::Where.common_name(),
-            ty: open_crud_name::FilterInputType::WhereUniqueInput
+            name: open_crud_name::fields::UpdateInputArg::Where.common_name(),
+            ty: open_crud_name::types::FilterInput::WhereUnique
                 .ty(model_name, TypeMod::NonOptional), // Note: Non-Optional
             default_value: None,
             directives: vec![],
@@ -324,8 +324,8 @@ fn update_with_nested_where_unique_input_def<'src>(
         // data
         InputValueDefinition {
             description: None,
-            name: open_crud_name::UpdateInputField::Data.common_name(),
-            ty: open_crud_name::UpdateInputType::UpdateInput
+            name: open_crud_name::fields::UpdateInputArg::Data.common_name(),
+            ty: open_crud_name::types::UpdateInput::Update
                 .ty(model_name, TypeMod::NonOptional), // Note:Non-Optional
             default_value: None,
             directives: vec![],
@@ -334,7 +334,7 @@ fn update_with_nested_where_unique_input_def<'src>(
     Ok(TypeDefinition {
         extend: false,
         description: None,
-        name: open_crud_name::UpdateInputType::UpdateWithNestedWhereUniqueInput
+        name: open_crud_name::types::UpdateInput::UpdateWithNestedWhereUnique
             .name(model_name),
         directives: vec![],
         kind: TypeKind::InputObject(InputObjectType { fields }),
@@ -351,8 +351,8 @@ fn upsert_with_nested_where_unique_input_def<'src>(
         // where
         InputValueDefinition {
             description: None,
-            name: open_crud_name::UpdateInputField::Where.common_name(),
-            ty: open_crud_name::FilterInputType::WhereUniqueInput
+            name: open_crud_name::fields::UpdateInputArg::Where.common_name(),
+            ty: open_crud_name::types::FilterInput::WhereUnique
                 .ty(model_name, TypeMod::NonOptional), // Note: Non-Optional
             default_value: None,
             directives: vec![],
@@ -360,8 +360,8 @@ fn upsert_with_nested_where_unique_input_def<'src>(
         // data
         InputValueDefinition {
             description: None,
-            name: open_crud_name::UpdateInputField::Data.common_name(),
-            ty: open_crud_name::UpdateInputType::UpsertInput
+            name: open_crud_name::fields::UpdateInputArg::Data.common_name(),
+            ty: open_crud_name::types::UpdateInput::Upsert
                 .ty(model_name, TypeMod::NonOptional), // Note:Non-Optional
             default_value: None,
             directives: vec![],
@@ -370,7 +370,7 @@ fn upsert_with_nested_where_unique_input_def<'src>(
     Ok(TypeDefinition {
         extend: false,
         description: None,
-        name: open_crud_name::UpdateInputType::UpsertWithNestedWhereUniqueInput
+        name: open_crud_name::types::UpdateInput::UpsertWithNestedWhereUnique
             .name(model_name),
         directives: vec![],
         kind: TypeKind::InputObject(InputObjectType { fields }),
@@ -387,8 +387,8 @@ fn connect_input_def<'src>(
         // where
         InputValueDefinition {
             description: Some(format!("'{}' object to connect", model_name)),
-            name: open_crud_name::UpdateInputField::Where.common_name(),
-            ty: open_crud_name::FilterInputType::WhereUniqueInput
+            name: open_crud_name::fields::UpdateInputArg::Where.common_name(),
+            ty: open_crud_name::types::FilterInput::WhereUnique
                 .ty(model_name, TypeMod::NonOptional), // Note: Non-Optional
             default_value: None,
             directives: vec![],
@@ -396,8 +396,8 @@ fn connect_input_def<'src>(
         // position
         InputValueDefinition {
             description: Some("Specify the position in the list of connected objects, by-defult will add it to end of the list.".to_string()),
-            name: open_crud_name::UpdateInputField::ConnectPosition.common_name(),
-            ty: open_crud_name::UpdateInputType::ConnectPositionInput.common_ty(TypeMod::Optional),
+            name: open_crud_name::fields::UpdateInputArg::ConnectPosition.common_name(),
+            ty: open_crud_name::types::UpdateInput::ConnectPosition.common_ty(TypeMod::Optional),
             default_value: None,
             directives: vec![],
         },
@@ -405,7 +405,7 @@ fn connect_input_def<'src>(
     Ok(TypeDefinition {
         extend: false,
         description: None,
-        name: open_crud_name::UpdateInputType::ConnectInput.name(model_name),
+        name: open_crud_name::types::UpdateInput::Connect.name(model_name),
         directives: vec![],
         kind: TypeKind::InputObject(InputObjectType { fields }),
     })
@@ -417,23 +417,23 @@ pub(in crate::graphql_gen) fn connect_position_input_def(
         // after
         InputValueDefinition {
             description: Some("Connect after the speficied ID.".to_string()),
-            name: open_crud_name::ConnectPositionInputField::After.common_name(),
-            ty: open_crud_name::OpenCRUDType::Id.common_ty(TypeMod::Optional),
+            name: open_crud_name::fields::ConnectPositionInputArg::After.common_name(),
+            ty: open_crud_name::types::OpenCRUDType::IdType.common_ty(TypeMod::Optional),
             default_value: None,
             directives: vec![],
         },
         // before
         InputValueDefinition {
             description: Some("Connect before the speficied ID.".to_string()),
-            name: open_crud_name::ConnectPositionInputField::Before.common_name(),
-            ty: open_crud_name::OpenCRUDType::Id.common_ty(TypeMod::Optional),
+            name: open_crud_name::fields::ConnectPositionInputArg::Before.common_name(),
+            ty: open_crud_name::types::OpenCRUDType::IdType.common_ty(TypeMod::Optional),
             default_value: None,
             directives: vec![],
         },
         // start
         InputValueDefinition {
             description: Some("Connect at the first position.".to_string()),
-            name: open_crud_name::ConnectPositionInputField::Start.common_name(),
+            name: open_crud_name::fields::ConnectPositionInputArg::Start.common_name(),
             ty: Type::new(FIELD_TYPE_NAME_BOOL, TypeMod::Optional),
             default_value: None,
             directives: vec![],
@@ -441,7 +441,7 @@ pub(in crate::graphql_gen) fn connect_position_input_def(
         // end
         InputValueDefinition {
             description: Some("Connect at the last position [default].".to_string()),
-            name: open_crud_name::ConnectPositionInputField::End.common_name(),
+            name: open_crud_name::fields::ConnectPositionInputArg::End.common_name(),
             ty: Type::new(FIELD_TYPE_NAME_BOOL, TypeMod::Optional),
             default_value: None,
             directives: vec![],
@@ -450,7 +450,7 @@ pub(in crate::graphql_gen) fn connect_position_input_def(
     Ok(TypeDefinition {
         extend: false,
         description: None,
-        name: open_crud_name::UpdateInputType::ConnectPositionInput.common_name(),
+        name: open_crud_name::types::UpdateInput::ConnectPosition.common_name(),
         directives: vec![],
         kind: TypeKind::InputObject(InputObjectType { fields }),
     })
@@ -508,10 +508,10 @@ fn relation_field_input_def<'src>(
             .try_get_ident_name()
             .map_err(ErrorGraphQLGen::new_sdml_error)?;
         let field_ty = if field.field_type.is_array() {
-            open_crud_name::UpdateInputType::UpdateManyInlineInput
+            open_crud_name::types::UpdateInput::UpdateManyInline
                 .ty(referenced_model_name, TypeMod::Optional)
         } else {
-            open_crud_name::UpdateInputType::UpdateOneInlineInput
+            open_crud_name::types::UpdateInput::UpdateOneInline
                 .ty(referenced_model_name, TypeMod::Optional)
         };
         Ok(InputValueDefinition {

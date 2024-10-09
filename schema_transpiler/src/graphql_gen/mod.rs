@@ -9,6 +9,7 @@ mod error;
 mod input_type;
 pub(crate) mod open_crud_name;
 mod query_api;
+mod root_mutation_type;
 mod root_query_type;
 mod r#type;
 
@@ -67,15 +68,15 @@ fn interface_node_def() -> TypeDefinition {
         description: Some(
             "Node interface as per Relay GraphQL Global Object Identification Spec. https://relay.dev/docs/guides/graphql-server-specification/#object-identification".to_string(),
         ),
-        name: open_crud_name::QueryType::RootNode.common_name(),
+        name: open_crud_name::types::QueryType::RootNode.common_name(),
         directives: vec![],
         kind: TypeKind::Interface(InterfaceType {
             implements: vec![],
             fields: vec![FieldDefinition {
                 description: Some("ID field with globally unique ID".to_string()),
-                name: open_crud_name::Field::Id.common_name(),
+                name: open_crud_name::fields::Field::Id.common_name(),
                 arguments: vec![],
-                ty: open_crud_name::OpenCRUDType::Id.common_ty(TypeMod::NonOptional),
+                ty: open_crud_name::types::OpenCRUDType::IdType.common_ty(TypeMod::NonOptional),
                 directives: vec![ConstDirective {
                     name: Name::new("unique"),
                     arguments: vec![],

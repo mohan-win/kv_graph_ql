@@ -1,8 +1,11 @@
 //! OpenCRUD type, field and field arg names.
-mod fields;
-mod types;
-
 use super::*;
+
+pub(crate) mod fields;
+pub(crate) use fields::FieldNamed;
+pub(crate) mod types;
+pub(crate) use types::Named;
+
 // Predefined GraphQL fields & types
 pub(crate) const FIELD_TYPE_NAME_STRING: &str = "String";
 pub(crate) const FIELD_TYPE_NAME_INT: &str = "Int";
@@ -17,6 +20,3 @@ pub(crate) const FIELD_ARG_AFTER: &str = "after";
 pub(crate) const FIELD_ARG_BEFORE: &str = "before";
 pub(crate) const FIELD_ARG_FIRST: &str = "first";
 pub(crate) const FIELD_ARG_LAST: &str = "last";
-
-pub(crate) use fields::*;
-pub(crate) use types::*;
