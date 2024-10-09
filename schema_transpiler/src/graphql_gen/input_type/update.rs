@@ -12,7 +12,16 @@ use super::*;
 pub(in crate::graphql_gen) fn update_input_types_def<'src>(
     model: &sdml_ast::ModelDecl<'src>,
 ) -> GraphQLGenResult<Vec<TypeDefinition>> {
-    unimplemented!()
+    Ok(vec![
+        update_input_def(model)?,
+        upsert_input_def(&model.name)?,
+        update_many_input_def(model)?,
+        update_one_inline_input_def(&model.name)?,
+        update_many_inline_input_def(&model.name)?,
+        update_with_nested_where_unique_input_def(&model.name)?,
+        upsert_with_nested_where_unique_input_def(&model.name)?,
+        connect_input_def(&model.name)?,
+    ])
 }
 
 /// Code-gen for the input type use to update a object.
@@ -190,7 +199,7 @@ fn update_one_inline_input_def<'src>(
     Ok(TypeDefinition {
         extend: false,
         description: None,
-        name: open_crud_name::UpdateInputType::UpsertInput.name(model_name),
+        name: open_crud_name::UpdateInputType::UpdateOneInlineInput.name(model_name),
         directives: vec![],
         kind: TypeKind::InputObject(InputObjectType { fields }),
     })
@@ -285,7 +294,7 @@ fn update_many_inline_input_def<'src>(
     Ok(TypeDefinition {
         extend: false,
         description: None,
-        name: open_crud_name::UpdateInputType::UpsertInput.name(model_name),
+        name: open_crud_name::UpdateInputType::UpdateManyInlineInput.name(model_name),
         directives: vec![],
         kind: TypeKind::InputObject(InputObjectType { fields }),
     })
@@ -294,24 +303,152 @@ fn update_many_inline_input_def<'src>(
 fn update_with_nested_where_unique_input_def<'src>(
     model_name: &sdml_ast::Token<'src>,
 ) -> GraphQLGenResult<TypeDefinition> {
-    unimplemented!()
+    let model_name = model_name
+        .try_get_ident_name()
+        .map_err(ErrorGraphQLGen::new_sdml_error)?;
+    let fields = vec![
+        // where
+        InputValueDefinition {
+            description: None,
+            name: open_crud_name::UpdateInputField::Where.common_name(),
+            ty: open_crud_name::FilterInputType::WhereUniqueInput
+                .ty(model_name, TypeMod::NonOptional), // Note: Non-Optional
+            default_value: None,
+            directives: vec![],
+        },
+        // data
+        InputValueDefinition {
+            description: None,
+            name: open_crud_name::UpdateInputField::Data.common_name(),
+            ty: open_crud_name::UpdateInputType::UpdateInput
+                .ty(model_name, TypeMod::NonOptional), // Note:Non-Optional
+            default_value: None,
+            directives: vec![],
+        },
+    ];
+    Ok(TypeDefinition {
+        extend: false,
+        description: None,
+        name: open_crud_name::UpdateInputType::UpdateWithNestedWhereUniqueInput
+            .name(model_name),
+        directives: vec![],
+        kind: TypeKind::InputObject(InputObjectType { fields }),
+    })
 }
 
 fn upsert_with_nested_where_unique_input_def<'src>(
     model_name: &sdml_ast::Token<'src>,
 ) -> GraphQLGenResult<TypeDefinition> {
-    unimplemented!()
+    let model_name = model_name
+        .try_get_ident_name()
+        .map_err(ErrorGraphQLGen::new_sdml_error)?;
+    let fields = vec![
+        // where
+        InputValueDefinition {
+            description: None,
+            name: open_crud_name::UpdateInputField::Where.common_name(),
+            ty: open_crud_name::FilterInputType::WhereUniqueInput
+                .ty(model_name, TypeMod::NonOptional), // Note: Non-Optional
+            default_value: None,
+            directives: vec![],
+        },
+        // data
+        InputValueDefinition {
+            description: None,
+            name: open_crud_name::UpdateInputField::Data.common_name(),
+            ty: open_crud_name::UpdateInputType::UpsertInput
+                .ty(model_name, TypeMod::NonOptional), // Note:Non-Optional
+            default_value: None,
+            directives: vec![],
+        },
+    ];
+    Ok(TypeDefinition {
+        extend: false,
+        description: None,
+        name: open_crud_name::UpdateInputType::UpsertWithNestedWhereUniqueInput
+            .name(model_name),
+        directives: vec![],
+        kind: TypeKind::InputObject(InputObjectType { fields }),
+    })
 }
 
 fn connect_input_def<'src>(
     model_name: &sdml_ast::Token<'src>,
 ) -> GraphQLGenResult<TypeDefinition> {
-    unimplemented!()
+    let model_name = model_name
+        .try_get_ident_name()
+        .map_err(ErrorGraphQLGen::new_sdml_error)?;
+    let fields = vec![
+        // where
+        InputValueDefinition {
+            description: Some(format!("'{}' object to connect", model_name)),
+            name: open_crud_name::UpdateInputField::Where.common_name(),
+            ty: open_crud_name::FilterInputType::WhereUniqueInput
+                .ty(model_name, TypeMod::NonOptional), // Note: Non-Optional
+            default_value: None,
+            directives: vec![],
+        },
+        // position
+        InputValueDefinition {
+            description: Some("Specify the position in the list of connected objects, by-defult will add it to end of the list.".to_string()),
+            name: open_crud_name::UpdateInputField::ConnectPosition.common_name(),
+            ty: open_crud_name::UpdateInputType::ConnectPositionInput.common_ty(TypeMod::Optional),
+            default_value: None,
+            directives: vec![],
+        },
+    ];
+    Ok(TypeDefinition {
+        extend: false,
+        description: None,
+        name: open_crud_name::UpdateInputType::ConnectInput.name(model_name),
+        directives: vec![],
+        kind: TypeKind::InputObject(InputObjectType { fields }),
+    })
 }
 
 pub(in crate::graphql_gen) fn connection_position_input_def(
 ) -> GraphQLGenResult<TypeDefinition> {
-    unimplemented!()
+    let fields = vec![
+        // after
+        InputValueDefinition {
+            description: Some("Connect after the speficied ID".to_string()),
+            name: open_crud_name::ConnectPositionInputField::After.common_name(),
+            ty: open_crud_name::OpenCRUDType::Id.common_ty(TypeMod::Optional),
+            default_value: None,
+            directives: vec![],
+        },
+        // before
+        InputValueDefinition {
+            description: Some("Connect before the speficied ID".to_string()),
+            name: open_crud_name::ConnectPositionInputField::Before.common_name(),
+            ty: open_crud_name::OpenCRUDType::Id.common_ty(TypeMod::Optional),
+            default_value: None,
+            directives: vec![],
+        },
+        // start
+        InputValueDefinition {
+            description: Some("Connect at the first position".to_string()),
+            name: open_crud_name::ConnectPositionInputField::Start.common_name(),
+            ty: Type::new(FIELD_TYPE_NAME_BOOL, TypeMod::Optional),
+            default_value: None,
+            directives: vec![],
+        },
+        // end
+        InputValueDefinition {
+            description: Some("Connect at the last position".to_string()),
+            name: open_crud_name::ConnectPositionInputField::End.common_name(),
+            ty: Type::new(FIELD_TYPE_NAME_BOOL, TypeMod::Optional),
+            default_value: None,
+            directives: vec![],
+        },
+    ];
+    Ok(TypeDefinition {
+        extend: false,
+        description: None,
+        name: open_crud_name::UpdateInputType::ConnectPositionInput.common_name(),
+        directives: vec![],
+        kind: TypeKind::InputObject(InputObjectType { fields }),
+    })
 }
 
 /// Code-gen input arg for the non-relation field.
@@ -389,24 +526,24 @@ fn relation_field_input_def<'src>(
 
 #[cfg(test)]
 mod tests {
-    use super::update_input_def;
+    use super::update_input_types_def;
 
     use chumsky::prelude::*;
     use sdml_parser::parser;
     use std::fs;
 
     #[test]
-    fn test_user_update_input_def() {
+    fn test_user_update_input_types_def() {
         let mut expected_graphql_str = fs::read_to_string(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/test_data/input_type/test_user_update_input_def.graphql"
+            "/test_data/input_type/test_user_update_input_types_def.graphql"
         ))
         .unwrap();
         expected_graphql_str.retain(|c| !c.is_whitespace());
 
         let sdml_str = fs::read_to_string(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/test_data/input_type/test_user_update_input_def.sdml"
+            "/test_data/input_type/test_user_update_input_types_def.sdml"
         ))
         .unwrap();
         let sdml_declarations = parser::delcarations()
@@ -419,10 +556,14 @@ mod tests {
             .models()
             .get("User")
             .expect("User model should exist in the SDML.");
-        let update_user_input_graphql_ast = update_input_def(user_model_sdml_ast)
+        let update_user_input_graphql_ast = update_input_types_def(user_model_sdml_ast)
             .expect("It should return all 'update user input'.");
 
-        let mut update_user_input_graphql_str = update_user_input_graphql_ast.to_string();
+        let mut update_user_input_graphql_str = update_user_input_graphql_ast
+            .into_iter()
+            .fold("".to_string(), |acc, graphql_ast| {
+                format!("{}{}", acc, graphql_ast)
+            });
         eprintln!("{}", update_user_input_graphql_str);
         update_user_input_graphql_str.retain(|c| !c.is_whitespace());
         assert_eq!(expected_graphql_str, update_user_input_graphql_str)

@@ -226,6 +226,9 @@ pub enum UpdateInputType {
     /// Ex. UserConnectInput is used inside UserUpdateManyInlineInput to connect existing users
     /// in a many side of relation.
     ConnectInput,
+    /// Identifies the input type which specifies the position from the list of connected objects,
+    /// by-defult will add it to end of the list.
+    ConnectPositionInput,
 }
 
 impl NamedUnformatted for UpdateInputType {
@@ -255,6 +258,14 @@ impl NamedUnformatted for UpdateInputType {
             UpdateInputType::ConnectInput => {
                 format!("{model_name_pc}ConnectInput")
             }
+            UpdateInputType::ConnectPositionInput => panic!("ConnectPositionInput is not specific to model, it is common for all models.")
+        }
+    }
+
+    fn common_name_str(&self) -> String {
+        match self {
+            Self::ConnectPositionInput => "ConnectPositionInput".to_string(),
+            _ =>  panic!("Common name for this abstraction is not available. This abstraction should be used in-conext of a specific model.")
         }
     }
 }

@@ -1,0 +1,102 @@
+input UserUpdateInput {
+  email: String
+  name: String
+  nickNames: [String!]
+  role: Role
+  mentees: UserUpdateManyInlineInput
+  mentor: UserUpdateOneInlineInput
+  spouse: UserUpdateOneInlineInput
+  profile: ProfileUpdateOneInlineInput
+  posts: PostUpdateManyInlineInput
+}
+
+input UserUpsertInput {
+  create: UserCreateInput!
+  update: UserUpdateInput!
+}
+
+input UserUpdateManyInput {
+  email: String
+  name: String
+  nickNames: [String!]
+  role: Role
+}
+
+input UserUpdateOneInlineInput {
+  """
+  Create and connect a new 'User' object.
+  """
+  create: UserCreateInput
+  """
+  Update 'User' object if exists.
+  """
+  update: UserUpdateWithNestedWhereUniqueInput
+  """
+  Upsert 'User' object.
+  """
+  upsert: UserUpsertWithNestedWhereUniqueInput
+  """
+  Connect an existing 'User' object.
+  """
+  connect: UserWhereUniqueInput
+  """
+  Disconnect 'User' object.
+  """
+  disconnect: Boolean
+  """
+  Delete 'User' object.
+  """
+  delete: Boolean
+}
+
+input UserUpdateManyInlineInput {
+  """
+  Create and connect multiple new 'User' objects.
+  """
+  create: [UserCreateInput!]
+  """
+  Update multiple 'User' objects if exists.
+  """
+  update: [UserUpdateWithNestedWhereUniqueInput!]
+  """
+  Upsert multiple 'User' objects.
+  """
+  upsert: [UserUpsertWithNestedWhereUniqueInput!]
+  """
+  Connect multiple existing 'User' objects.
+  """
+  connect: [UserConnectInput!]
+  """
+  Replace existing relation with multiple 'User' objects.
+  """
+  set: [UserWhereUniqueInput!]
+  """
+  Disconnect multiple 'User' objects from relation.
+  """
+  disconnect: [UserWhereUniqueInput!]
+  """
+  Delete multiple 'User' objects.
+  """
+  delete: [UserWhereUniqueInput!]
+}
+
+input UserUpdateWithNestedWhereUniqueInput {
+  where: UserWhereUniqueInput!
+  data: UserUpdateInput!
+}
+
+input UserUpsertWithNestedWhereUniqueInput {
+  where: UserWhereUniqueInput!
+  data: UserUpsertInput!
+}
+
+input UserConnectInput {
+  """
+  'User' object to connect
+  """
+  where: UserWhereUniqueInput!
+  """
+  Specify the position in the list of connected objects, by-defult will add it to end of the list.
+  """
+  position: ConnectPositionInput
+}

@@ -46,6 +46,7 @@ pub enum Field {
     Query(QueryField),
     Create(CreateInputField),
     Update(UpdateInputField),
+    ConnectPos(ConnectPositionInputField),
 }
 
 impl FieldNamedUnformatted for Field {
@@ -54,6 +55,9 @@ impl FieldNamedUnformatted for Field {
             Self::Query(query_fld) => query_fld.name_str(model_name),
             Self::Create(create_input_field) => create_input_field.name_str(model_name),
             Self::Update(update_input_field) => update_input_field.name_str(model_name),
+            Self::ConnectPos(connect_pos_input_field) => {
+                connect_pos_input_field.name_str(model_name)
+            }
             _ => panic!("These are common fields, doesn't belong to a model."),
         }
     }
@@ -62,6 +66,9 @@ impl FieldNamedUnformatted for Field {
             Self::Id => "id".to_string(),
             Self::Create(create_input_field) => create_input_field.common_name_str(),
             Self::Update(update_input_field) => update_input_field.common_name_str(),
+            Self::ConnectPos(connect_pos_input_field) => {
+                connect_pos_input_field.common_name_str()
+            }
             _ => panic!("These fields needs to be used in-context of a model."),
         }
     }
@@ -151,6 +158,34 @@ impl FieldNamedUnformatted for UpdateInputField {
             Self::Where => "where".to_string(),
             Self::Data => "data".to_string(),
             Self::ConnectPosition => "position".to_string(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ConnectPositionInputField {
+    // Identifies the field to connect after the speficied ID
+    After,
+    // Identifies the field to connect before the specified ID
+    Before,
+    // Identifies the field to connect at the first position
+    Start,
+    // Identifies the field to connect at the last position. [default]
+    End,
+}
+
+impl FieldNamedUnformatted for ConnectPositionInputField {
+    fn name_str(&self, _model_name: &str) -> String {
+        match self {
+            fld => panic!("{:?} common for all the model. Doesn't changes its name based on model name.", fld),
+        }
+    }
+    fn common_name_str(&self) -> String {
+        match self {
+            Self::After => "after".to_string(),
+            Self::Before => "before".to_string(),
+            Self::Start => "start".to_string(),
+            Self::End => "end".to_string(),
         }
     }
 }
