@@ -34,7 +34,9 @@ fn update_input_def<'src>(
         model,
         // Note: Filter out relation_scalar fields & auto generated ids.
         // Because they are not updatable directly.
-        true, true,
+        // But UpdateInput can be used to update unique fields.
+        // [see] update_many_input_def() where unique fields are filtered out
+        true, true, false,
     );
 
     let mut input_field_defs = model_fields
@@ -100,15 +102,18 @@ fn upsert_input_def<'src>(
 }
 
 /// Code-gen the input type used to update many objects in one go..
-/// Ex. UserUpdateManyInput is used to capture data to update many objects.
+/// Ex. UserUpdateManyInput is used to capture data to update many objects in one go.
+/// **Note:** We need to filter out, id, unique fields and relation fields, because
+/// they are not updatable with update_many interface.
 fn update_many_input_def<'src>(
     model: &sdml_ast::ModelDecl<'src>,
 ) -> GraphQLGenResult<TypeDefinition> {
     let model_fields = helpers::get_model_fields(
         model,
         // Note: Filter out relation_scalar fields & auto generated ids.
-        // Because they are not updatable directly.
-        true, true,
+        // and [important] also filter out unique fields.
+        // Because they are not updatable directly in UpdateManyInput.
+        true, true, true,
     );
 
     let non_relation_input_field_defs = model_fields

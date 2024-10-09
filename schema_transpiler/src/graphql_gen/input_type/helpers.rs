@@ -9,10 +9,12 @@ pub(super) struct ModelFields<'src, 'b> {
 /// ### Arguments
 /// * `model` - reference to sdml model declaration
 /// * `filter_relation_scalar_fields` - if `true`, the function filters out the relation scalar fields.
+/// * `filter_unique_fields` - if `true`, the function filters out fields with @unique attribute.
 pub(super) fn get_model_fields<'src, 'b>(
     model: &'b sdml_ast::ModelDecl<'src>,
     filter_relation_scalar_fields: bool,
     filter_auto_generated_id: bool,
+    filter_unique_fields: bool,
 ) -> ModelFields<'src, 'b> {
     let mut non_relation_fields = vec![];
     let mut relation_fields = vec![];
@@ -42,6 +44,7 @@ pub(super) fn get_model_fields<'src, 'b>(
                 (!filter_relation_scalar_fields
                     || !relation_scalar_field_names.contains(&field.name.ident_name()))
                     && (!filter_auto_generated_id || !field.is_auto_gen_id())
+                    && (!filter_unique_fields || !field.has_unique_attrib())
             })
             .collect();
     }

@@ -283,7 +283,6 @@ input UserCreateOneInlineInput {
 }
 
 input UserUpdateManyInput {
-  email: String
   name: String
   nickNames: [String!]
   role: Role
