@@ -531,6 +531,8 @@ fn relation_field_input_def<'src>(
 
 #[cfg(test)]
 mod tests {
+    use crate::graphql_gen::TypeDefinition;
+
     use super::connect_position_input_def;
     use super::update_input_types_def;
 
@@ -566,6 +568,45 @@ mod tests {
             .expect("It should return all 'update user input'.");
 
         let mut update_user_input_graphql_str = update_user_input_graphql_ast
+            .into_iter()
+            .fold("".to_string(), |acc, graphql_ast| {
+                format!("{}{}", acc, graphql_ast)
+            });
+        update_user_input_graphql_str.retain(|c| !c.is_whitespace());
+        assert_eq!(expected_graphql_str, update_user_input_graphql_str)
+    }
+
+    #[test]
+    fn test_update_input_types_def() {
+        let mut expected_graphql_str = fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/input_type/test_update_input_types_def.graphql"
+        ))
+        .unwrap();
+        expected_graphql_str.retain(|c| !c.is_whitespace());
+
+        let sdml_str = fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/input_type/test_update_input_types_def.sdml"
+        ))
+        .unwrap();
+        let sdml_declarations = parser::delcarations()
+            .parse(&sdml_str)
+            .into_output()
+            .expect("It should be a valid SDML.");
+        let data_model = parser::semantic_analysis(sdml_declarations)
+            .expect("A valid SDML file shouldn't fail in parsing.");
+
+        let update_input_types_graphql_ast = data_model
+            .models_sorted()
+            .iter()
+            .flat_map(|model| {
+                update_input_types_def(model)
+                    .expect("update_input_types_def should succeed!")
+            })
+            .collect::<Vec<TypeDefinition>>();
+
+        let mut update_user_input_graphql_str = update_input_types_graphql_ast
             .into_iter()
             .fold("".to_string(), |acc, graphql_ast| {
                 format!("{}{}", acc, graphql_ast)

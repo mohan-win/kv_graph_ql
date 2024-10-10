@@ -1,0 +1,387 @@
+input UserUpdateInput {
+  email: String
+  name: String
+  nickNames: [String!]
+  role: Role
+  mentees: UserUpdateManyInlineInput
+  mentor: UserUpdateOneInlineInput
+  spouse: UserUpdateOneInlineInput
+  profile: ProfileUpdateOneInlineInput
+  posts: PostUpdateManyInlineInput
+}
+
+input UserUpsertInput {
+  create: UserCreateInput!
+  update: UserUpdateInput!
+}
+
+input UserUpdateManyInput {
+  name: String
+  nickNames: [String!]
+  role: Role
+}
+
+input UserUpdateOneInlineInput {
+  """
+  Create and connect a new 'User' object.
+  """
+  create: UserCreateInput
+  """
+  Update 'User' object if exists.
+  """
+  update: UserUpdateWithNestedWhereUniqueInput
+  """
+  Upsert 'User' object.
+  """
+  upsert: UserUpsertWithNestedWhereUniqueInput
+  """
+  Connect an existing 'User' object.
+  """
+  connect: UserWhereUniqueInput
+  """
+  Disconnect 'User' object.
+  """
+  disconnect: Boolean
+  """
+  Delete 'User' object.
+  """
+  delete: Boolean
+}
+
+input UserUpdateManyInlineInput {
+  """
+  Create and connect multiple new 'User' objects.
+  """
+  create: [UserCreateInput!]
+  """
+  Update multiple 'User' objects if exists.
+  """
+  update: [UserUpdateWithNestedWhereUniqueInput!]
+  """
+  Upsert multiple 'User' objects.
+  """
+  upsert: [UserUpsertWithNestedWhereUniqueInput!]
+  """
+  Connect multiple existing 'User' objects.
+  """
+  connect: [UserConnectInput!]
+  """
+  Replace existing relation with multiple 'User' objects.
+  """
+  set: [UserWhereUniqueInput!]
+  """
+  Disconnect multiple 'User' objects from relation.
+  """
+  disconnect: [UserWhereUniqueInput!]
+  """
+  Delete multiple 'User' objects.
+  """
+  delete: [UserWhereUniqueInput!]
+}
+
+input UserUpdateWithNestedWhereUniqueInput {
+  where: UserWhereUniqueInput!
+  data: UserUpdateInput!
+}
+
+input UserUpsertWithNestedWhereUniqueInput {
+  where: UserWhereUniqueInput!
+  data: UserUpsertInput!
+}
+
+input UserConnectInput {
+  """
+  'User' object to connect
+  """
+  where: UserWhereUniqueInput!
+  """
+  Specify the position in the list of connected objects, by-defult will add it to end of the list.
+  """
+  position: ConnectPositionInput
+}
+
+input ProfileUpdateInput {
+  bio: String
+  user: UserUpdateOneInlineInput
+}
+
+input ProfileUpsertInput {
+  create: ProfileCreateInput!
+  update: ProfileUpdateInput!
+}
+
+input ProfileUpdateManyInput {
+  bio: String
+}
+
+input ProfileUpdateOneInlineInput {
+  """
+  Create and connect a new 'Profile' object.
+  """
+  create: ProfileCreateInput
+  """
+  Update 'Profile' object if exists.
+  """
+  update: ProfileUpdateWithNestedWhereUniqueInput
+  """
+  Upsert 'Profile' object.
+  """
+  upsert: ProfileUpsertWithNestedWhereUniqueInput
+  """
+  Connect an existing 'Profile' object.
+  """
+  connect: ProfileWhereUniqueInput
+  """
+  Disconnect 'Profile' object.
+  """
+  disconnect: Boolean
+  """
+  Delete 'Profile' object.
+  """
+  delete: Boolean
+}
+
+input ProfileUpdateManyInlineInput {
+  """
+  Create and connect multiple new 'Profile' objects.
+  """
+  create: [ProfileCreateInput!]
+  """
+  Update multiple 'Profile' objects if exists.
+  """
+  update: [ProfileUpdateWithNestedWhereUniqueInput!]
+  """
+  Upsert multiple 'Profile' objects.
+  """
+  upsert: [ProfileUpsertWithNestedWhereUniqueInput!]
+  """
+  Connect multiple existing 'Profile' objects.
+  """
+  connect: [ProfileConnectInput!]
+  """
+  Replace existing relation with multiple 'Profile' objects.
+  """
+  set: [ProfileWhereUniqueInput!]
+  """
+  Disconnect multiple 'Profile' objects from relation.
+  """
+  disconnect: [ProfileWhereUniqueInput!]
+  """
+  Delete multiple 'Profile' objects.
+  """
+  delete: [ProfileWhereUniqueInput!]
+}
+
+input ProfileUpdateWithNestedWhereUniqueInput {
+  where: ProfileWhereUniqueInput!
+  data: ProfileUpdateInput!
+}
+
+input ProfileUpsertWithNestedWhereUniqueInput {
+  where: ProfileWhereUniqueInput!
+  data: ProfileUpsertInput!
+}
+
+input ProfileConnectInput {
+  """
+  'Profile' object to connect
+  """
+  where: ProfileWhereUniqueInput!
+  """
+  Specify the position in the list of connected objects, by-defult will add it to end of the list.
+  """
+  position: ConnectPositionInput
+}
+
+input PostUpdateInput {
+  createdAt: DateTime
+  updatedAt: DateTime
+  title: String
+  published: Boolean
+  author: UserUpdateOneInlineInput
+  category: CategoryUpdateManyInlineInput
+}
+
+input PostUpsertInput {
+  create: PostCreateInput!
+  update: PostUpdateInput!
+}
+
+input PostUpdateManyInput {
+  createdAt: DateTime
+  updatedAt: DateTime
+  title: String
+  published: Boolean
+}
+
+input PostUpdateOneInlineInput {
+  """
+  Create and connect a new 'Post' object.
+  """
+  create: PostCreateInput
+  """
+  Update 'Post' object if exists.
+  """
+  update: PostUpdateWithNestedWhereUniqueInput
+  """
+  Upsert 'Post' object.
+  """
+  upsert: PostUpsertWithNestedWhereUniqueInput
+  """
+  Connect an existing 'Post' object.
+  """
+  connect: PostWhereUniqueInput
+  """
+  Disconnect 'Post' object.
+  """
+  disconnect: Boolean
+  """
+  Delete 'Post' object.
+  """
+  delete: Boolean
+}
+
+input PostUpdateManyInlineInput {
+  """
+  Create and connect multiple new 'Post' objects.
+  """
+  create: [PostCreateInput!]
+  """
+  Update multiple 'Post' objects if exists.
+  """
+  update: [PostUpdateWithNestedWhereUniqueInput!]
+  """
+  Upsert multiple 'Post' objects.
+  """
+  upsert: [PostUpsertWithNestedWhereUniqueInput!]
+  """
+  Connect multiple existing 'Post' objects.
+  """
+  connect: [PostConnectInput!]
+  """
+  Replace existing relation with multiple 'Post' objects.
+  """
+  set: [PostWhereUniqueInput!]
+  """
+  Disconnect multiple 'Post' objects from relation.
+  """
+  disconnect: [PostWhereUniqueInput!]
+  """
+  Delete multiple 'Post' objects.
+  """
+  delete: [PostWhereUniqueInput!]
+}
+
+input PostUpdateWithNestedWhereUniqueInput {
+  where: PostWhereUniqueInput!
+  data: PostUpdateInput!
+}
+
+input PostUpsertWithNestedWhereUniqueInput {
+  where: PostWhereUniqueInput!
+  data: PostUpsertInput!
+}
+
+input PostConnectInput {
+  """
+  'Post' object to connect
+  """
+  where: PostWhereUniqueInput!
+  """
+  Specify the position in the list of connected objects, by-defult will add it to end of the list.
+  """
+  position: ConnectPositionInput
+}
+
+input CategoryUpdateInput {
+  name: String
+  posts: PostUpdateManyInlineInput
+}
+
+input CategoryUpsertInput {
+  create: CategoryCreateInput!
+  update: CategoryUpdateInput!
+}
+
+input CategoryUpdateManyInput {
+  
+}
+
+input CategoryUpdateOneInlineInput {
+  """
+  Create and connect a new 'Category' object.
+  """
+  create: CategoryCreateInput
+  """
+  Update 'Category' object if exists.
+  """
+  update: CategoryUpdateWithNestedWhereUniqueInput
+  """
+  Upsert 'Category' object.
+  """
+  upsert: CategoryUpsertWithNestedWhereUniqueInput
+  """
+  Connect an existing 'Category' object.
+  """
+  connect: CategoryWhereUniqueInput
+  """
+  Disconnect 'Category' object.
+  """
+  disconnect: Boolean
+  """
+  Delete 'Category' object.
+  """
+  delete: Boolean
+}
+
+input CategoryUpdateManyInlineInput {
+  """
+  Create and connect multiple new 'Category' objects.
+  """
+  create: [CategoryCreateInput!]
+  """
+  Update multiple 'Category' objects if exists.
+  """
+  update: [CategoryUpdateWithNestedWhereUniqueInput!]
+  """
+  Upsert multiple 'Category' objects.
+  """
+  upsert: [CategoryUpsertWithNestedWhereUniqueInput!]
+  """
+  Connect multiple existing 'Category' objects.
+  """
+  connect: [CategoryConnectInput!]
+  """
+  Replace existing relation with multiple 'Category' objects.
+  """
+  set: [CategoryWhereUniqueInput!]
+  """
+  Disconnect multiple 'Category' objects from relation.
+  """
+  disconnect: [CategoryWhereUniqueInput!]
+  """
+  Delete multiple 'Category' objects.
+  """
+  delete: [CategoryWhereUniqueInput!]
+}
+
+input CategoryUpdateWithNestedWhereUniqueInput {
+  where: CategoryWhereUniqueInput!
+  data: CategoryUpdateInput!
+}
+
+input CategoryUpsertWithNestedWhereUniqueInput {
+  where: CategoryWhereUniqueInput!
+  data: CategoryUpsertInput!
+}
+
+input CategoryConnectInput {
+  """
+  'Category' object to connect
+  """
+  where: CategoryWhereUniqueInput!
+  """
+  Specify the position in the list of connected objects, by-defult will add it to end of the list.
+  """
+  position: ConnectPositionInput
+}
