@@ -1,8 +1,5 @@
 //! Defines necessary abstractions to capture (OpenCRUD)[https://github.com/opencrud/opencrud]
 //! field **names** in rust.
-
-use std::fmt::format;
-
 use convert_case::{self, Casing};
 use graphql_value::Name;
 
