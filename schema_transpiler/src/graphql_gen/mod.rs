@@ -8,7 +8,7 @@ mod enum_type;
 mod error;
 mod input_type;
 pub(crate) mod open_crud_name;
-mod query_api;
+mod crud_api;
 mod root_mutation_type;
 mod root_query_type;
 mod r#type;
