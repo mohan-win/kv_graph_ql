@@ -39,7 +39,7 @@ model Post {
 
 model Category {
     categoryId  ShortStr      @id @default(auto())
-    name        ShortStr
+    name        ShortStr      @unique
     postIDs     ShortStr[] 
     posts       Post[]        @relation(name: "CategoriesOnPost", field: postIDs, references: postId)
 }

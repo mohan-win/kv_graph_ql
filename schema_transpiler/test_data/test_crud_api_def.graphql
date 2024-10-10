@@ -1260,6 +1260,7 @@ posts_is_empty: Boolean
 """The where unique filter which can match at-most 1 object."""
 input CategoryWhereUniqueInput {
 id: ID
+name: String
 }
 
 """Order by input for Category's scalar fields"""
@@ -1273,7 +1274,7 @@ name_DSC
 """Category"""
 type Category implements Node {
 id: ID! @map(name: "categoryId") @unique
-name: String!
+name: String! @unique
 postIDs: [String!]!
 posts(
 where: PostWhereInput
@@ -1332,7 +1333,6 @@ update: CategoryUpdateInput!
 }
 
 input CategoryUpdateManyInput {
-name: String
 }
 
 input CategoryUpdateOneInlineInput {
