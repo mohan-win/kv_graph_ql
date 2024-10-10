@@ -12,6 +12,247 @@ name: String!
 directive @unique on
 | FIELD_DEFINITION
 
+type Query {
+node(
+id: ID!
+): Node
+user(
+where: UserWhereUniqueInput!
+): User
+users(
+where: UserWhereInput
+orderBy: UserOrderByInput
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): [User!]!
+usersConnection(
+where: UserWhereInput
+orderBy: UserOrderByInput
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): UserConnection!
+profile(
+where: ProfileWhereUniqueInput!
+): Profile
+profiles(
+where: ProfileWhereInput
+orderBy: ProfileOrderByInput
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): [Profile!]!
+profilesConnection(
+where: ProfileWhereInput
+orderBy: ProfileOrderByInput
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): ProfileConnection!
+post(
+where: PostWhereUniqueInput!
+): Post
+posts(
+where: PostWhereInput
+orderBy: PostOrderByInput
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): [Post!]!
+postsConnection(
+where: PostWhereInput
+orderBy: PostOrderByInput
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): PostConnection!
+category(
+where: CategoryWhereUniqueInput!
+): Category
+categories(
+where: CategoryWhereInput
+orderBy: CategoryOrderByInput
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): [Category!]!
+categoriesConnection(
+where: CategoryWhereInput
+orderBy: CategoryOrderByInput
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): CategoryConnection!
+}
+
+type Mutation {
+"""Returns newly created 'User' object if successful."""
+createUser(
+data: UserCreateInput!
+): User
+"""Returns the updated 'User' object if successful."""
+updateUser(
+where: UserWhereUniqueInput!
+data: UserUpdateInput!
+): User
+"""Returns the deleted 'User' object if successful."""
+deleteUser(
+where: UserWhereUniqueInput!
+): User
+"""Returns the upserted (either created new or updated) 'User' object if successful."""
+upsertUser(
+where: UserWhereUniqueInput!
+data: UserUpsertInput!
+): User
+"""Returns the updated 'User' objects."""
+updateManyUsersConnection(
+where: UserWhereInput!
+data: UserUpdateManyInput!
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): UserConnection!
+"""Returns the deleted 'User' objects."""
+deleteManyUsersConnection(
+where: UserWhereInput!
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): UserConnection!
+"""Returns newly created 'Profile' object if successful."""
+createProfile(
+data: ProfileCreateInput!
+): Profile
+"""Returns the updated 'Profile' object if successful."""
+updateProfile(
+where: ProfileWhereUniqueInput!
+data: ProfileUpdateInput!
+): Profile
+"""Returns the deleted 'Profile' object if successful."""
+deleteProfile(
+where: ProfileWhereUniqueInput!
+): Profile
+"""Returns the upserted (either created new or updated) 'Profile' object if successful."""
+upsertProfile(
+where: ProfileWhereUniqueInput!
+data: ProfileUpsertInput!
+): Profile
+"""Returns the updated 'Profile' objects."""
+updateManyProfilesConnection(
+where: ProfileWhereInput!
+data: ProfileUpdateManyInput!
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): ProfileConnection!
+"""Returns the deleted 'Profile' objects."""
+deleteManyProfilesConnection(
+where: ProfileWhereInput!
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): ProfileConnection!
+"""Returns newly created 'Post' object if successful."""
+createPost(
+data: PostCreateInput!
+): Post
+"""Returns the updated 'Post' object if successful."""
+updatePost(
+where: PostWhereUniqueInput!
+data: PostUpdateInput!
+): Post
+"""Returns the deleted 'Post' object if successful."""
+deletePost(
+where: PostWhereUniqueInput!
+): Post
+"""Returns the upserted (either created new or updated) 'Post' object if successful."""
+upsertPost(
+where: PostWhereUniqueInput!
+data: PostUpsertInput!
+): Post
+"""Returns the updated 'Post' objects."""
+updateManyPostsConnection(
+where: PostWhereInput!
+data: PostUpdateManyInput!
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): PostConnection!
+"""Returns the deleted 'Post' objects."""
+deleteManyPostsConnection(
+where: PostWhereInput!
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): PostConnection!
+"""Returns newly created 'Category' object if successful."""
+createCategory(
+data: CategoryCreateInput!
+): Category
+"""Returns the updated 'Category' object if successful."""
+updateCategory(
+where: CategoryWhereUniqueInput!
+data: CategoryUpdateInput!
+): Category
+"""Returns the deleted 'Category' object if successful."""
+deleteCategory(
+where: CategoryWhereUniqueInput!
+): Category
+"""Returns the upserted (either created new or updated) 'Category' object if successful."""
+upsertCategory(
+where: CategoryWhereUniqueInput!
+data: CategoryUpsertInput!
+): Category
+"""Returns the updated 'Category' objects."""
+updateManyCategoriesConnection(
+where: CategoryWhereInput!
+data: CategoryUpdateManyInput!
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): CategoryConnection!
+"""Returns the deleted 'Category' objects."""
+deleteManyCategoriesConnection(
+where: CategoryWhereInput!
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): CategoryConnection!
+}
+
 """Node interface as per Relay GraphQL Global Object Identification Spec. https://relay.dev/docs/guides/graphql-server-specification/#object-identification"""
 interface Node {
 """ID field with globally unique ID"""
@@ -1141,245 +1382,4 @@ input CategoryConnectInput {
 where: CategoryWhereUniqueInput!
 """Specify the position in the list of connected objects, by-defult will add it to end of the list."""
 position: ConnectPositionInput
-}
-
-type Query {
-node(
-id: ID!
-): Node
-user(
-where: UserWhereUniqueInput!
-): User
-users(
-where: UserWhereInput
-orderBy: UserOrderByInput
-skip: Int
-after: ID
-before: ID
-first: Int
-last: Int
-): [User!]!
-usersConnection(
-where: UserWhereInput
-orderBy: UserOrderByInput
-skip: Int
-after: ID
-before: ID
-first: Int
-last: Int
-): UserConnection!
-profile(
-where: ProfileWhereUniqueInput!
-): Profile
-profiles(
-where: ProfileWhereInput
-orderBy: ProfileOrderByInput
-skip: Int
-after: ID
-before: ID
-first: Int
-last: Int
-): [Profile!]!
-profilesConnection(
-where: ProfileWhereInput
-orderBy: ProfileOrderByInput
-skip: Int
-after: ID
-before: ID
-first: Int
-last: Int
-): ProfileConnection!
-post(
-where: PostWhereUniqueInput!
-): Post
-posts(
-where: PostWhereInput
-orderBy: PostOrderByInput
-skip: Int
-after: ID
-before: ID
-first: Int
-last: Int
-): [Post!]!
-postsConnection(
-where: PostWhereInput
-orderBy: PostOrderByInput
-skip: Int
-after: ID
-before: ID
-first: Int
-last: Int
-): PostConnection!
-category(
-where: CategoryWhereUniqueInput!
-): Category
-categories(
-where: CategoryWhereInput
-orderBy: CategoryOrderByInput
-skip: Int
-after: ID
-before: ID
-first: Int
-last: Int
-): [Category!]!
-categoriesConnection(
-where: CategoryWhereInput
-orderBy: CategoryOrderByInput
-skip: Int
-after: ID
-before: ID
-first: Int
-last: Int
-): CategoryConnection!
-}
-
-type Mutation {
-"""Returns newly created 'User' object if successful."""
-createUser(
-data: UserCreateInput!
-): User
-"""Returns the updated 'User' object if successful."""
-updateUser(
-where: UserWhereUniqueInput!
-data: UserUpdateInput!
-): User
-"""Returns the deleted 'User' object if successful."""
-deleteUser(
-where: UserWhereUniqueInput!
-): User
-"""Returns the upserted (either created new or updated) 'User' object if successful."""
-upsertUser(
-where: UserWhereUniqueInput!
-data: UserUpsertInput!
-): User
-"""Returns the updated 'User' objects."""
-updateManyUsersConnection(
-where: UserWhereInput!
-data: UserUpdateManyInput!
-skip: Int
-after: ID
-before: ID
-first: Int
-last: Int
-): UserConnection!
-"""Returns the deleted 'User' objects."""
-deleteManyUsersConnection(
-where: UserWhereInput!
-skip: Int
-after: ID
-before: ID
-first: Int
-last: Int
-): UserConnection!
-"""Returns newly created 'Profile' object if successful."""
-createProfile(
-data: ProfileCreateInput!
-): Profile
-"""Returns the updated 'Profile' object if successful."""
-updateProfile(
-where: ProfileWhereUniqueInput!
-data: ProfileUpdateInput!
-): Profile
-"""Returns the deleted 'Profile' object if successful."""
-deleteProfile(
-where: ProfileWhereUniqueInput!
-): Profile
-"""Returns the upserted (either created new or updated) 'Profile' object if successful."""
-upsertProfile(
-where: ProfileWhereUniqueInput!
-data: ProfileUpsertInput!
-): Profile
-"""Returns the updated 'Profile' objects."""
-updateManyProfilesConnection(
-where: ProfileWhereInput!
-data: ProfileUpdateManyInput!
-skip: Int
-after: ID
-before: ID
-first: Int
-last: Int
-): ProfileConnection!
-"""Returns the deleted 'Profile' objects."""
-deleteManyProfilesConnection(
-where: ProfileWhereInput!
-skip: Int
-after: ID
-before: ID
-first: Int
-last: Int
-): ProfileConnection!
-"""Returns newly created 'Post' object if successful."""
-createPost(
-data: PostCreateInput!
-): Post
-"""Returns the updated 'Post' object if successful."""
-updatePost(
-where: PostWhereUniqueInput!
-data: PostUpdateInput!
-): Post
-"""Returns the deleted 'Post' object if successful."""
-deletePost(
-where: PostWhereUniqueInput!
-): Post
-"""Returns the upserted (either created new or updated) 'Post' object if successful."""
-upsertPost(
-where: PostWhereUniqueInput!
-data: PostUpsertInput!
-): Post
-"""Returns the updated 'Post' objects."""
-updateManyPostsConnection(
-where: PostWhereInput!
-data: PostUpdateManyInput!
-skip: Int
-after: ID
-before: ID
-first: Int
-last: Int
-): PostConnection!
-"""Returns the deleted 'Post' objects."""
-deleteManyPostsConnection(
-where: PostWhereInput!
-skip: Int
-after: ID
-before: ID
-first: Int
-last: Int
-): PostConnection!
-"""Returns newly created 'Category' object if successful."""
-createCategory(
-data: CategoryCreateInput!
-): Category
-"""Returns the updated 'Category' object if successful."""
-updateCategory(
-where: CategoryWhereUniqueInput!
-data: CategoryUpdateInput!
-): Category
-"""Returns the deleted 'Category' object if successful."""
-deleteCategory(
-where: CategoryWhereUniqueInput!
-): Category
-"""Returns the upserted (either created new or updated) 'Category' object if successful."""
-upsertCategory(
-where: CategoryWhereUniqueInput!
-data: CategoryUpsertInput!
-): Category
-"""Returns the updated 'Category' objects."""
-updateManyCategoriesConnection(
-where: CategoryWhereInput!
-data: CategoryUpdateManyInput!
-skip: Int
-after: ID
-before: ID
-first: Int
-last: Int
-): CategoryConnection!
-"""Returns the deleted 'Category' objects."""
-deleteManyCategoriesConnection(
-where: CategoryWhereInput!
-skip: Int
-after: ID
-before: ID
-first: Int
-last: Int
-): CategoryConnection!
 }

@@ -12,6 +12,16 @@ pub(in crate::graphql_gen) fn crud_api_def<'src>(
     // Custom Directives.
     api_type_defs.push(TypeSystemDefinition::Directive(directive_map_def()));
     api_type_defs.push(TypeSystemDefinition::Directive(directive_unique_def()));
+
+    // Root query type.
+    api_type_defs.push(TypeSystemDefinition::Type(
+        root_query_type::root_query_type_def(&data_model.models_sorted())?,
+    ));
+    // Root mutation type
+    api_type_defs.push(TypeSystemDefinition::Type(
+        root_mutation_type::root_mutation_type_def(&data_model.models_sorted())?,
+    ));
+
     // Root Node interface.
     api_type_defs.push(TypeSystemDefinition::Type(interface_node_def()));
     // Enums
@@ -23,12 +33,12 @@ pub(in crate::graphql_gen) fn crud_api_def<'src>(
                 acc.push(TypeSystemDefinition::Type(enum_type::enum_def(r#enum)?));
                 Ok(acc)
             })?;
-    // Common Aux Types
+    // Common types.
     api_type_defs.push(TypeSystemDefinition::Type(aux_type::page_info_type_def()?));
     api_type_defs.push(TypeSystemDefinition::Type(aux_type::aggregage_type_def()?));
     api_type_defs.push(TypeSystemDefinition::Type(
         input_type::update::connect_position_input_def()?,
-    )); // Connect position input type
+    ));
 
     // Model specific types & Models.
     data_model.models_sorted().iter().try_for_each(|model| {
@@ -65,14 +75,6 @@ pub(in crate::graphql_gen) fn crud_api_def<'src>(
 
         Ok(())
     })?;
-    // Root query type.
-    api_type_defs.push(TypeSystemDefinition::Type(
-        root_query_type::root_query_type_def(&data_model.models_sorted())?,
-    ));
-    // Root mutation type
-    api_type_defs.push(TypeSystemDefinition::Type(
-        root_mutation_type::root_mutation_type_def(&data_model.models_sorted())?,
-    ));
 
     Ok(api_type_defs)
 }
