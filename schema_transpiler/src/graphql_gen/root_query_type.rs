@@ -33,7 +33,7 @@ pub(in crate::graphql_gen) fn root_query_type_def<'src>(
 fn root_node_field() -> GraphQLGenResult<FieldDefinition> {
     Ok(FieldDefinition {
         description: None,
-        name: open_crud_name::fields::QueryTypeField::RootNode.common_name(),
+        name: open_crud_name::fields::QueryType::RootNodeField.common_name(),
         arguments: vec![InputValueDefinition {
             description: None,
             name: open_crud_name::fields::Field::Id.common_name(),
@@ -60,10 +60,10 @@ fn root_query_fields<'src>(
         // Query unique object.
         FieldDefinition {
             description: None,
-            name: open_crud_name::fields::QueryTypeField::RootField.name(model_name),
+            name: open_crud_name::fields::QueryType::RootField.name(model_name),
             arguments: vec![InputValueDefinition {
                 description: None,
-                name: Name::new(FIELD_ARG_WHERE),
+                name: open_crud_name::fields::QueryInputArg::Where.common_name(),
                 ty: open_crud_name::types::FilterInput::WhereUnique
                     .ty(model_name, TypeMod::NonOptional),
                 default_value: None,
@@ -78,7 +78,7 @@ fn root_query_fields<'src>(
         // Query array of objects.
         FieldDefinition {
             description: None,
-            name: open_crud_name::fields::QueryTypeField::RootFieldArray.name(model_name),
+            name: open_crud_name::fields::QueryType::RootFieldArray.name(model_name),
             arguments: r#type::array_field_args(model_name)?,
             ty: Type::new(model_name, TypeMod::Array),
             directives: vec![],
@@ -89,8 +89,7 @@ fn root_query_fields<'src>(
         // Query object connection for multiple objects.
         FieldDefinition {
             description: None,
-            name: open_crud_name::fields::QueryTypeField::RootFieldConnection
-                .name(model_name),
+            name: open_crud_name::fields::QueryType::RootFieldConnection.name(model_name),
             arguments: r#type::array_field_args(model_name)?,
             ty: open_crud_name::types::AuxiliaryType::Connection
                 .ty(model_name, TypeMod::NonOptional),

@@ -120,7 +120,7 @@ pub(in crate::graphql_gen) fn array_field_args<'src>(
     let mut args = vec![];
     args.push(InputValueDefinition {
         description: None,
-        name: Name::new(FIELD_ARG_WHERE),
+        name: open_crud_name::fields::QueryInputArg::Where.common_name(),
         ty: open_crud_name::types::FilterInput::Where
             .ty(referenced_model_name, TypeMod::Optional),
         default_value: None,
@@ -128,7 +128,7 @@ pub(in crate::graphql_gen) fn array_field_args<'src>(
     });
     args.push(InputValueDefinition {
         description: None,
-        name: Name::new(FIELD_ARG_ORDER_BY),
+        name: open_crud_name::fields::QueryInputArg::OrderBy.common_name(),
         ty: open_crud_name::types::OpenCRUDType::OrderByInput
             .ty(referenced_model_name, TypeMod::Optional),
         default_value: None,
@@ -136,35 +136,35 @@ pub(in crate::graphql_gen) fn array_field_args<'src>(
     });
     args.push(InputValueDefinition {
         description: None,
-        name: Name::new(FIELD_ARG_SKIP),
+        name: open_crud_name::fields::QueryInputArg::Skip.common_name(),
         ty: Type::new(FIELD_TYPE_NAME_INT, TypeMod::Optional),
         default_value: None,
         directives: vec![],
     });
     args.push(InputValueDefinition {
         description: None,
-        name: Name::new(FIELD_ARG_AFTER),
+        name: open_crud_name::fields::QueryInputArg::After.common_name(),
         ty: open_crud_name::types::OpenCRUDType::IdType.common_ty(TypeMod::Optional),
         default_value: None,
         directives: vec![],
     });
     args.push(InputValueDefinition {
         description: None,
-        name: Name::new(FIELD_ARG_BEFORE),
+        name: open_crud_name::fields::QueryInputArg::Before.common_name(),
         ty: open_crud_name::types::OpenCRUDType::IdType.common_ty(TypeMod::Optional),
         default_value: None,
         directives: vec![],
     });
     args.push(InputValueDefinition {
         description: None,
-        name: Name::new(FIELD_ARG_FIRST),
+        name: open_crud_name::fields::QueryInputArg::First.common_name(),
         ty: Type::new(FIELD_TYPE_NAME_INT, TypeMod::Optional),
         default_value: None,
         directives: vec![],
     });
     args.push(InputValueDefinition {
         description: None,
-        name: Name::new(FIELD_ARG_LAST),
+        name: open_crud_name::fields::QueryInputArg::Last.common_name(),
         ty: Type::new(FIELD_TYPE_NAME_INT, TypeMod::Optional),
         default_value: None,
         directives: vec![],

@@ -43,7 +43,7 @@ trait FieldNamedUnformatted {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Field {
     Id,
-    Query(QueryTypeField),
+    Query(QueryType),
     Create(CreateInputArg),
     Update(UpdateInputArg),
     ConnectPos(ConnectPositionInputArg),
@@ -75,34 +75,68 @@ impl FieldNamedUnformatted for Field {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum QueryTypeField {
-    RootNode,
+pub enum QueryType {
+    // Root node field.
+    RootNodeField,
     /// Root query field.
     RootField,
     /// Root query field array.
     RootFieldArray,
     /// Root Connection field.
     RootFieldConnection,
+    // Query input arg,
+    InputArg(QueryInputArg),
 }
 
-impl FieldNamedUnformatted for QueryTypeField {
+impl FieldNamedUnformatted for QueryType {
     fn name_str(&self, model_name: &str) -> String {
         match self {
-            QueryTypeField::RootNode => {
+            QueryType::RootNodeField => {
                 panic!("Root node field is common for all models")
             }
-            QueryTypeField::RootField => model_name.to_string(),
-            QueryTypeField::RootFieldArray => pluralizer::pluralize(model_name, 2, false),
-            QueryTypeField::RootFieldConnection => {
+            QueryType::RootField => model_name.to_string(),
+            QueryType::RootFieldArray => pluralizer::pluralize(model_name, 2, false),
+            QueryType::RootFieldConnection => {
                 format!("{}Connection", pluralizer::pluralize(model_name, 2, false))
             }
+            QueryType::InputArg(query_input_arg) => query_input_arg.name_str(model_name),
         }
     }
     fn common_name_str(&self) -> String {
         match self {
-            QueryTypeField::RootNode => "node".to_string(),
+            QueryType::RootNodeField => "node".to_string(),
+            QueryType::InputArg(query_input_arg) => query_input_arg.common_name_str(),
             fld => panic!("{:?} should be used in-context of a model.", fld),
         }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum QueryInputArg {
+    Where,
+    OrderBy,
+    Skip,
+    After,
+    First,
+    Before,
+    Last,
+}
+
+impl FieldNamedUnformatted for QueryInputArg {
+    fn name_str(&self, _model_name: &str) -> String {
+        panic!("Input arg {:?} is not specific to model.", self)
+    }
+    fn common_name_str(&self) -> String {
+        match self {
+            Self::Where => "where",
+            Self::OrderBy => "orderBy",
+            Self::Skip => "skip",
+            Self::After => "after",
+            Self::First => "first",
+            Self::Before => "before",
+            Self::Last => "last",
+        }
+        .to_string()
     }
 }
 
