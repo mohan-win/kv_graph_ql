@@ -67,6 +67,7 @@ trait NamedUnformatted {
 #[derive(Debug, Clone, PartialEq)]
 pub enum OpenCRUDType {
     IdType,
+    Mutation(MutationType),
     Query(QueryType),
     Create(CreateInput),
     Update(UpdateInput),
@@ -79,6 +80,9 @@ impl NamedUnformatted for OpenCRUDType {
         match self {
             OpenCRUDType::IdType => panic!("ID type is not model specific."),
             OpenCRUDType::Query(query_type) => query_type.name_str(model_name_pc),
+            OpenCRUDType::Mutation(mutation_type) => {
+                mutation_type.name_str(model_name_pc)
+            }
             OpenCRUDType::Create(create_input_type) => {
                 create_input_type.name_str(model_name_pc)
             }
@@ -97,6 +101,7 @@ impl NamedUnformatted for OpenCRUDType {
         match self {
             OpenCRUDType::IdType => "ID".to_string(),
             OpenCRUDType::Query(query_type) => query_type.common_name_str(),
+            OpenCRUDType::Mutation(mutation_type) => mutation_type.common_name_str(),
             OpenCRUDType::Create(create_input_type) => {
                 create_input_type.common_name_str()
             }
@@ -153,6 +158,23 @@ impl NamedUnformatted for QueryType {
             Self::Aggregate => "Aggregate".to_string(),
             _ => panic!("{:#?} should be used in model context", self),
         }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum MutationType {
+    RootMutation,
+}
+
+impl NamedUnformatted for MutationType {
+    fn name_str(&self, _model_name_pc: &str) -> String {
+        panic!("{:#?} doesn't belong to any model.", self)
+    }
+    fn common_name_str(&self) -> String {
+        match self {
+            Self::RootMutation => "Mutation",
+        }
+        .to_string()
     }
 }
 

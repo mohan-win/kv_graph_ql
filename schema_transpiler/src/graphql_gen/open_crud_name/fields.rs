@@ -1,6 +1,8 @@
 //! Defines necessary abstractions to capture (OpenCRUD)[https://github.com/opencrud/opencrud]
 //! field **names** in rust.
 
+use std::fmt::format;
+
 use convert_case::{self, Casing};
 use graphql_value::Name;
 
@@ -44,6 +46,7 @@ trait FieldNamedUnformatted {
 pub enum Field {
     Id,
     Query(QueryType),
+    Mutation(MutationType),
     Create(CreateInputArg),
     Update(UpdateInputArg),
     ConnectPos(ConnectPositionInputArg),
@@ -52,18 +55,19 @@ pub enum Field {
 impl FieldNamedUnformatted for Field {
     fn name_str(&self, model_name: &str) -> String {
         match self {
-            Self::Query(query_fld) => query_fld.name_str(model_name),
-            Self::Create(create_input_field) => create_input_field.name_str(model_name),
-            Self::Update(update_input_field) => update_input_field.name_str(model_name),
-            Self::ConnectPos(connect_pos_input_field) => {
-                connect_pos_input_field.name_str(model_name)
-            }
+            Self::Query(query) => query.name_str(model_name),
+            Self::Mutation(mutation) => mutation.name_str(model_name),
+            Self::Create(create_input) => create_input.name_str(model_name),
+            Self::Update(update_input) => update_input.name_str(model_name),
+            Self::ConnectPos(connect_pos_input) => connect_pos_input.name_str(model_name),
             _ => panic!("These are common fields, doesn't belong to a model."),
         }
     }
     fn common_name_str(&self) -> String {
         match self {
             Self::Id => "id".to_string(),
+            Self::Query(query) => query.common_name_str(),
+            Self::Mutation(mutation) => mutation.common_name_str(),
             Self::Create(create_input_field) => create_input_field.common_name_str(),
             Self::Update(update_input_field) => update_input_field.common_name_str(),
             Self::ConnectPos(connect_pos_input_field) => {
@@ -74,6 +78,7 @@ impl FieldNamedUnformatted for Field {
     }
 }
 
+/// Fields for root Query type.
 #[derive(Debug, Clone, PartialEq)]
 pub enum QueryType {
     // Root node field.
@@ -130,6 +135,72 @@ impl FieldNamedUnformatted for QueryInputArg {
         match self {
             Self::Where => "where",
             Self::OrderBy => "orderBy",
+            Self::Skip => "skip",
+            Self::After => "after",
+            Self::First => "first",
+            Self::Before => "before",
+            Self::Last => "last",
+        }
+        .to_string()
+    }
+}
+
+/// Fields for root mutation type.
+#[derive(Debug, Clone, PartialEq)]
+pub enum MutationType {
+    Create,
+    Update,
+    Delete,
+    Upsert,
+    UpdateMany,
+    DeleteMany,
+    InputArg(MutationInputArg),
+}
+
+impl FieldNamedUnformatted for MutationType {
+    fn name_str(&self, model_name: &str) -> String {
+        let model_name_plural = pluralizer::pluralize(model_name, 2, false);
+        match self {
+            // Note: Intentionally inserted a "_" in the name, which is
+            // removed when it is converted to camel_case in FieldNamed trait
+            // function. Why? Thus allowing the name to be properly camelcased
+            // even when model_name is mentioned without propercasing.
+            Self::Create => format!("create_{model_name}"),
+            Self::Update => format!("update_{model_name}"),
+            Self::Delete => format!("delete_{model_name}"),
+            Self::Upsert => format!("upsert_{model_name}"),
+            Self::UpdateMany => format!("updateMany_{model_name_plural}Connection"),
+            Self::DeleteMany => format!("deleteMany_{model_name_plural}Connection"),
+            Self::InputArg(mutation_input_arg) => mutation_input_arg.name_str(model_name),
+        }
+    }
+    fn common_name_str(&self) -> String {
+        match self {
+            Self::InputArg(mutation_input_arg) => mutation_input_arg.common_name_str(),
+            _ => panic!("{:?} field should be used in-context of a model", self),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum MutationInputArg {
+    Where,
+    Data,
+    Skip,
+    After,
+    First,
+    Before,
+    Last,
+}
+
+impl FieldNamedUnformatted for MutationInputArg {
+    fn name_str(&self, _model_name: &str) -> String {
+        panic!("Input arg {:?} is not specific to model.", self)
+    }
+    fn common_name_str(&self) -> String {
+        match self {
+            Self::Where => "where",
+            Self::Data => "data",
             Self::Skip => "skip",
             Self::After => "after",
             Self::First => "first",
