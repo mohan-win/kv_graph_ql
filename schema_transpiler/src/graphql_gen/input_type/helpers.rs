@@ -2,23 +2,26 @@ use super::*;
 
 #[derive(Debug, Clone)]
 pub(super) struct ModelFields<'src, 'b> {
-    pub non_relation_fields: Vec<&'b sdml_ast::FieldDecl<'src>>,
     pub relation_fields: Vec<&'b sdml_ast::FieldDecl<'src>>,
+    pub relation_scalar_fields: Vec<&'b sdml_ast::FieldDecl<'src>>,
+    pub id_fields: Vec<(&'b sdml_ast::FieldDecl<'src>, bool)>, // Vec<(field, is_auto_generated)>
+    pub unique_fields: Vec<&'b sdml_ast::FieldDecl<'src>>,
+    pub non_unique_fields: Vec<&'b sdml_ast::FieldDecl<'src>>,
 }
+
 /// Get Model fields.
-/// ### Arguments
-/// * `model` - reference to sdml model declaration
-/// * `filter_relation_scalar_fields` - if `true`, the function filters out the relation scalar fields.
-/// * `filter_unique_fields` - if `true`, the function filters out fields with @unique attribute.
 pub(super) fn get_model_fields<'src, 'b>(
     model: &'b sdml_ast::ModelDecl<'src>,
-    filter_relation_scalar_fields: bool,
-    filter_auto_generated_id: bool,
-    filter_unique_fields: bool,
 ) -> ModelFields<'src, 'b> {
-    let mut non_relation_fields = vec![];
-    let mut relation_fields = vec![];
-    let mut relation_scalar_field_names = vec![];
+    let mut result = ModelFields {
+        relation_fields: Vec::new(),
+        relation_scalar_fields: Vec::new(),
+        id_fields: Vec::new(),
+        unique_fields: Vec::new(),
+        non_unique_fields: Vec::new(),
+    };
+
+    let mut relation_scalar_field_names = Vec::new();
     model
         .fields
         .iter()
@@ -27,30 +30,50 @@ pub(super) fn get_model_fields<'src, 'b>(
                 panic!("Can't transpile field with unknown type to graphql")
             }
             sdml_ast::Type::Relation(edge) => {
-                relation_fields.push(field);
+                result.relation_fields.push(field);
                 edge.scalar_field_name().map(|fld_name| {
-                    relation_scalar_field_names.push(fld_name.ident_name())
+                    relation_scalar_field_names.push(fld_name.ident_name().unwrap())
                 });
             }
             sdml_ast::Type::Primitive { .. } | sdml_ast::Type::Enum { .. } => {
-                non_relation_fields.push(field);
+                if field.is_auto_gen_id() {
+                    result.id_fields.push((field, true));
+                } else if field.has_id_attrib() {
+                    result.id_fields.push((field, false));
+                } else if field.has_unique_attrib() {
+                    result.unique_fields.push(field);
+                } else {
+                    result.non_unique_fields.push(field);
+                }
             }
         });
 
-    if filter_relation_scalar_fields || filter_auto_generated_id {
-        non_relation_fields = non_relation_fields
-            .into_iter()
-            .filter(|field| {
-                (!filter_relation_scalar_fields
-                    || !relation_scalar_field_names.contains(&field.name.ident_name()))
-                    && (!filter_auto_generated_id || !field.is_auto_gen_id())
-                    && (!filter_unique_fields || !field.has_unique_attrib())
-            })
-            .collect();
-    }
+    let mut relation_scalar_fields = Vec::new();
+    // Filter-out relation scalar fields from unique & non-unique fields.
+    result.unique_fields = result
+        .unique_fields
+        .into_iter()
+        .filter(|field| {
+            if relation_scalar_field_names.contains(&field.name.ident_name().unwrap()) {
+                relation_scalar_fields.push(*field);
+                false
+            } else {
+                true
+            }
+        })
+        .collect();
+    result.non_unique_fields = result
+        .non_unique_fields
+        .into_iter()
+        .filter(|field| {
+            if relation_scalar_field_names.contains(&field.name.ident_name().unwrap()) {
+                relation_scalar_fields.push(*field);
+                false
+            } else {
+                true
+            }
+        })
+        .collect();
 
-    ModelFields {
-        non_relation_fields,
-        relation_fields,
-    }
+    result
 }

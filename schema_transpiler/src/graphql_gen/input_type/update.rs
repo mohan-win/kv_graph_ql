@@ -1,3 +1,5 @@
+use sdml_ast::ModelDecl;
+
 use super::*;
 
 /// Code-gen for *update input types* for the given model.
@@ -5,23 +7,23 @@ use super::*;
 /// * {ModelName}UpdateInput,
 /// * {ModelName}UpsertInput,
 /// * {ModelName}UpdateOneInlineInput,
-/// * {ModelName}UpdateManyInlineInput,
+/// * {ModelName}UpdateManyInlineInput [if relevant].,
 /// * {ModelName}UpdateWithNestedWhereUniqueInput,
 /// * {ModelName}UpsertWithNestedWhereUniqueInput,
 /// * {ModelName}ConnectInput.
 pub(in crate::graphql_gen) fn update_input_types_def<'src>(
     model: &sdml_ast::ModelDecl<'src>,
 ) -> GraphQLGenResult<Vec<TypeDefinition>> {
-    Ok(vec![
-        update_input_def(model)?,
-        upsert_input_def(&model.name)?,
-        update_many_input_def(model)?,
-        update_one_inline_input_def(&model.name)?,
-        update_many_inline_input_def(&model.name)?,
-        update_with_nested_where_unique_input_def(&model.name)?,
-        upsert_with_nested_where_unique_input_def(&model.name)?,
-        connect_input_def(&model.name)?,
-    ])
+    let mut result = Vec::new();
+    result.push(update_input_def(model)?);
+    result.push(upsert_input_def(&model.name)?);
+    update_many_input_def(model)?.map(|input_type| result.push(input_type));
+    result.push(update_one_inline_input_def(&model.name)?);
+    result.push(update_many_inline_input_def(&model.name)?);
+    result.push(update_with_nested_where_unique_input_def(&model.name)?);
+    result.push(upsert_with_nested_where_unique_input_def(&model.name)?);
+    result.push(connect_input_def(&model.name)?);
+    Ok(result)
 }
 
 /// Code-gen for the input type use to update a object.
@@ -30,17 +32,16 @@ pub(in crate::graphql_gen) fn update_input_types_def<'src>(
 fn update_input_def<'src>(
     model: &sdml_ast::ModelDecl<'src>,
 ) -> GraphQLGenResult<TypeDefinition> {
-    let model_fields = helpers::get_model_fields(
-        model,
-        // Note: Filter out relation_scalar fields & auto generated ids.
-        // Because they are not updatable directly.
-        // But UpdateInput can be used to update unique fields.
-        // [see] update_many_input_def() where unique fields are filtered out
-        true, true, false,
-    );
+    let model_fields = model.get_fields();
+    // Note: Filter out relation_scalar fields & ids.
+    // Because they are not updatable directly.
+    // But UpdateInput can be used to update unique fields.
+    // [see] update_many_input_def() where unique fields are filtered out
+    let mut non_relation_fields = Vec::new();
+    non_relation_fields.extend(model_fields.unique_fields);
+    non_relation_fields.extend(model_fields.non_unique_fields);
 
-    let mut input_field_defs = model_fields
-        .non_relation_fields
+    let mut input_field_defs = non_relation_fields
         .into_iter()
         .map(non_relation_field_input_def)
         .collect::<GraphQLGenResult<Vec<InputValueDefinition>>>()?;
@@ -101,41 +102,54 @@ fn upsert_input_def<'src>(
     })
 }
 
+/// Returns `true` if updateMany API and type is relevant for the model.
+/// Ex. If Model has only @unique & @id fields, then updateMany API won't be
+/// relevant for it.
+pub(in crate::graphql_gen) fn has_update_many_input<'src>(
+    model: &ModelDecl<'src>,
+) -> bool {
+    let fields = model.get_fields();
+    fields.non_unique_fields.len() > 0
+}
+
 /// Code-gen the input type used to update many objects in one go..
-/// Ex. UserUpdateManyInput is used to capture data to update many objects in one go.
-/// **Note:** We need to filter out, id, unique fields and relation fields, because
+/// Ex. UserUpdateManyInput is used to capture data to update many User objects in one go.
+/// **Note:**
+/// * We need to filter out, id, unique fields and relation fields, because
 /// they are not updatable with update_many interface.
+/// * If there are no fields, this function will return None.
+///
 fn update_many_input_def<'src>(
     model: &sdml_ast::ModelDecl<'src>,
-) -> GraphQLGenResult<TypeDefinition> {
-    let model_fields = helpers::get_model_fields(
-        model,
-        // Note: Filter out relation_scalar fields & auto generated ids.
-        // and [important] also filter out unique fields.
-        // Because they are not updatable directly in UpdateManyInput.
-        true, true, true,
-    );
+) -> GraphQLGenResult<Option<TypeDefinition>> {
+    let model_fields = model.get_fields();
 
-    let non_relation_input_field_defs = model_fields
-        .non_relation_fields
+    // Note: Filter out relation_scalar fields & ids.
+    // and [important] also filter out unique fields.
+    // Because they are not updatable directly in UpdateManyInput.
+    let non_unique_field_defs = model_fields
+        .non_unique_fields
         .into_iter()
         .map(non_relation_field_input_def)
         .collect::<GraphQLGenResult<Vec<InputValueDefinition>>>()?;
-    // Note: relation_input_fields can't be present in UpdateManyInput.
 
-    let model_name = model
-        .name
-        .try_get_ident_name()
-        .map_err(ErrorGraphQLGen::new_sdml_error)?;
-    Ok(TypeDefinition {
-        extend: false,
-        description: None,
-        name: open_crud_name::types::UpdateInput::UpdateMany.name(model_name),
-        directives: vec![],
-        kind: TypeKind::InputObject(InputObjectType {
-            fields: non_relation_input_field_defs,
-        }),
-    })
+    if non_unique_field_defs.len() == 0 {
+        Ok(None)
+    } else {
+        let model_name = model
+            .name
+            .try_get_ident_name()
+            .map_err(ErrorGraphQLGen::new_sdml_error)?;
+        Ok(Some(TypeDefinition {
+            extend: false,
+            description: None,
+            name: open_crud_name::types::UpdateInput::UpdateMany.name(model_name),
+            directives: vec![],
+            kind: TypeKind::InputObject(InputObjectType {
+                fields: non_unique_field_defs,
+            }),
+        }))
+    }
 }
 
 fn update_one_inline_input_def<'src>(
@@ -578,6 +592,10 @@ mod tests {
 
     #[test]
     fn test_update_input_types_def() {
+        assert!(
+            false,
+            "Disallow empty models in SDML ? Disallow models with only Id  in SDML ?"
+        );
         let mut expected_graphql_str = fs::read_to_string(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/input_type/test_update_input_types_def.graphql"

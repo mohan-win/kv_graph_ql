@@ -304,7 +304,7 @@ input CategoryUpsertInput {
 }
 
 input CategoryUpdateManyInput {
-  
+  empty: String
 }
 
 input CategoryUpdateOneInlineInput {
