@@ -64,6 +64,7 @@ input PostCreateManyInlineInput {
 }
 
 input CategoryCreateInput {
+  categoryId: String!
   name: String!
   posts: PostCreateManyInlineInput!
 }

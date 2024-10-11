@@ -592,10 +592,6 @@ mod tests {
 
     #[test]
     fn test_update_input_types_def() {
-        assert!(
-            false,
-            "Disallow empty models in SDML ? Disallow models with only Id  in SDML ?"
-        );
         let mut expected_graphql_str = fs::read_to_string(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_data/input_type/test_update_input_types_def.graphql"

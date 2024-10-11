@@ -305,7 +305,6 @@ mod tests {
             .fold("".to_string(), |acc, input_ty| {
                 format!("{}{}", acc, input_ty.to_string())
             });
-
         create_input_types_def_graphql_str.retain(|c| !c.is_whitespace());
         assert_eq!(expected_graphql_str, create_input_types_def_graphql_str)
     }
