@@ -264,6 +264,13 @@ pub struct ModelFields<'src, 'b> {
 impl<'src, 'b> ModelDecl<'src> {
     /// Get Model fields.
     pub fn get_fields(&'b self) -> ModelFields<'src, 'b> {
+        self.get_fields_internal(false) // IMPORTNAT: Don't allow unknown_field_type when fields are accessed from outside the crate.
+    }
+
+    pub(crate) fn get_fields_internal(
+        &'b self,
+        allow_unknown_field_type: bool,
+    ) -> ModelFields<'src, 'b> {
         let mut result = ModelFields {
             relation_fields: Vec::new(),
             relation_scalar_fields: Vec::new(),
@@ -277,7 +284,9 @@ impl<'src, 'b> ModelDecl<'src> {
             .iter()
             .for_each(|field| match &*field.field_type.r#type() {
                 Type::Unknown(..) => {
-                    panic!("Can't transpile field with unknown type to graphql")
+                    if !allow_unknown_field_type {
+                        panic!("Can't allow unknown field type.")
+                    }
                 }
                 Type::Relation(edge) => {
                     result.relation_fields.push(field);

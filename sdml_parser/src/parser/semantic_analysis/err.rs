@@ -13,6 +13,8 @@ pub enum SemanticError<'src> {
         field_name: &'src str,
         model_name: &'src str,
     },
+    /// This error is thrown when a Model doesn't stores any data.
+    ModelEmpty { span: Span, model_name: &'src str },
     /// This error is returned when name of a user defined type clashes with already existing type.
     TypeDuplicateDefinition { span: Span, type_name: &'src str },
     /// This error is returned if type of a field is undefined.

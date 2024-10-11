@@ -38,3 +38,15 @@ enum Role {
     USER
     ADMIN
 }
+
+model EmptyModel {
+
+}
+
+model EmptyModelOnlyAutoGenId {
+    someId ShortStr @id @default(auto())
+}
+
+model OkModel {
+    someId ShortStr @id
+}

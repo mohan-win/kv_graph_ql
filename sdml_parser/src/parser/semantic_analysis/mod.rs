@@ -172,27 +172,27 @@ fn get_actual_type<'src>(
 fn validate_model_id_field<'src>(
     model: &ModelDecl<'src>,
 ) -> Result<(), SemanticError<'src>> {
-    let mut id_fields = model.fields.iter().filter(|field| {
-        field
-            .attributes
-            .iter()
-            .find(|attrib| {
-                if let Token::Ident(ATTRIB_NAME_ID, _) = attrib.name {
-                    true
-                } else {
-                    false
-                }
-            })
-            .is_some()
-    });
+    let model_fields = model.get_fields_internal(true); // Note: allow_unknown_field_type is set to `true`. Because this function is called during the semantic_update phase.
+    let has_only_auto_gen_id = model_fields
+        .id_fields
+        .iter()
+        .fold(true, |acc, (_id_fld, is_auto_gen)| acc && *is_auto_gen);
+    let is_empty_model = model_fields.non_unique_fields.is_empty()
+        && model_fields.unique_fields.is_empty()
+        && has_only_auto_gen_id;
 
-    let id_field = id_fields.next();
-    if id_field.is_none() {
+    if is_empty_model {
+        Err(SemanticError::ModelEmpty {
+            span: model.name.span(),
+            model_name: model.name.ident_name().unwrap(),
+        })
+    } else if model_fields.id_fields.is_empty() {
         Err(SemanticError::ModelIdFieldMissing {
             span: model.name.span(),
             model_name: model.name.ident_name().unwrap(),
         })
-    } else if let Some(second_id_field) = id_fields.next() {
+    } else if model_fields.id_fields.len() > 1 {
+        let (second_id_field, _) = model_fields.id_fields[1];
         // Is there more than one Id field in a Model ?
         Err(SemanticError::ModelIdFieldDuplicate {
             span: second_id_field.name.span(),
@@ -260,27 +260,33 @@ mod tests {
                 field_name: "name",
                 model_name: "Category",
             },
-            SemanticError::AttributeInvalid {
-                span: Span::new(337, 340),
-                reason: String::from(
-                    "Only Non-Optional Scalar Short String field is allowed",
-                ),
-                attrib_name: "id",
-                field_name: "profileId",
-                model_name: "Profile",
-            },
             SemanticError::ModelIdFieldMissing {
                 span: Span::new(45, 291),
                 model_name: "User",
             },
             SemanticError::AttributeInvalid {
                 span: Span::new(464, 467),
-                reason: String::from(
-                    "Only Non-Optional Scalar Short String field is allowed",
-                ),
+                reason: "Only Non-Optional Scalar Short String field is allowed"
+                    .to_string(),
                 attrib_name: "id",
                 field_name: "postId",
                 model_name: "Post",
+            },
+            SemanticError::ModelEmpty {
+                span: Span::new(849, 872),
+                model_name: "EmptyModel",
+            },
+            SemanticError::ModelEmpty {
+                span: Span::new(872, 948),
+                model_name: "EmptyModelOnlyAutoGenId",
+            },
+            SemanticError::AttributeInvalid {
+                span: Span::new(337, 340),
+                reason: "Only Non-Optional Scalar Short String field is allowed"
+                    .to_string(),
+                attrib_name: "id",
+                field_name: "profileId",
+                model_name: "Profile",
             },
         ];
 
@@ -292,7 +298,6 @@ mod tests {
         match semantic_update(&mut ast) {
             Ok(_) => assert!(false, "Expecting model errors to surface"),
             Err(errs) => {
-                eprintln!("{:#?}", errs);
                 assert_eq!(expected_semantic_errs.len(), errs.len());
                 errs.into_iter()
                     .for_each(|e| assert!(expected_semantic_errs.contains(&e)))
@@ -391,6 +396,10 @@ mod tests {
                 relation_name: "posts",
                 field_name: None,
                 model_name: None,
+            },
+            SemanticError::ModelEmpty {
+                span: Span::new(454, 575),
+                model_name: "User1",
             },
         ];
 
