@@ -7,9 +7,9 @@ type Mutation {
   Returns the updated 'User' object if successful.
   """
   updateUser(
-    where: UserWhereUniqueInput!
+    where: UserWhereUniqueInput! 
     data: UserUpdateInput!
-  ): User
+    ): User
   """
   Returns the deleted 'User' object if successful.
   """
@@ -19,14 +19,13 @@ type Mutation {
   """
   upsertUser(
     where: UserWhereUniqueInput!
-    data: UserUpsertInput!
-  ): User
+   data: UserUpsertInput!
+   ): User
   """
-  Returns the updated 'User' objects.
+  Returns the deleted 'User' objects.
   """
-  updateManyUsersConnection(
+  deleteManyUsersConnection(
     where: UserWhereInput!
-    data: UserUpdateManyInput!
     skip: Int
     after: ID
     before: ID
@@ -34,10 +33,11 @@ type Mutation {
     last: Int
   ): UserConnection!
   """
-  Returns the deleted 'User' objects.
+  Returns the updated 'User' objects.
   """
-  deleteManyUsersConnection(
+  updateManyUsersConnection(
     where: UserWhereInput!
+    data: UserUpdateManyInput!
     skip: Int
     after: ID
     before: ID
@@ -67,11 +67,10 @@ type Mutation {
     data: ProfileUpsertInput!
   ): Profile
   """
-  Returns the updated 'Profile' objects.
+  Returns the deleted 'Profile' objects.
   """
-  updateManyProfilesConnection(
+  deleteManyProfilesConnection(
     where: ProfileWhereInput!
-    data: ProfileUpdateManyInput!
     skip: Int
     after: ID
     before: ID
@@ -79,10 +78,11 @@ type Mutation {
     last: Int
   ): ProfileConnection!
   """
-  Returns the deleted 'Profile' objects.
+  Returns the updated 'Profile' objects.
   """
-  deleteManyProfilesConnection(
+  updateManyProfilesConnection(
     where: ProfileWhereInput!
+    data: ProfileUpdateManyInput!
     skip: Int
     after: ID
     before: ID
@@ -97,8 +97,9 @@ type Mutation {
   Returns the updated 'Post' object if successful.
   """
   updatePost(
-    where: PostWhereUniqueInput!
-    data: PostUpdateInput!): Post
+    where: PostWhereUniqueInput! 
+    data: PostUpdateInput!
+    ): Post
   """
   Returns the deleted 'Post' object if successful.
   """
@@ -107,15 +108,14 @@ type Mutation {
   Returns the upserted (either created new or updated) 'Post' object if successful.
   """
   upsertPost(
-   where: PostWhereUniqueInput!
-   data: PostUpsertInput!
-  ): Post
+    where: PostWhereUniqueInput! 
+    data: PostUpsertInput!
+    ): Post
   """
-  Returns the updated 'Post' objects.
+  Returns the deleted 'Post' objects.
   """
-  updateManyPostsConnection(
+  deleteManyPostsConnection(
     where: PostWhereInput!
-    data: PostUpdateManyInput!
     skip: Int
     after: ID
     before: ID
@@ -123,10 +123,11 @@ type Mutation {
     last: Int
   ): PostConnection!
   """
-  Returns the deleted 'Post' objects.
+  Returns the updated 'Post' objects.
   """
-  deleteManyPostsConnection(
+  updateManyPostsConnection(
     where: PostWhereInput!
+    data: PostUpdateManyInput!
     skip: Int
     after: ID
     before: ID
@@ -155,18 +156,6 @@ type Mutation {
     where: CategoryWhereUniqueInput!
     data: CategoryUpsertInput!
   ): Category
-  """
-  Returns the updated 'Category' objects.
-  """
-  updateManyCategoriesConnection(
-    where: CategoryWhereInput!
-    data: CategoryUpdateManyInput!
-    skip: Int
-    after: ID
-    before: ID
-    first: Int
-    last: Int
-  ): CategoryConnection!
   """
   Returns the deleted 'Category' objects.
   """

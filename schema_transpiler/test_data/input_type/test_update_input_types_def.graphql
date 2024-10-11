@@ -303,10 +303,6 @@ input CategoryUpsertInput {
   update: CategoryUpdateInput!
 }
 
-input CategoryUpdateManyInput {
-  empty: String
-}
-
 input CategoryUpdateOneInlineInput {
   """
   Create and connect a new 'Category' object.
