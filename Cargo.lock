@@ -101,6 +101,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "db_engine"
+version = "0.1.0"
+
+[[package]]
 name = "digest"
 version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -270,6 +274,10 @@ checksum = "5787f7cda34e3033a72192c018bc5883100330f362ef279a8cbccfce8bb4e874"
 dependencies = [
  "cc",
 ]
+
+[[package]]
+name = "query_engine"
+version = "0.1.0"
 
 [[package]]
 name = "quote"

@@ -1,8 +1,14 @@
 [workspace]
 resolver = "2"
 members = [
+  # Parses & Validates SDML file to build AST.
   "sdml_parser",
+  # Transpiles SDML AST into OpenCRUD GraphQL Schema type defs.
   "schema_transpiler",
+  # Valdiates and executes OpenCRUD query/mutation to build GraphQL response.
+  "query_engine",
+  # Exposes underlying DB to query_engine.
+  "db_engine",
   
   # graphql_value and graphql_parser are forked from (https://github.com/async-graphql/async-graphql)
   # and modified for kv_graph_ql.
@@ -12,6 +18,7 @@ members = [
 
 [workspace.dependencies]
 sdml_parser = {path = "sdml_parser", version = "0.1.0"}
+schema_transpiler = {path = "schema_transpiler", version = "0.1.0"}
 graphql_parser = { path = "graphql_parser", version = "7.0.6" }
 graphql_value = { path = "graphql_value", version = "7.0.6" }
 
