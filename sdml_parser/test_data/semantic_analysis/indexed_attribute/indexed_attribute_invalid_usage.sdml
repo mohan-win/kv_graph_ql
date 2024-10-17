@@ -1,0 +1,30 @@
+model User {
+    userId          ShortStr    @id @default(auto()) 
+    nickNames       ShortStr[]  @indexed
+    email           ShortStr    @unique @indexed
+    posts           Post[]      @relation(name:"user_posts") 
+    negativePosts   Post[]      @relation(name:"negative_posts")
+    mentees         User[]      @relation(name:"mentor_mentee")
+    mentor          User?       @relation(name:"mentor_mentee", field: mentorId, references: userId)
+    mentorId        ShortStr?   @indexed
+    profile         Profile?    @relation(name:"user_profile")
+    spouse          User?       @relation(name:"user_spouse", field: spouseUserId, references: userId)
+    spouseUserId    ShortStr?   @unique
+}
+
+model Post {
+    postId           ShortStr    @id @default(auto()) @indexed
+    content          LongStr
+    authorId         ShortStr?   @indexed
+    author           User?       @relation(name: "user_posts", field: authorId, references: userId) @indexed
+    negativeAuthorId ShortStr?
+    negativeAuthor   User?       @relation(name:"negative_posts", field: negativeAuthorId, references: userId)
+}
+
+model Profile {
+    profileId   ShortStr    @id @default(auto())
+    bday        DateTime    
+    married     Boolean     @indexed
+    user        User        @relation(name:"user_profile", field: userId, references: email)
+    userId      ShortStr    @unique
+}

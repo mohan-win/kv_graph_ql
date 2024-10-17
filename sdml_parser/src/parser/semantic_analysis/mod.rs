@@ -670,7 +670,6 @@ mod tests {
         match semantic_update(&mut ast) {
             Ok(_) => assert!(false, "Expecting relation errors to surface"),
             Err(errs) => {
-                eprintln!("{errs:#?}");
                 assert_eq!(expected_semantic_errs.len(), errs.len());
                 errs.into_iter()
                     .for_each(|e| assert!(expected_semantic_errs.contains(&e)));
@@ -682,7 +681,7 @@ mod tests {
     fn test_indexed_attribute_valid_usage() {
         let indexed_attribute_valid_usage_sdml = std::fs::read_to_string(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/test_data/semantic_analysis/indexed_attribute_valid_usage.sdml"
+            "/test_data/semantic_analysis/indexed_attribute/indexed_attribute_valid_usage.sdml"
         ))
         .unwrap();
 
@@ -699,6 +698,69 @@ mod tests {
                     "There shouldn't any scemantic errors instead {:?} thrown",
                     errs
                 )
+            }
+        }
+    }
+
+    #[test]
+    fn test_indexed_attribute_invalid_usage() {
+        let indexed_attribute_invalid_usage_sdml = std::fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/semantic_analysis/indexed_attribute/indexed_attribute_invalid_usage.sdml"
+        ))
+        .unwrap();
+        let expected_scemantic_errs: Vec<SemanticError> = vec![
+            SemanticError::AttributeIncompatible {
+                span: Span::new(148, 156),
+                attrib_name: "indexed",
+                first_attrib_name: "unique",
+                field_name: "email",
+                model_name: "User",
+            },
+            SemanticError::AttributeIncompatible {
+                span: Span::new(766, 774),
+                attrib_name: "indexed",
+                first_attrib_name: "id",
+                field_name: "postId",
+                model_name: "Post",
+            },
+            SemanticError::RelationInvalidAttribute {
+                span: Span::new(946, 954),
+                attrib_name: "indexed",
+                field_name: "author",
+                model_name: "Post",
+            },
+            SemanticError::AttributeIncompatible {
+                span: Span::new(946, 954),
+                attrib_name: "indexed",
+                first_attrib_name: "relation",
+                field_name: "author",
+                model_name: "Post",
+            },
+            SemanticError::RelationPartial {
+                span: Span::new(204, 216),
+                relation_name: "user_posts",
+                field_name: None,
+                model_name: None,
+            },
+        ];
+
+        let decls = crate::parser::delcarations()
+            .parse(&indexed_attribute_invalid_usage_sdml)
+            .into_result()
+            .unwrap();
+        let mut ast = to_data_model(decls, true).unwrap();
+        match semantic_update(&mut ast) {
+            Ok(_) => assert!(false, "Expecting semantic errors to get surfaced."),
+            Err(errs) => {
+                eprintln!("{:#?}", errs);
+                errs.iter().for_each(|err| {
+                    assert!(
+                        expected_scemantic_errs.contains(err),
+                        "{} is an inexpected semantic error",
+                        err
+                    )
+                });
             }
         }
     }
