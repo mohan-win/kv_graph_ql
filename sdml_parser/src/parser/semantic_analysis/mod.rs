@@ -677,4 +677,29 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn test_indexed_attribute_valid_usage() {
+        let indexed_attribute_valid_usage_sdml = std::fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_data/semantic_analysis/indexed_attribute_valid_usage.sdml"
+        ))
+        .unwrap();
+
+        let decls = crate::parser::delcarations()
+            .parse(&indexed_attribute_valid_usage_sdml)
+            .into_result()
+            .unwrap();
+        let mut ast = to_data_model(decls, true).unwrap();
+        match semantic_update(&mut ast) {
+            Ok(_) => assert!(true, "test passed!"),
+            Err(errs) => {
+                assert!(
+                    false,
+                    "There shouldn't any scemantic errors instead {:?} thrown",
+                    errs
+                )
+            }
+        }
+    }
 }

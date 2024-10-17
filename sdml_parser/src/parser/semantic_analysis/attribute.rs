@@ -468,6 +468,13 @@ fn is_valid_field_type<'src>(
                         Ok(())
                     }
                 }
+                AllowedFieldType::AnyField { can_be_optional } => {
+                    if !can_be_optional && is_optional_field {
+                        invalid_attribute_err
+                    } else {
+                        Ok(())
+                    }
+                }
                 _ => invalid_attribute_err,
             }
         }
