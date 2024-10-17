@@ -1,6 +1,4 @@
-use crate::ast::{
-    DataModel, Declaration, EnumDecl, FieldDecl, ModelDecl, Span, Token, Type,
-};
+use crate::ast::{DataModel, Declaration, EnumDecl, FieldDecl, ModelDecl, Span, Type};
 use std::{
     collections::{HashMap, HashSet},
     ops::{ControlFlow, Deref},
