@@ -9,6 +9,7 @@ pub mod err;
 pub(crate) use attribute::ATTRIB_ARG_FN_AUTO;
 pub(crate) use attribute::ATTRIB_NAME_DEFAULT;
 pub(crate) use attribute::ATTRIB_NAME_ID;
+pub(crate) use attribute::ATTRIB_NAME_INDEXED;
 pub(crate) use attribute::ATTRIB_NAME_UNIQUE;
 use err::SemanticError;
 use relation::RelationMap;

@@ -7,7 +7,7 @@ model User {
     email       ShortStr     @unique
     name        ShortStr?     
     nickNames  ShortStr[]    @indexed
-    role        Role         @default(USER)
+    role        Role         @default(USER) @indexed
     mentees     User[]       @relation(name: "UsersMentor")
     mentor      User?        @relation(name: "UsersMentor", field: mentorEmail, references: email)
     mentorEmail ShortStr?    

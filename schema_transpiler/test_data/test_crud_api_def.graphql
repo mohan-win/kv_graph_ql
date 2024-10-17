@@ -504,8 +504,8 @@ type User implements Node {
 id: ID! @map(name: "userId") @unique
 email: String! @unique
 name: String
-nickNames: [String!]!
-role: Role!
+nickNames: [String!]! @indexed
+role: Role! @indexed
 mentees(
 where: UserWhereInput
 orderBy: UserOrderByInput
@@ -1032,7 +1032,7 @@ authorId_DSC
 """Post"""
 type Post implements Node {
 id: ID! @map(name: "postId") @unique
-createdAt: DateTime!
+createdAt: DateTime! @indexed
 updatedAt: DateTime!
 title: String!
 published: Boolean!

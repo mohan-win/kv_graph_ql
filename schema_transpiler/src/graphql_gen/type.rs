@@ -102,6 +102,11 @@ fn non_relation_field_def<'src>(
             name: Name::new("unique"),
             arguments: vec![],
         });
+    } else if field.has_indexed_attrib() {
+        directives.push(ConstDirective {
+            name: Name::new("indexed"),
+            arguments: vec![],
+        });
     }
 
     Ok(FieldDefinition {

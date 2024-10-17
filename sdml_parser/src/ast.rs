@@ -384,6 +384,10 @@ impl<'src> FieldDecl<'src> {
         self.get_attribute(semantic_analysis::ATTRIB_NAME_UNIQUE)
             .is_some()
     }
+    pub fn has_indexed_attrib(&self) -> bool {
+        self.get_attribute(semantic_analysis::ATTRIB_NAME_INDEXED)
+            .is_some()
+    }
     pub fn has_default_attrib(&self) -> bool {
         self.default_attribute().is_some()
     }
