@@ -462,6 +462,7 @@ impl<'src> FieldType<'src> {
     /// Is this typed as a  scalar field (i.e) can it hold only one value ?
     /// **Note**: If this is an array type, this field is able to
     /// hold more than one value. Hence it is not scalar field.
+    /// Also relation fields are non-scalar fields.
     pub fn is_scalar(&self) -> bool {
         if self.is_array() {
             false

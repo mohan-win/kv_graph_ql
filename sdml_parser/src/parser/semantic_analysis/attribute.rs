@@ -14,6 +14,7 @@ pub const ATTRIB_NAME_DEFAULT: &str = "default";
 pub const ATTRIB_NAME_ID: &str = "id";
 pub const ATTRIB_NAME_RELATION: &str = "relation";
 pub const ATTRIB_NAME_UNIQUE: &str = "unique";
+pub const ATTRIB_NAME_INDEXED: &str = "indexed";
 // Valid attribute arg functions
 pub const ATTRIB_ARG_FN_NOW: &str = "now";
 pub const ATTRIB_ARG_FN_AUTO: &str = "auto";
@@ -613,7 +614,6 @@ enum AllowedFieldType {
     /// Attribute is allowed only on non-scalar field.
     NonScalarField { can_be_optional: bool },
     /// Attribute is allowed on both scalar and non-scalar field
-    #[allow(dead_code)]
     AnyField { can_be_optional: bool },
 }
 
@@ -682,6 +682,7 @@ impl AttributeDetails {
         attributes_map
             .insert(ATTRIB_NAME_RELATION, AttributeDetails::relation_attribute());
         attributes_map.insert(ATTRIB_NAME_UNIQUE, AttributeDetails::unique_attribute());
+        attributes_map.insert(ATTRIB_NAME_INDEXED, AttributeDetails::indexed_attribute());
         attributes_map
     }
     /// Does this attribute shouldn't have any args ?
@@ -748,6 +749,19 @@ impl AttributeDetails {
             allowed_arg_values: vec![],
             allowed_named_args: vec![],
             allowed_field_type: AllowedFieldType::ScalarField {
+                can_be_optional: true,
+            },
+        }
+    }
+    #[inline]
+    fn indexed_attribute() -> Self {
+        Self {
+            name: ATTRIB_NAME_INDEXED,
+            compatible_attribute_names: vec![],
+            allowed_arg_fns: vec![],
+            allowed_arg_values: vec![],
+            allowed_named_args: vec![],
+            allowed_field_type: AllowedFieldType::AnyField {
                 can_be_optional: true,
             },
         }
