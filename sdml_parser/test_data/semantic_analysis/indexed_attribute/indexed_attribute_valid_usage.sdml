@@ -24,7 +24,7 @@ model Post {
 model Profile {
     profileId   ShortStr    @id @default(auto())
     bday        DateTime    
-    married     Boolean     @indexed
+    married     Boolean     @default(false) @indexed
     user        User        @relation(name:"user_profile", field: userId, references: email)
     userId      ShortStr    @unique
 }

@@ -702,7 +702,7 @@ impl AttributeDetails {
     fn default_attribute() -> Self {
         Self {
             name: ATTRIB_NAME_DEFAULT,
-            compatible_attribute_names: vec![ATTRIB_NAME_ID],
+            compatible_attribute_names: vec![ATTRIB_NAME_ID, ATTRIB_NAME_INDEXED],
             allowed_arg_fns: vec![ATTRIB_ARG_FN_AUTO, ATTRIB_ARG_FN_NOW],
             allowed_arg_values: vec![
                 ATTRIB_ARG_VALUE_TRUE,
@@ -764,7 +764,7 @@ impl AttributeDetails {
     fn indexed_attribute() -> Self {
         Self {
             name: ATTRIB_NAME_INDEXED,
-            compatible_attribute_names: vec![],
+            compatible_attribute_names: vec![ATTRIB_NAME_DEFAULT],
             allowed_arg_fns: vec![],
             allowed_arg_values: vec![],
             allowed_named_args: vec![],

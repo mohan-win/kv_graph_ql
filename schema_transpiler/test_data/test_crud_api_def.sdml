@@ -6,7 +6,7 @@ model User {
     userId      ShortStr     @id @default(auto()) 
     email       ShortStr     @unique
     name        ShortStr?     
-    nickNames  ShortStr[]
+    nickNames  ShortStr[]    @indexed
     role        Role         @default(USER)
     mentees     User[]       @relation(name: "UsersMentor")
     mentor      User?        @relation(name: "UsersMentor", field: mentorEmail, references: email)
@@ -26,7 +26,7 @@ model Profile {
 
 model Post {
     postId      ShortStr    @id @default(auto())
-    createdAt   DateTime    @default(now())
+    createdAt   DateTime    @default(now()) @indexed
     updatedAt   DateTime
     title       ShortStr
     published   Boolean     @default(false)
