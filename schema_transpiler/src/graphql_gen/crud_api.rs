@@ -12,6 +12,7 @@ pub(in crate::graphql_gen) fn crud_api_def<'src>(
     // Custom Directives.
     api_type_defs.push(TypeSystemDefinition::Directive(directive_map_def()));
     api_type_defs.push(TypeSystemDefinition::Directive(directive_unique_def()));
+    api_type_defs.push(TypeSystemDefinition::Directive(directive_indexed_def()));
 
     // Root query type.
     api_type_defs.push(TypeSystemDefinition::Type(

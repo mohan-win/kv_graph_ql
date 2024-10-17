@@ -12,6 +12,10 @@ name: String!
 directive @unique on
 | FIELD_DEFINITION
 
+"""When applied to an object field, the field will be indexed in the underlying data store for faster search & retrival."""
+directive @indexed on
+| FIELD_DEFINITION
+
 type Query {
 node(
 id: ID!
