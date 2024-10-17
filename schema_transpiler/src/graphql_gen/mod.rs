@@ -4,11 +4,11 @@
 //! SDML models.
 //!
 mod aux_type;
+mod crud_api;
 mod enum_type;
 mod error;
 mod input_type;
 pub(crate) mod open_crud_name;
-mod crud_api;
 mod root_mutation_type;
 mod root_query_type;
 mod r#type;
@@ -55,6 +55,17 @@ fn directive_unique_def() -> DirectiveDefinition {
     DirectiveDefinition {
         description: Some("When applied to an object field, the value of the field should be unique across all object instances of the same type".to_string()),
         name: Name::new("unique"),
+        arguments: vec![],
+        is_repeatable: false,
+        locations: vec![DirectiveLocation::FieldDefinition],
+    }
+}
+
+/// @indexed directive definition.
+fn directive_indexed_def() -> DirectiveDefinition {
+    DirectiveDefinition {
+        description: Some("When applied to an object field, the field will be indexed in the underlying data store for faster search & retrival.".to_string()),
+        name: Name::new("indexed"),
         arguments: vec![],
         is_repeatable: false,
         locations: vec![DirectiveLocation::FieldDefinition],
@@ -123,6 +134,17 @@ directive @unique on
 "#;
         let unique_directive = directive_unique_def();
         assert_eq!(expected_graph_ql, unique_directive.to_string());
+    }
+
+    #[test]
+    fn test_directive_indexed_def() {
+        let expected_graph_ql = r#"
+"""When applied to an object field, the field will be indexed in the underlying data store for faster search & retrival."""
+directive @indexed on
+| FIELD_DEFINITION
+"#;
+        let indexed_directive = directive_indexed_def();
+        assert_eq!(expected_graph_ql, indexed_directive.to_string());
     }
 
     #[test]
