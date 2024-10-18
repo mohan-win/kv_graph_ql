@@ -38,15 +38,16 @@ fn update_input_def<'src>(
     // But UpdateInput can be used to update unique fields.
     // [see] update_many_input_def() where unique fields are filtered out
     let mut non_relation_fields = Vec::new();
-    non_relation_fields.extend(model_fields.unique_fields);
-    non_relation_fields.extend(model_fields.non_unique_fields);
+    non_relation_fields.extend(&model_fields.unique);
+    non_relation_fields
+        .extend(model_fields.get_rest(sdml_ast::ModelIndexedFieldsFilter::All));
 
     let mut input_field_defs = non_relation_fields
         .into_iter()
         .map(non_relation_field_input_def)
         .collect::<GraphQLGenResult<Vec<InputValueDefinition>>>()?;
     let relation_input_field_defs = model_fields
-        .relation_fields
+        .relation
         .into_iter()
         .map(relation_field_input_def)
         .collect::<GraphQLGenResult<Vec<InputValueDefinition>>>()?;
@@ -109,7 +110,10 @@ pub(in crate::graphql_gen) fn has_update_many_input<'src>(
     model: &ModelDecl<'src>,
 ) -> bool {
     let fields = model.get_fields();
-    fields.non_unique_fields.len() > 0
+    fields
+        .get_rest(sdml_ast::ModelIndexedFieldsFilter::All)
+        .len()
+        > 0
 }
 
 /// Code-gen the input type used to update many objects in one go..
@@ -128,7 +132,7 @@ fn update_many_input_def<'src>(
     // and [important] also filter out unique fields.
     // Because they are not updatable directly in UpdateManyInput.
     let non_unique_field_defs = model_fields
-        .non_unique_fields
+        .get_rest(sdml_ast::ModelIndexedFieldsFilter::All)
         .into_iter()
         .map(non_relation_field_input_def)
         .collect::<GraphQLGenResult<Vec<InputValueDefinition>>>()?;

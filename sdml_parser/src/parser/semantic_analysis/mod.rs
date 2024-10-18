@@ -1,4 +1,7 @@
-use crate::ast::{DataModel, Declaration, EnumDecl, FieldDecl, ModelDecl, Span, Type};
+use crate::ast::{
+    DataModel, Declaration, EnumDecl, FieldDecl, ModelDecl, ModelIndexedFieldsFilter,
+    Span, Type,
+};
 use std::{
     collections::{HashMap, HashSet},
     ops::{ControlFlow, Deref},
@@ -173,11 +176,13 @@ fn validate_model_id_field<'src>(
 ) -> Result<(), SemanticError<'src>> {
     let model_fields = model.get_fields_internal(true); // Note: allow_unknown_field_type is set to `true`. Because this function is called during the semantic_update phase.
     let has_only_auto_gen_id = model_fields
-        .id_fields
+        .id
         .iter()
         .fold(true, |acc, (_id_fld, is_auto_gen)| acc && *is_auto_gen);
-    let is_empty_model = model_fields.non_unique_fields.is_empty()
-        && model_fields.unique_fields.is_empty()
+    let is_empty_model = model_fields
+        .get_rest(ModelIndexedFieldsFilter::All)
+        .is_empty()
+        && model_fields.unique.is_empty()
         && has_only_auto_gen_id;
 
     if is_empty_model {
@@ -185,13 +190,13 @@ fn validate_model_id_field<'src>(
             span: model.name.span(),
             model_name: model.name.ident_name().unwrap(),
         })
-    } else if model_fields.id_fields.is_empty() {
+    } else if model_fields.id.is_empty() {
         Err(SemanticError::ModelIdFieldMissing {
             span: model.name.span(),
             model_name: model.name.ident_name().unwrap(),
         })
-    } else if model_fields.id_fields.len() > 1 {
-        let (second_id_field, _) = model_fields.id_fields[1];
+    } else if model_fields.id.len() > 1 {
+        let (second_id_field, _) = model_fields.id[1];
         // Is there more than one Id field in a Model ?
         Err(SemanticError::ModelIdFieldDuplicate {
             span: second_id_field.name.span(),

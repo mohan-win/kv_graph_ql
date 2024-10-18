@@ -234,7 +234,7 @@ impl<'src> TryFrom<Token<'src>> for ConfigValue<'src> {
             Token::Float(f, s) => Ok(ConfigValue::Float(f, s)),
             Token::Int(i, s) => Ok(ConfigValue::Int(i, s)),
             Token::Str(str, s) => Ok(ConfigValue::Str(str, s)),
-            t => Err(format!("Token {:?} can't turned into string", t)),
+            t => Err(format!("Token {:?} can't be turned into ConfigValue", t)),
         }
     }
 }
@@ -254,11 +254,93 @@ pub struct ModelDecl<'src> {
 
 #[derive(Debug, Clone)]
 pub struct ModelFields<'src, 'b> {
-    pub relation_fields: Vec<&'b FieldDecl<'src>>,
-    pub relation_scalar_fields: Vec<&'b FieldDecl<'src>>,
-    pub id_fields: Vec<(&'b FieldDecl<'src>, bool)>, // Vec<(field, is_auto_generated)>
-    pub unique_fields: Vec<&'b FieldDecl<'src>>,
-    pub non_unique_fields: Vec<&'b FieldDecl<'src>>,
+    #[allow(dead_code)]
+    model: &'b ModelDecl<'src>,
+    pub relation: Vec<&'b FieldDecl<'src>>,
+    /// relation_scalar: Vec<(field, is_unique_or_indexed)>
+    relation_scalar: Vec<(&'b FieldDecl<'src>, bool)>,
+    /// id: Vec<(field, is_auto_generated)>
+    pub id: Vec<(&'b FieldDecl<'src>, bool)>,
+    pub unique: Vec<&'b FieldDecl<'src>>,
+    /// rest: Vec<(field, is_indexed)>
+    rest: Vec<(&'b FieldDecl<'src>, bool)>,
+}
+pub enum ModelIndexedFieldsFilter {
+    All,
+    OnlyIndexedFields,
+    OnlyNonIndexedFields,
+}
+
+impl<'src, 'b> ModelFields<'src, 'b> {
+    /// Retrieves all of the indexed fields of the model
+    /// Following fields are indexed in the data store.
+    /// * Field with @id attribute
+    /// * Field with @unique attribute
+    /// * Field with explicit @indexed attribute.
+    pub fn all_indexed(&'b self) -> Vec<&'b FieldDecl<'src>> {
+        let mut indexed_fields = Vec::new();
+        indexed_fields.extend(self.id.iter().map(|(field, _is_auto_gen)| field));
+        indexed_fields.extend(self.unique.iter());
+        indexed_fields.extend(self.relation_scalar.iter().filter_map(
+            |(field, is_unique_or_indexed)| {
+                if *is_unique_or_indexed {
+                    Some(field)
+                } else {
+                    None
+                }
+            },
+        ));
+        indexed_fields.extend(self.rest.iter().filter_map(|(field, is_indexed)| {
+            if *is_indexed {
+                Some(field)
+            } else {
+                None
+            }
+        }));
+
+        indexed_fields
+    }
+
+    /// Get Relation scalar fields.
+    pub fn get_relation_scalars(
+        &'b self,
+        filter: ModelIndexedFieldsFilter,
+    ) -> Vec<&'b FieldDecl<'src>> {
+        self.relation_scalar
+            .iter()
+            .filter_map(|(field, is_unique_or_indexed)| match filter {
+                ModelIndexedFieldsFilter::All => Some(*field),
+                ModelIndexedFieldsFilter::OnlyIndexedFields if *is_unique_or_indexed => {
+                    Some(*field)
+                }
+                ModelIndexedFieldsFilter::OnlyNonIndexedFields
+                    if !*is_unique_or_indexed =>
+                {
+                    Some(*field)
+                }
+                _ => None,
+            })
+            .collect()
+    }
+
+    pub fn get_rest(
+        &'b self,
+        filter: ModelIndexedFieldsFilter,
+    ) -> Vec<&'b FieldDecl<'src>> {
+        self.rest
+            .iter()
+            .filter_map(|(field, is_indexed)| match filter {
+                ModelIndexedFieldsFilter::All => Some(*field),
+                ModelIndexedFieldsFilter::OnlyIndexedFields if *is_indexed => {
+                    Some(*field)
+                }
+                ModelIndexedFieldsFilter::OnlyNonIndexedFields if !*is_indexed => {
+                    Some(*field)
+                }
+                _ => None,
+            })
+            .collect()
+    }
 }
 
 impl<'src, 'b> ModelDecl<'src> {
@@ -272,11 +354,12 @@ impl<'src, 'b> ModelDecl<'src> {
         allow_unknown_field_type: bool,
     ) -> ModelFields<'src, 'b> {
         let mut result = ModelFields {
-            relation_fields: Vec::new(),
-            relation_scalar_fields: Vec::new(),
-            id_fields: Vec::new(),
-            unique_fields: Vec::new(),
-            non_unique_fields: Vec::new(),
+            model: self,
+            relation: Vec::new(),
+            relation_scalar: Vec::new(),
+            id: Vec::new(),
+            unique: Vec::new(),
+            rest: Vec::new(),
         };
 
         let mut relation_scalar_field_names = Vec::new();
@@ -289,46 +372,48 @@ impl<'src, 'b> ModelDecl<'src> {
                     }
                 }
                 Type::Relation(edge) => {
-                    result.relation_fields.push(field);
+                    result.relation.push(field);
                     edge.scalar_field_name().map(|fld_name| {
                         relation_scalar_field_names.push(fld_name.ident_name().unwrap())
                     });
                 }
                 Type::Primitive { .. } | Type::Enum { .. } => {
                     if field.is_auto_gen_id() {
-                        result.id_fields.push((field, true));
+                        result.id.push((field, true));
                     } else if field.has_id_attrib() {
-                        result.id_fields.push((field, false));
+                        result.id.push((field, false));
                     } else if field.has_unique_attrib() {
-                        result.unique_fields.push(field);
+                        result.unique.push(field);
                     } else {
-                        result.non_unique_fields.push(field);
+                        result.rest.push((field, field.has_indexed_attrib()));
                     }
                 }
             });
 
         let mut relation_scalar_fields = Vec::new();
         // Filter-out relation scalar fields from unique & non-unique fields.
-        result.unique_fields = result
-            .unique_fields
+        result.unique = result
+            .unique
             .into_iter()
             .filter(|field| {
                 if relation_scalar_field_names.contains(&field.name.ident_name().unwrap())
                 {
-                    relation_scalar_fields.push(*field);
+                    // Note: relation scalar fields with @unique attribute are indexed.
+                    // Hence setting is_unique_or_indexed to true.
+                    relation_scalar_fields.push((*field, true));
                     false
                 } else {
                     true
                 }
             })
             .collect();
-        result.non_unique_fields = result
-            .non_unique_fields
+        result.rest = result
+            .rest
             .into_iter()
-            .filter(|field| {
+            .filter(|(field, is_indexed)| {
                 if relation_scalar_field_names.contains(&field.name.ident_name().unwrap())
                 {
-                    relation_scalar_fields.push(*field);
+                    relation_scalar_fields.push((*field, *is_indexed));
                     false
                 } else {
                     true

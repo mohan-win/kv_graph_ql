@@ -27,23 +27,21 @@ fn create_input_def<'src>(
     // 3. CreateInput type can include input-arg for unique fields.
     let model_fields = model.get_fields();
     let mut non_relation_fields = Vec::new();
-    model_fields
-        .id_fields
-        .iter()
-        .for_each(|(id_field, is_auto_gen)| {
-            if !is_auto_gen {
-                non_relation_fields.push(*id_field);
-            }
-        });
-    non_relation_fields.extend(model_fields.unique_fields);
-    non_relation_fields.extend(model_fields.non_unique_fields);
+    model_fields.id.iter().for_each(|(id_field, is_auto_gen)| {
+        if !is_auto_gen {
+            non_relation_fields.push(*id_field);
+        }
+    });
+    non_relation_fields.extend(&model_fields.unique);
+    non_relation_fields
+        .extend(model_fields.get_rest(sdml_ast::ModelIndexedFieldsFilter::All));
 
     let mut input_field_defs = non_relation_fields
         .into_iter()
         .map(non_relation_field_input_def)
         .collect::<GraphQLGenResult<Vec<InputValueDefinition>>>()?;
     let relation_input_field_defs = model_fields
-        .relation_fields
+        .relation
         .into_iter()
         .map(relation_field_input_def)
         .collect::<GraphQLGenResult<Vec<InputValueDefinition>>>()?;
