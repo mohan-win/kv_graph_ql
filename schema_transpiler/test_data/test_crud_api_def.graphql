@@ -566,11 +566,11 @@ name: String
 nickNames: [String!]!
 """Default value 'USER' will be assigned if no value is passed to this input arg."""
 role: Role
-mentees: UserCreateManyInlineInput!
+mentees: UserCreateManyInlineInput
 mentor: UserCreateOneInlineInput
 spouse: UserCreateOneInlineInput
 profile: ProfileCreateOneInlineInput
-posts: PostCreateManyInlineInput!
+posts: PostCreateManyInlineInput
 }
 
 input UserCreateOneInlineInput {
@@ -1078,7 +1078,7 @@ title: String!
 """Default value 'false' will be assigned if no value is passed to this input arg."""
 published: Boolean
 author: UserCreateOneInlineInput!
-category: CategoryCreateManyInlineInput!
+category: CategoryCreateManyInlineInput
 }
 
 input PostCreateOneInlineInput {
@@ -1303,7 +1303,7 @@ aggregate: Aggregate!
 
 input CategoryCreateInput {
 name: String!
-posts: PostCreateManyInlineInput!
+posts: PostCreateManyInlineInput
 }
 
 input CategoryCreateOneInlineInput {

@@ -243,9 +243,9 @@ pub enum TypeMod {
     NonOptional,
     /// Optional type modifier. Type
     Optional,
-    /// Array type modifier. [ElementType!]!
+    /// Array type modifier. \[ElementType!\]!
     Array,
-    /// Optional Array with, Non-optional elements. [ElementType!]
+    /// Optional Array with, Non-optional elements. \[ElementType!\]
     ArrayOptional,
 }
 

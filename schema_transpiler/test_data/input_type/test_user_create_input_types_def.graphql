@@ -6,11 +6,11 @@ input UserCreateInput {
   Default value 'USER' will be assigned if no value is passed to this input arg.
   """
   role: Role
-  mentees: UserCreateManyInlineInput!
+  mentees: UserCreateManyInlineInput
   mentor: UserCreateOneInlineInput
   spouse: UserCreateOneInlineInput
   profile: ProfileCreateOneInlineInput
-  posts: PostCreateManyInlineInput!
+  posts: PostCreateManyInlineInput
 }
 
 input UserCreateOneInlineInput {

@@ -123,8 +123,11 @@ fn relation_field_input_def<'src>(
             .try_get_ident_name()
             .map_err(ErrorGraphQLGen::new_sdml_error)?;
         let field_ty = if field.field_type.is_array() {
+            // Note: for relation array fields, the `create many inline input` type should be `Optional`!!
+            // Otherwise the <Model>CreateManyInlineInput would be mandatory,
+            // which would force the user to give this value when creating the parent type!
             open_crud_name::types::CreateInput::CreateManyInline
-                .ty(referenced_model_name, TypeMod::NonOptional)
+                .ty(referenced_model_name, TypeMod::Optional)
         } else if field.field_type.is_optional() {
             open_crud_name::types::CreateInput::CreateOneInline
                 .ty(referenced_model_name, TypeMod::Optional)
@@ -267,7 +270,6 @@ mod tests {
             .fold("".to_string(), |acc, input_ty| {
                 format!("{}{}", acc, input_ty.to_string())
             });
-
         create_user_input_type_graphql_str.retain(|c| !c.is_whitespace());
         assert_eq!(expected_graphql_str, create_user_input_type_graphql_str)
     }

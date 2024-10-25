@@ -775,11 +775,11 @@ input UserCreateInput {
   Default value 'USER' will be assigned if no value is passed to this input arg.
   """
   role: Role
-  mentees: UserCreateManyInlineInput!
+  mentees: UserCreateManyInlineInput
   mentor: UserCreateOneInlineInput
   spouse: UserCreateOneInlineInput
   profile: ProfileCreateOneInlineInput
-  posts: PostCreateManyInlineInput!
+  posts: PostCreateManyInlineInput
 }
 
 input UserCreateOneInlineInput {
@@ -1571,7 +1571,7 @@ input PostCreateInput {
   """
   published: Boolean
   author: UserCreateOneInlineInput!
-  category: CategoryCreateManyInlineInput!
+  category: CategoryCreateManyInlineInput
 }
 
 input PostCreateOneInlineInput {
@@ -1908,7 +1908,7 @@ type CategoryConnection {
 
 input CategoryCreateInput {
   name: String!
-  posts: PostCreateManyInlineInput!
+  posts: PostCreateManyInlineInput
 }
 
 input CategoryCreateOneInlineInput {
