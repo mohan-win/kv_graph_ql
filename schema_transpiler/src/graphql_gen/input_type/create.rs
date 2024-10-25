@@ -122,18 +122,15 @@ fn relation_field_input_def<'src>(
             .referenced_model_name()
             .try_get_ident_name()
             .map_err(ErrorGraphQLGen::new_sdml_error)?;
+        // Note: The relation field type modifier should always be Optional.
+        // Why ? Otherwise the actual GraphQL mutation data for creation can
+        // become un-necessariy complicated.
         let field_ty = if field.field_type.is_array() {
-            // Note: for relation array fields, the `create many inline input` type should be `Optional`!!
-            // Otherwise the <Model>CreateManyInlineInput would be mandatory,
-            // which would force the user to give this value when creating the parent type!
             open_crud_name::types::CreateInput::CreateManyInline
-                .ty(referenced_model_name, TypeMod::Optional)
-        } else if field.field_type.is_optional() {
-            open_crud_name::types::CreateInput::CreateOneInline
                 .ty(referenced_model_name, TypeMod::Optional)
         } else {
             open_crud_name::types::CreateInput::CreateOneInline
-                .ty(referenced_model_name, TypeMod::NonOptional)
+                .ty(referenced_model_name, TypeMod::Optional)
         };
         Ok(InputValueDefinition {
             description: None,

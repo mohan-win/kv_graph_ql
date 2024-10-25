@@ -1095,7 +1095,7 @@ type ProfileConnection {
 
 input ProfileCreateInput {
   bio: String
-  user: UserCreateOneInlineInput!
+  user: UserCreateOneInlineInput
 }
 
 input ProfileCreateOneInlineInput {
@@ -1570,7 +1570,7 @@ input PostCreateInput {
   Default value 'false' will be assigned if no value is passed to this input arg.
   """
   published: Boolean
-  author: UserCreateOneInlineInput!
+  author: UserCreateOneInlineInput
   category: CategoryCreateManyInlineInput
 }
 
