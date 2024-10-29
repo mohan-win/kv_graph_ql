@@ -1,0 +1,18 @@
+{
+    "userWithSpouse": {
+        "email": "puni@beusefultech.com",
+        "name": "Punitha Mohanraj",
+        "nickNames": [
+            "Puni"
+        ],
+        "spouse": {
+            "create": {
+                "email": "mohan@beusefultech.com",
+                "name": "Mohanraj",
+                "nickNames": [
+                    "Mohan"
+                ]
+            }
+        }
+    }
+}

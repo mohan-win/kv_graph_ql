@@ -1,0 +1,20 @@
+{
+    "userWithExistingMentees": {
+        "email": "yoda@beusefultech.com",
+        "name": "Master Yoda",
+        "nickNames": [
+            "yoda",
+            "guru"
+        ],
+        "mentees": {
+            "connect": [
+                {
+                    "email": "mohan@beusefultech.com"
+                },
+                {
+                    "id": "punis_user_id"
+                }
+            ]
+        }
+    }
+}

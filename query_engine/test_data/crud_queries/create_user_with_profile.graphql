@@ -1,0 +1,26 @@
+mutation CreateUserWithProfile(
+  $profileWithUser: ProfileCreateInput!
+  $userWithProfile: UserCreateInput!
+) {
+  profileThenUser: createProfile(data: $profileWithUser) {
+    id
+    bio
+    user {
+      id
+      email
+      nickNames
+      profile {
+        id
+      }
+    }
+  }
+  userThenProfile: createUser(data: $userWithProfile) {
+    id
+    email
+    nickNames
+    profile {
+      id
+      bio
+    }
+  }
+}

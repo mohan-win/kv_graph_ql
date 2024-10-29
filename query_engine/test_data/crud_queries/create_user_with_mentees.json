@@ -1,0 +1,27 @@
+{
+    "userWithNewMentees": {
+        "email": "yoda@beusefultech.com",
+        "name": "Master Yoda",
+        "nickNames": [
+            "yoda",
+            "guru"
+        ],
+        "mentees": {
+            "create": [
+                {
+                    "email": "mohan@beusefultech.com",
+                    "name": "Mohanraj KR",
+                    "nickNames": [
+                        "Mohan"
+                    ]
+                },
+                {
+                    "email": "puni@beusefultech.com",
+                    "nickNames": [
+                        "Puni"
+                    ]
+                }
+            ]
+        }
+    }
+}

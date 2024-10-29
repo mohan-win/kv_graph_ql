@@ -1,0 +1,15 @@
+{
+    "userWithExistingProfile": {
+        "email": "mohan@beusefultech.com",
+        "name": "Mohanraj",
+        "nickNames": [
+            "Mohan"
+        ],
+        "role": "ADMIN",
+        "profile": {
+            "connect": {
+                "id": "existing_profile_id"
+            }
+        }
+    }
+}

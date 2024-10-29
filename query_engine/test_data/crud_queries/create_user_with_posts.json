@@ -1,0 +1,42 @@
+{
+    "postWithUser": {
+        "updatedAt": "2024-10-24",
+        "title": "This is so useful",
+        "author": {
+            "create": {
+                "email": "mohan@beusefultech.com",
+                "nickNames": [
+                    "Mohan"
+                ]
+            }
+        }
+    },
+    "postWithExistingUser": {
+        "updatedAt": "2024-10-24",
+        "title": "This is so useful1",
+        "author": {
+            "connect": {
+                "email": "puni@beusefultech.com"
+            }
+        }
+    },
+    "userWithNewPosts": {
+        "email": "vaibhav@beusefultech.com",
+        "name": "Vaibhav Mohanraj",
+        "nickNames": [
+            "Vaibhav"
+        ],
+        "posts": {
+            "create": [
+                {
+                    "updatedAt": "2024-10-20",
+                    "title": "New post from Vaibhav"
+                },
+                {
+                    "updatedAt": "2024-10-20",
+                    "title": "Another post from Vaibhav"
+                }
+            ]
+        }
+    }
+}

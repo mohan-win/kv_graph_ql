@@ -1,0 +1,12 @@
+mutation CreateUserWithSpouse($userWithSpouse: UserCreateInput!) {
+  createUser(data: $userWithSpouse) {
+    id
+    email
+    name
+    spouse {
+      id
+      email
+      name
+    }
+  }
+}

@@ -1,0 +1,11 @@
+mutation CreateUserWithProfile($userWithExistingProfile: UserCreateInput!) {
+  createUser(data: $userWithExistingProfile) {
+    id
+    email
+    nickNames
+    profile {
+      id
+      bio
+    }
+  }
+}

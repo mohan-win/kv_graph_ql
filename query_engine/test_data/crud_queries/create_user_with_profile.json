@@ -1,0 +1,28 @@
+{
+    "profileWithUser": {
+        "bio": "This is Mohanraj. Building next-gen backend framework.",
+        "user": {
+            "create": {
+                "email": "mohan@beusefultech.com",
+                "name": "Mohanraj",
+                "nickNames": [
+                    "Mohan"
+                ],
+                "role": "ADMIN"
+            }
+        }
+    },
+    "userWithProfile": {
+        "email": "puni@beusefultech.com",
+        "name": "Punitha Mohanraj",
+        "nickNames": [
+            "Puni"
+        ],
+        "role": "ADMIN",
+        "profile": {
+            "create": {
+                "bio": "This is Puni..."
+            }
+        }
+    }
+}

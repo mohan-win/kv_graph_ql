@@ -1,0 +1,31 @@
+fragment postFields on Post {
+  id
+  title
+  author {
+    id
+    email
+    name
+  }
+}
+
+mutation CreatePostWithNewUser(
+  $postWithUser: PostCreateInput!
+  $postWithExistingUser: PostCreateInput!
+  $userWithNewPosts: UserCreateInput!
+) {
+  newUserPost: createPost(data: $postWithUser) {
+    ...postFields
+  }
+  existingUserPost: createPost(data: $postWithExistingUser) {
+    ...postFields
+  }
+  userWithNewPosts: createUser(data: $userWithNewPosts) {
+    id
+    email
+    name
+    posts {
+      id
+      title
+    }
+  }
+}

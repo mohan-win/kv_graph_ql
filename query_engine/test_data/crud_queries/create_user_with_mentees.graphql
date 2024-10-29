@@ -1,0 +1,12 @@
+mutation CreateUserWithMentees($userWithNewMentees: UserCreateInput!) {
+  createUser(data: $userWithNewMentees) {
+    id
+    email
+    name
+    mentees {
+      id
+      name
+      mentorEmail
+    }
+  }
+}
