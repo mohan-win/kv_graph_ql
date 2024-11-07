@@ -1,0 +1,610 @@
+ExecutableDocument {
+        operations: Multiple(
+            {
+                Name(
+                    "CreatePostWithNewUser",
+                ): Positioned {
+                    pos: Pos(11:1),
+                    node: OperationDefinition {
+                        ty: Mutation,
+                        variable_definitions: [
+                            Positioned {
+                                pos: Pos(12:3),
+                                node: VariableDefinition {
+                                    name: Positioned {
+                                        pos: Pos(12:4),
+                                        node: Name(
+                                            "postWithUser",
+                                        ),
+                                    },
+                                    var_type: Positioned {
+                                        pos: Pos(12:18),
+                                        node: Type {
+                                            base: Named(
+                                                Name(
+                                                    "PostCreateInput",
+                                                ),
+                                            ),
+                                            nullable: false,
+                                        },
+                                    },
+                                    directives: [],
+                                    default_value: None,
+                                },
+                            },
+                            Positioned {
+                                pos: Pos(13:3),
+                                node: VariableDefinition {
+                                    name: Positioned {
+                                        pos: Pos(13:4),
+                                        node: Name(
+                                            "postWithExistingUser",
+                                        ),
+                                    },
+                                    var_type: Positioned {
+                                        pos: Pos(13:26),
+                                        node: Type {
+                                            base: Named(
+                                                Name(
+                                                    "PostCreateInput",
+                                                ),
+                                            ),
+                                            nullable: false,
+                                        },
+                                    },
+                                    directives: [],
+                                    default_value: None,
+                                },
+                            },
+                            Positioned {
+                                pos: Pos(14:3),
+                                node: VariableDefinition {
+                                    name: Positioned {
+                                        pos: Pos(14:4),
+                                        node: Name(
+                                            "userWithNewPosts",
+                                        ),
+                                    },
+                                    var_type: Positioned {
+                                        pos: Pos(14:22),
+                                        node: Type {
+                                            base: Named(
+                                                Name(
+                                                    "UserCreateInput",
+                                                ),
+                                            ),
+                                            nullable: false,
+                                        },
+                                    },
+                                    directives: [],
+                                    default_value: None,
+                                },
+                            },
+                        ],
+                        directives: [],
+                        selection_set: Positioned {
+                            pos: Pos(15:3),
+                            node: SelectionSet {
+                                items: [
+                                    Positioned {
+                                        pos: Pos(16:3),
+                                        node: Field(
+                                            Positioned {
+                                                pos: Pos(16:3),
+                                                node: Field {
+                                                    alias: Some(
+                                                        Positioned {
+                                                            pos: Pos(16:3),
+                                                            node: Name(
+                                                                "newUserPost",
+                                                            ),
+                                                        },
+                                                    ),
+                                                    name: Positioned {
+                                                        pos: Pos(16:16),
+                                                        node: Name(
+                                                            "createPost",
+                                                        ),
+                                                    },
+                                                    arguments: [
+                                                        (
+                                                            Positioned {
+                                                                pos: Pos(16:27),
+                                                                node: Name(
+                                                                    "data",
+                                                                ),
+                                                            },
+                                                            Positioned {
+                                                                pos: Pos(16:33),
+                                                                node: Variable(
+                                                                    Name(
+                                                                        "postWithUser",
+                                                                    ),
+                                                                ),
+                                                            },
+                                                        ),
+                                                    ],
+                                                    directives: [],
+                                                    selection_set: Positioned {
+                                                        pos: Pos(16:48),
+                                                        node: SelectionSet {
+                                                            items: [
+                                                                Positioned {
+                                                                    pos: Pos(17:5),
+                                                                    node: FragmentSpread(
+                                                                        Positioned {
+                                                                            pos: Pos(17:5),
+                                                                            node: FragmentSpread {
+                                                                                fragment_name: Positioned {
+                                                                                    pos: Pos(17:8),
+                                                                                    node: Name(
+                                                                                        "postFields",
+                                                                                    ),
+                                                                                },
+                                                                                directives: [],
+                                                                            },
+                                                                        },
+                                                                    ),
+                                                                },
+                                                            ],
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        ),
+                                    },
+                                    Positioned {
+                                        pos: Pos(19:3),
+                                        node: Field(
+                                            Positioned {
+                                                pos: Pos(19:3),
+                                                node: Field {
+                                                    alias: Some(
+                                                        Positioned {
+                                                            pos: Pos(19:3),
+                                                            node: Name(
+                                                                "existingUserPost",
+                                                            ),
+                                                        },
+                                                    ),
+                                                    name: Positioned {
+                                                        pos: Pos(19:21),
+                                                        node: Name(
+                                                            "createPost",
+                                                        ),
+                                                    },
+                                                    arguments: [
+                                                        (
+                                                            Positioned {
+                                                                pos: Pos(19:32),
+                                                                node: Name(
+                                                                    "data",
+                                                                ),
+                                                            },
+                                                            Positioned {
+                                                                pos: Pos(19:38),
+                                                                node: Variable(
+                                                                    Name(
+                                                                        "postWithExistingUser",
+                                                                    ),
+                                                                ),
+                                                            },
+                                                        ),
+                                                    ],
+                                                    directives: [],
+                                                    selection_set: Positioned {
+                                                        pos: Pos(19:61),
+                                                        node: SelectionSet {
+                                                            items: [
+                                                                Positioned {
+                                                                    pos: Pos(20:5),
+                                                                    node: FragmentSpread(
+                                                                        Positioned {
+                                                                            pos: Pos(20:5),
+                                                                            node: FragmentSpread {
+                                                                                fragment_name: Positioned {
+                                                                                    pos: Pos(20:8),
+                                                                                    node: Name(
+                                                                                        "postFields",
+                                                                                    ),
+                                                                                },
+                                                                                directives: [],
+                                                                            },
+                                                                        },
+                                                                    ),
+                                                                },
+                                                            ],
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        ),
+                                    },
+                                    Positioned {
+                                        pos: Pos(22:3),
+                                        node: Field(
+                                            Positioned {
+                                                pos: Pos(22:3),
+                                                node: Field {
+                                                    alias: Some(
+                                                        Positioned {
+                                                            pos: Pos(22:3),
+                                                            node: Name(
+                                                                "userWithNewPosts",
+                                                            ),
+                                                        },
+                                                    ),
+                                                    name: Positioned {
+                                                        pos: Pos(22:21),
+                                                        node: Name(
+                                                            "createUser",
+                                                        ),
+                                                    },
+                                                    arguments: [
+                                                        (
+                                                            Positioned {
+                                                                pos: Pos(22:32),
+                                                                node: Name(
+                                                                    "data",
+                                                                ),
+                                                            },
+                                                            Positioned {
+                                                                pos: Pos(22:38),
+                                                                node: Variable(
+                                                                    Name(
+                                                                        "userWithNewPosts",
+                                                                    ),
+                                                                ),
+                                                            },
+                                                        ),
+                                                    ],
+                                                    directives: [],
+                                                    selection_set: Positioned {
+                                                        pos: Pos(22:57),
+                                                        node: SelectionSet {
+                                                            items: [
+                                                                Positioned {
+                                                                    pos: Pos(23:5),
+                                                                    node: Field(
+                                                                        Positioned {
+                                                                            pos: Pos(23:5),
+                                                                            node: Field {
+                                                                                alias: None,
+                                                                                name: Positioned {
+                                                                                    pos: Pos(23:5),
+                                                                                    node: Name(
+                                                                                        "id",
+                                                                                    ),
+                                                                                },
+                                                                                arguments: [],
+                                                                                directives: [],
+                                                                                selection_set: Positioned {
+                                                                                    pos: Pos(0:0),
+                                                                                    node: SelectionSet {
+                                                                                        items: [],
+                                                                                    },
+                                                                                },
+                                                                            },
+                                                                        },
+                                                                    ),
+                                                                },
+                                                                Positioned {
+                                                                    pos: Pos(24:5),
+                                                                    node: Field(
+                                                                        Positioned {
+                                                                            pos: Pos(24:5),
+                                                                            node: Field {
+                                                                                alias: None,
+                                                                                name: Positioned {
+                                                                                    pos: Pos(24:5),
+                                                                                    node: Name(
+                                                                                        "email",
+                                                                                    ),
+                                                                                },
+                                                                                arguments: [],
+                                                                                directives: [],
+                                                                                selection_set: Positioned {
+                                                                                    pos: Pos(0:0),
+                                                                                    node: SelectionSet {
+                                                                                        items: [],
+                                                                                    },
+                                                                                },
+                                                                            },
+                                                                        },
+                                                                    ),
+                                                                },
+                                                                Positioned {
+                                                                    pos: Pos(25:5),
+                                                                    node: Field(
+                                                                        Positioned {
+                                                                            pos: Pos(25:5),
+                                                                            node: Field {
+                                                                                alias: None,
+                                                                                name: Positioned {
+                                                                                    pos: Pos(25:5),
+                                                                                    node: Name(
+                                                                                        "name",
+                                                                                    ),
+                                                                                },
+                                                                                arguments: [],
+                                                                                directives: [],
+                                                                                selection_set: Positioned {
+                                                                                    pos: Pos(0:0),
+                                                                                    node: SelectionSet {
+                                                                                        items: [],
+                                                                                    },
+                                                                                },
+                                                                            },
+                                                                        },
+                                                                    ),
+                                                                },
+                                                                Positioned {
+                                                                    pos: Pos(26:5),
+                                                                    node: Field(
+                                                                        Positioned {
+                                                                            pos: Pos(26:5),
+                                                                            node: Field {
+                                                                                alias: None,
+                                                                                name: Positioned {
+                                                                                    pos: Pos(26:5),
+                                                                                    node: Name(
+                                                                                        "posts",
+                                                                                    ),
+                                                                                },
+                                                                                arguments: [],
+                                                                                directives: [],
+                                                                                selection_set: Positioned {
+                                                                                    pos: Pos(26:11),
+                                                                                    node: SelectionSet {
+                                                                                        items: [
+                                                                                            Positioned {
+                                                                                                pos: Pos(27:7),
+                                                                                                node: Field(
+                                                                                                    Positioned {
+                                                                                                        pos: Pos(27:7),
+                                                                                                        node: Field {
+                                                                                                            alias: None,
+                                                                                                            name: Positioned {
+                                                                                                                pos: Pos(27:7),
+                                                                                                                node: Name(
+                                                                                                                    "id",
+                                                                                                                ),
+                                                                                                            },
+                                                                                                            arguments: [],
+                                                                                                            directives: [],
+                                                                                                            selection_set: Positioned {
+                                                                                                                pos: Pos(0:0),
+                                                                                                                node: SelectionSet {
+                                                                                                                    items: [],
+                                                                                                                },
+                                                                                                            },
+                                                                                                        },
+                                                                                                    },
+                                                                                                ),
+                                                                                            },
+                                                                                            Positioned {
+                                                                                                pos: Pos(28:7),
+                                                                                                node: Field(
+                                                                                                    Positioned {
+                                                                                                        pos: Pos(28:7),
+                                                                                                        node: Field {
+                                                                                                            alias: None,
+                                                                                                            name: Positioned {
+                                                                                                                pos: Pos(28:7),
+                                                                                                                node: Name(
+                                                                                                                    "title",
+                                                                                                                ),
+                                                                                                            },
+                                                                                                            arguments: [],
+                                                                                                            directives: [],
+                                                                                                            selection_set: Positioned {
+                                                                                                                pos: Pos(0:0),
+                                                                                                                node: SelectionSet {
+                                                                                                                    items: [],
+                                                                                                                },
+                                                                                                            },
+                                                                                                        },
+                                                                                                    },
+                                                                                                ),
+                                                                                            },
+                                                                                        ],
+                                                                                    },
+                                                                                },
+                                                                            },
+                                                                        },
+                                                                    ),
+                                                                },
+                                                            ],
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        ),
+                                    },
+                                ],
+                            },
+                        },
+                    },
+                },
+            },
+        ),
+        fragments: {
+            Name(
+                "postFields",
+            ): Positioned {
+                pos: Pos(1:1),
+                node: FragmentDefinition {
+                    type_condition: Positioned {
+                        pos: Pos(1:21),
+                        node: TypeCondition {
+                            on: Positioned {
+                                pos: Pos(1:24),
+                                node: Name(
+                                    "Post",
+                                ),
+                            },
+                        },
+                    },
+                    directives: [],
+                    selection_set: Positioned {
+                        pos: Pos(1:29),
+                        node: SelectionSet {
+                            items: [
+                                Positioned {
+                                    pos: Pos(2:3),
+                                    node: Field(
+                                        Positioned {
+                                            pos: Pos(2:3),
+                                            node: Field {
+                                                alias: None,
+                                                name: Positioned {
+                                                    pos: Pos(2:3),
+                                                    node: Name(
+                                                        "id",
+                                                    ),
+                                                },
+                                                arguments: [],
+                                                directives: [],
+                                                selection_set: Positioned {
+                                                    pos: Pos(0:0),
+                                                    node: SelectionSet {
+                                                        items: [],
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    ),
+                                },
+                                Positioned {
+                                    pos: Pos(3:3),
+                                    node: Field(
+                                        Positioned {
+                                            pos: Pos(3:3),
+                                            node: Field {
+                                                alias: None,
+                                                name: Positioned {
+                                                    pos: Pos(3:3),
+                                                    node: Name(
+                                                        "title",
+                                                    ),
+                                                },
+                                                arguments: [],
+                                                directives: [],
+                                                selection_set: Positioned {
+                                                    pos: Pos(0:0),
+                                                    node: SelectionSet {
+                                                        items: [],
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    ),
+                                },
+                                Positioned {
+                                    pos: Pos(4:3),
+                                    node: Field(
+                                        Positioned {
+                                            pos: Pos(4:3),
+                                            node: Field {
+                                                alias: None,
+                                                name: Positioned {
+                                                    pos: Pos(4:3),
+                                                    node: Name(
+                                                        "author",
+                                                    ),
+                                                },
+                                                arguments: [],
+                                                directives: [],
+                                                selection_set: Positioned {
+                                                    pos: Pos(4:10),
+                                                    node: SelectionSet {
+                                                        items: [
+                                                            Positioned {
+                                                                pos: Pos(5:5),
+                                                                node: Field(
+                                                                    Positioned {
+                                                                        pos: Pos(5:5),
+                                                                        node: Field {
+                                                                            alias: None,
+                                                                            name: Positioned {
+                                                                                pos: Pos(5:5),
+                                                                                node: Name(
+                                                                                    "id",
+                                                                                ),
+                                                                            },
+                                                                            arguments: [],
+                                                                            directives: [],
+                                                                            selection_set: Positioned {
+                                                                                pos: Pos(0:0),
+                                                                                node: SelectionSet {
+                                                                                    items: [],
+                                                                                },
+                                                                            },
+                                                                        },
+                                                                    },
+                                                                ),
+                                                            },
+                                                            Positioned {
+                                                                pos: Pos(6:5),
+                                                                node: Field(
+                                                                    Positioned {
+                                                                        pos: Pos(6:5),
+                                                                        node: Field {
+                                                                            alias: None,
+                                                                            name: Positioned {
+                                                                                pos: Pos(6:5),
+                                                                                node: Name(
+                                                                                    "email",
+                                                                                ),
+                                                                            },
+                                                                            arguments: [],
+                                                                            directives: [],
+                                                                            selection_set: Positioned {
+                                                                                pos: Pos(0:0),
+                                                                                node: SelectionSet {
+                                                                                    items: [],
+                                                                                },
+                                                                            },
+                                                                        },
+                                                                    },
+                                                                ),
+                                                            },
+                                                            Positioned {
+                                                                pos: Pos(7:5),
+                                                                node: Field(
+                                                                    Positioned {
+                                                                        pos: Pos(7:5),
+                                                                        node: Field {
+                                                                            alias: None,
+                                                                            name: Positioned {
+                                                                                pos: Pos(7:5),
+                                                                                node: Name(
+                                                                                    "name",
+                                                                                ),
+                                                                            },
+                                                                            arguments: [],
+                                                                            directives: [],
+                                                                            selection_set: Positioned {
+                                                                                pos: Pos(0:0),
+                                                                                node: SelectionSet {
+                                                                                    items: [],
+                                                                                },
+                                                                            },
+                                                                        },
+                                                                    },
+                                                                ),
+                                                            },
+                                                        ],
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    ),
+                                },
+                            ],
+                        },
+                    },
+                },
+            },
+        },
+    }
