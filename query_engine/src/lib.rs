@@ -1,6 +1,10 @@
+mod introspection;
+
 use graphql_parser;
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
+
+pub use graphql_value::ConstValue as Value;
 
 #[cfg(test)]
 mod tests {

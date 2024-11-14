@@ -5,6 +5,8 @@ edition = "2021"
 
 [dependencies]
 graphql_parser.workspace = true
+graphql_value.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+indexmap.workspace = true
 
