@@ -1,8 +1,14 @@
 //! Impements necessary meta-data types for introspection.
 
-use crate::Value;
+use crate::{introspection::types::__DirectiveLocation, Value};
 use indexmap::{map::IndexMap, set::IndexSet};
-use std::{fmt, sync::Arc};
+use std::{
+    collections::{BTreeMap, HashMap, HashSet},
+    fmt,
+    sync::Arc,
+};
+
+use super::types::IntrospectionMode;
 
 fn strip_brackets(type_name: &str) -> Option<&str> {
     type_name
@@ -274,4 +280,214 @@ pub enum MetaType {
         /// custom directive invocations
         directive_invocations: Vec<MetaDirectiveInvocation>,
     },
+}
+
+impl MetaType {
+    #[inline]
+    pub fn type_id(&self) -> MetaTypeId {
+        match self {
+            Self::Scalar { .. } => MetaTypeId::Scalar,
+            Self::Object { .. } => MetaTypeId::Object,
+            Self::Interface { .. } => MetaTypeId::Interface,
+            Self::Union { .. } => MetaTypeId::Union,
+            Self::Enum { .. } => MetaTypeId::Enum,
+            Self::InputObject { .. } => MetaTypeId::InputObject,
+        }
+    }
+
+    #[inline]
+    pub fn fields(&self) -> Option<&IndexMap<String, MetaField>> {
+        match self {
+            MetaType::Object { fields, .. } => Some(&fields),
+            MetaType::Interface { fields, .. } => Some(&fields),
+            _ => None,
+        }
+    }
+
+    #[inline]
+    pub fn field_by_name(&self, name: &str) -> Option<&MetaField> {
+        self.fields().and_then(|fields| fields.get(name))
+    }
+
+    #[inline]
+    pub fn name(&self) -> &str {
+        match self {
+            Self::Scalar { name, .. } => name,
+            Self::Object { name, .. } => name,
+            Self::Interface { name, .. } => name,
+            Self::Union { name, .. } => name,
+            Self::Enum { name, .. } => name,
+            Self::InputObject { name, .. } => name,
+        }
+    }
+
+    #[inline]
+    pub fn is_abstract(&self) -> bool {
+        matches!(self, Self::Interface { .. } | Self::Union { .. })
+    }
+
+    #[inline]
+    pub fn is_leaf(&self) -> bool {
+        matches!(self, Self::Enum { .. } | Self::Scalar { .. })
+    }
+
+    #[inline]
+    pub fn is_input(&self) -> bool {
+        matches!(
+            self,
+            Self::Enum { .. } | Self::Scalar { .. } | Self::InputObject { .. }
+        )
+    }
+
+    #[inline]
+    pub fn is_possible_type(&self, type_name: &str) -> bool {
+        match self {
+            Self::Interface { possible_types, .. } => possible_types.contains(type_name),
+            Self::Union { possible_types, .. } => possible_types.contains(type_name),
+            Self::Object { name, .. } => name == type_name,
+            _ => false,
+        }
+    }
+
+    #[inline]
+    pub fn possible_types(&self) -> Option<&IndexSet<String>> {
+        match self {
+            Self::Interface { possible_types, .. } => Some(possible_types),
+            Self::Union { possible_types, .. } => Some(possible_types),
+            _ => None,
+        }
+    }
+
+    pub fn type_overlap(&self, ty: &MetaType) -> bool {
+        if std::ptr::eq(self, ty) {
+            return true;
+        }
+        match (self.is_abstract(), ty.is_abstract()) {
+            (true, true) => self
+                .possible_types()
+                .iter()
+                .copied()
+                .flatten()
+                .any(|type_name| ty.is_possible_type(type_name)),
+            (true, false) => self.is_possible_type(ty.name()),
+            (false, true) => ty.is_possible_type(self.name()),
+            _ => false,
+        }
+    }
+}
+
+pub struct MetaDirective {
+    pub name: String,
+    pub description: Option<String>,
+    pub locations: Vec<__DirectiveLocation>,
+    pub args: IndexMap<String, MetaInputValue>,
+    pub is_repeatable: bool,
+    pub composable: Option<String>,
+}
+
+/// A type registry for schema.
+#[derive(Default)]
+pub struct Registry {
+    pub types: BTreeMap<String, MetaType>,
+    pub directives: BTreeMap<String, MetaDirective>,
+    pub implements: HashMap<String, IndexSet<String>>,
+    pub query_type: String,
+    pub mutation_type: Option<String>,
+    pub subscription_type: Option<String>,
+    pub introspection_mode: IntrospectionMode,
+    pub ignore_name_conflicts: HashSet<String>,
+    pub enable_suggestions: bool,
+}
+
+impl Registry {
+    pub(crate) fn add_system_types(&mut self) {
+        self.add_directive(MetaDirective {
+            name: "skip".into(),
+            description: Some("Directs the executor to skip this field or fragment when the `if` argument is true".to_string()),
+            locations: vec![
+                __DirectiveLocation::FIELD,
+                __DirectiveLocation::FRAGMENT_SPREAD,
+                __DirectiveLocation::INLINE_FRAGMENT,
+            ],
+            args: {
+                let mut args = IndexMap::new();
+                args.insert("if".into(), MetaInputValue {
+                    name: "if".into(),
+                    description: Some("Skipped when true.".into()),
+                    ty: "Boolean!".into(),
+                    default_value: None,
+                    directive_invocations: vec![],
+                });
+                args
+            },
+            is_repeatable: false,
+            composable: None
+        });
+
+        self.add_directive(MetaDirective {
+            name: "deprecated".into(),
+            description: Some(
+                "Marks an element of a GraphQL schema as no longer supported."
+                    .to_string(),
+            ),
+            locations: vec![
+                __DirectiveLocation::FIELD_DEFINITION,
+                __DirectiveLocation::ARGUMENT_DEFINITION,
+                __DirectiveLocation::INPUT_FIELD_DEFINITION,
+                __DirectiveLocation::ENUM_VALUE,
+            ],
+            args: {
+                let mut args = IndexMap::new();
+                args.insert(
+                    "reason".into(),
+                    MetaInputValue {
+                        name: "reason".into(),
+                        description: Some("A reason why it is deprecated, formatted using Markdown syntax".into()),
+                        ty: "String".into(),
+                        default_value: Some(r#""No longer supported.""#.into()),
+                        directive_invocations: vec![]
+                    },
+                );
+                args
+            },
+            is_repeatable: false,
+            composable: None,
+        });
+
+        self.add_directive(MetaDirective {
+            name: "specifiedBy".into(),
+            description: Some("Provides a scalar specification URL for specifying the behaviour of custom scalar types.".into()),
+            locations: vec![__DirectiveLocation::SCALAR],
+            args: {
+                let mut args = IndexMap::new();
+                args.insert("url".into(), MetaInputValue {
+                    name: "url".into(),
+                    description: Some("URL that specifies the behaviour of this scalar.".into()),
+                    ty: "String!".into(),
+                    default_value: None,
+                    directive_invocations: vec![]
+                });
+                args
+            },
+            is_repeatable: false,
+            composable: None
+        });
+
+        self.add_directive(MetaDirective {
+            name: "oneOf".into(),
+            description: Some("Indicates that an Input Object is a OneOf Input Object(and thus requires exactly one of its field to be provided)".into()),
+            locations: vec![__DirectiveLocation::INPUT_OBJECT],
+            args: Default::default(),
+            is_repeatable: false,
+            composable: None,
+        });
+
+        // Create system scalars.
+        unimplemented!("Implement adding system scalars.")
+    }
+
+    pub fn add_directive(&mut self, directive: MetaDirective) {
+        self.directives
+            .insert(directive.name.to_string(), directive);
+    }
 }
