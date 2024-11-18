@@ -2,11 +2,7 @@
 use crate::graphql_parser::types::{
     BaseType as ParsedBaseType, Type as ParsedType, VariableDefinition,
 };
-use crate::{
-    introspection::types::{IntrospectionMode, __DirectiveLocation},
-    Value,
-};
-use core::panic;
+use crate::{introspection::types::__DirectiveLocation, Value};
 use indexmap::{map::IndexMap, set::IndexSet};
 use std::{
     collections::{BTreeMap, HashMap, HashSet},

@@ -1,5 +1,9 @@
 use std::collections::HashSet;
 
+use crate::registry;
+
+/// A Directive can be adjacent to many parts of the GraphQL language,
+/// a __DirectiveLocation describes one such possible adjacencies.
 #[allow(non_camel_case_types)]
 pub enum __DirectiveLocation {
     /// Location adjacent to a query operation.
@@ -58,4 +62,17 @@ pub enum __DirectiveLocation {
 
     /// Location adjacent to an input object field definition.
     INPUT_FIELD_DEFINITION,
+}
+
+/// A Directive provides a way to describe alternate runtime execution and type
+/// validation behaviour in a GraphQL context.
+///
+/// In some cases, you need to provide options to alter GraphQL's execution
+/// behaviour in ways field arguments will not suffice, such as conditionally
+/// including or skipping a field. Directives provide this by describing
+/// additional information to the execution module.
+pub struct __Directive<'a> {
+    pub registry: &'a registry::Registry,
+    pub visible_types: &'a HashSet<&'a str>,
+    pub directive: &'a registry::MetaDirective,
 }

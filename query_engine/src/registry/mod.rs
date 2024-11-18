@@ -1,11 +1,12 @@
 //! Impements necessary meta-data types for introspection.
-use super::meta_types::*;
+mod meta_types;
+pub use meta_types::*;
+
 use crate::graphql_parser::types::{
     BaseType as ParsedBaseType, Type as ParsedType, VariableDefinition,
 };
 use crate::{
-    introspection::types::{IntrospectionMode, __DirectiveLocation},
-    Value,
+    introspection::types::__DirectiveLocation, schema::IntrospectionMode, Value,
 };
 use core::panic;
 use indexmap::{map::IndexMap, set::IndexSet};
