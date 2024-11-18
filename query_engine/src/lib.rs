@@ -1,4 +1,8 @@
+mod execution;
 mod introspection;
+mod meta_types;
+mod registry;
+mod validation;
 
 use graphql_parser;
 use serde::{Deserialize, Serialize};

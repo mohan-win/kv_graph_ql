@@ -1,14 +1,18 @@
 //! Impements necessary meta-data types for introspection.
-
-use crate::{introspection::types::__DirectiveLocation, Value};
+use crate::graphql_parser::types::{
+    BaseType as ParsedBaseType, Type as ParsedType, VariableDefinition,
+};
+use crate::{
+    introspection::types::{IntrospectionMode, __DirectiveLocation},
+    Value,
+};
+use core::panic;
 use indexmap::{map::IndexMap, set::IndexSet};
 use std::{
     collections::{BTreeMap, HashMap, HashSet},
     fmt,
     sync::Arc,
 };
-
-use super::types::IntrospectionMode;
 
 fn strip_brackets(type_name: &str) -> Option<&str> {
     type_name
@@ -175,6 +179,51 @@ pub enum MetaTypeId {
     Union,
     Enum,
     InputObject,
+}
+
+impl MetaTypeId {
+    pub(crate) fn create_fake_type(&self, fake_type_name: &'static str) -> MetaType {
+        match self {
+            MetaTypeId::Scalar => MetaType::Scalar {
+                name: fake_type_name.to_string(),
+                description: None,
+                is_valid: None,
+                specified_by_url: None,
+            },
+            MetaTypeId::Object => MetaType::Object {
+                name: fake_type_name.to_string(),
+                description: None,
+                fields: Default::default(),
+                is_subscription: false,
+                directive_invocations: vec![],
+            },
+            MetaTypeId::Interface => MetaType::Interface {
+                name: fake_type_name.to_string(),
+                description: None,
+                fields: Default::default(),
+                possible_types: Default::default(),
+                directive_invocations: vec![],
+            },
+            MetaTypeId::Union => MetaType::Union {
+                name: fake_type_name.to_string(),
+                description: None,
+                possible_types: Default::default(),
+            },
+            MetaTypeId::Enum => MetaType::Enum {
+                name: fake_type_name.to_string(),
+                description: None,
+                enum_values: Default::default(),
+                directive_invocations: vec![],
+            },
+            MetaTypeId::InputObject => MetaType::InputObject {
+                name: fake_type_name.to_string(),
+                description: None,
+                input_fields: Default::default(),
+                oneof: false,
+                directive_invocations: vec![],
+            },
+        }
+    }
 }
 
 impl fmt::Display for MetaTypeId {
@@ -383,111 +432,4 @@ pub struct MetaDirective {
     pub args: IndexMap<String, MetaInputValue>,
     pub is_repeatable: bool,
     pub composable: Option<String>,
-}
-
-/// A type registry for schema.
-#[derive(Default)]
-pub struct Registry {
-    pub types: BTreeMap<String, MetaType>,
-    pub directives: BTreeMap<String, MetaDirective>,
-    pub implements: HashMap<String, IndexSet<String>>,
-    pub query_type: String,
-    pub mutation_type: Option<String>,
-    pub subscription_type: Option<String>,
-    pub introspection_mode: IntrospectionMode,
-    pub ignore_name_conflicts: HashSet<String>,
-    pub enable_suggestions: bool,
-}
-
-impl Registry {
-    pub(crate) fn add_system_types(&mut self) {
-        self.add_directive(MetaDirective {
-            name: "skip".into(),
-            description: Some("Directs the executor to skip this field or fragment when the `if` argument is true".to_string()),
-            locations: vec![
-                __DirectiveLocation::FIELD,
-                __DirectiveLocation::FRAGMENT_SPREAD,
-                __DirectiveLocation::INLINE_FRAGMENT,
-            ],
-            args: {
-                let mut args = IndexMap::new();
-                args.insert("if".into(), MetaInputValue {
-                    name: "if".into(),
-                    description: Some("Skipped when true.".into()),
-                    ty: "Boolean!".into(),
-                    default_value: None,
-                    directive_invocations: vec![],
-                });
-                args
-            },
-            is_repeatable: false,
-            composable: None
-        });
-
-        self.add_directive(MetaDirective {
-            name: "deprecated".into(),
-            description: Some(
-                "Marks an element of a GraphQL schema as no longer supported."
-                    .to_string(),
-            ),
-            locations: vec![
-                __DirectiveLocation::FIELD_DEFINITION,
-                __DirectiveLocation::ARGUMENT_DEFINITION,
-                __DirectiveLocation::INPUT_FIELD_DEFINITION,
-                __DirectiveLocation::ENUM_VALUE,
-            ],
-            args: {
-                let mut args = IndexMap::new();
-                args.insert(
-                    "reason".into(),
-                    MetaInputValue {
-                        name: "reason".into(),
-                        description: Some("A reason why it is deprecated, formatted using Markdown syntax".into()),
-                        ty: "String".into(),
-                        default_value: Some(r#""No longer supported.""#.into()),
-                        directive_invocations: vec![]
-                    },
-                );
-                args
-            },
-            is_repeatable: false,
-            composable: None,
-        });
-
-        self.add_directive(MetaDirective {
-            name: "specifiedBy".into(),
-            description: Some("Provides a scalar specification URL for specifying the behaviour of custom scalar types.".into()),
-            locations: vec![__DirectiveLocation::SCALAR],
-            args: {
-                let mut args = IndexMap::new();
-                args.insert("url".into(), MetaInputValue {
-                    name: "url".into(),
-                    description: Some("URL that specifies the behaviour of this scalar.".into()),
-                    ty: "String!".into(),
-                    default_value: None,
-                    directive_invocations: vec![]
-                });
-                args
-            },
-            is_repeatable: false,
-            composable: None
-        });
-
-        self.add_directive(MetaDirective {
-            name: "oneOf".into(),
-            description: Some("Indicates that an Input Object is a OneOf Input Object(and thus requires exactly one of its field to be provided)".into()),
-            locations: vec![__DirectiveLocation::INPUT_OBJECT],
-            args: Default::default(),
-            is_repeatable: false,
-            composable: None,
-        });
-
-        // Create system scalars.
-        unimplemented!("Implement adding system scalars.")
-    }
-
-    pub fn add_directive(&mut self, directive: MetaDirective) {
-        self.directives
-            .insert(directive.name.to_string(), directive);
-    }
 }
