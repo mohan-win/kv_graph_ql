@@ -2,6 +2,8 @@ use std::collections::HashSet;
 
 use crate::registry;
 
+use super::input_value::__InputValue;
+
 /// A Directive can be adjacent to many parts of the GraphQL language,
 /// a __DirectiveLocation describes one such possible adjacencies.
 #[allow(non_camel_case_types)]
@@ -75,4 +77,37 @@ pub struct __Directive<'a> {
     pub registry: &'a registry::Registry,
     pub visible_types: &'a HashSet<&'a str>,
     pub directive: &'a registry::MetaDirective,
+}
+
+impl<'a> __Directive<'a> {
+    #[inline]
+    fn name(&self) -> &str {
+        &self.directive.name
+    }
+
+    #[inline]
+    fn description(&self) -> Option<&str> {
+        self.directive.description.as_deref()
+    }
+
+    #[inline]
+    fn locations(&self) -> &Vec<__DirectiveLocation> {
+        &self.directive.locations
+    }
+
+    fn args(&self) -> Vec<__InputValue<'a>> {
+        self.directive
+            .args
+            .values()
+            .map(|input_value| __InputValue {
+                registry: self.registry,
+                visible_types: self.visible_types,
+                input_value,
+            })
+            .collect()
+    }
+
+    fn is_repeatable(&self) -> bool {
+        self.directive.is_repeatable
+    }
 }
