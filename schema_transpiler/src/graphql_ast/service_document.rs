@@ -1,10 +1,10 @@
+#![allow(dead_code)]
+
 //! The ServiceDocument types defined here are similar to types defined in
 //! graphql_parser crate except that,
 //! 1. These types exclude Position information, as they are not relevant for graphql_gen module.
 //! 2. Includes display_helpers, to convert these ServiceDocument::* types into GraphQL SDL.
-
 use super::*;
-
 pub mod display_helpers;
 
 /// A GraphQL file or request string defining a GraphQL service.
@@ -54,6 +54,7 @@ pub struct SchemaDefinition {
 ///
 /// [Reference](https://spec.graphql.org/October2021/#TypeDefinition). This also covers
 /// [extensions](https://spec.graphql.org/October2021/#TypeExtension).
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct TypeDefinition {
     /// Whether the type is an extension of another type.

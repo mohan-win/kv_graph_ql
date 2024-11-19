@@ -196,38 +196,6 @@ fn enum_field_def<'src>(
     )
 }
 
-fn list_field_def<'src>(
-    field_name: &sdml_ast::Token<'src>,
-    scalar_type: &sdml_ast::Type<'src>,
-) -> GraphQLGenResult<Vec<InputValueDefinition>> {
-    let scalar_type = match scalar_type {
-        sdml_ast::Type::Primitive { r#type, .. } => {
-            Ok(Type::map_sdml_type_to_graphql_ty_name(r#type))
-        },
-        sdml_ast::Type::Enum{enum_ty_name} => enum_ty_name.try_get_ident_name().map_or_else(
-            |e| Err(ErrorGraphQLGen::new_sdml_error(e)),
-            |ident| Ok(ident.to_string()),
-        ),
-        _ => Err(ErrorGraphQLGen::SDMLError {
-            error: format!("Only primitive types and enum types can be represented as scalars in GraphQL instead type {scalar_type:?} is passed"),
-            pos: scalar_type.token().span(),
-        }),
-    }?;
-    // Names of the fields whose type is a list
-    let list_field_names_fmt = [
-        ("{}_contains_every", "contains all scalars T"),
-        ("{}_contains_some", "contains atleast 1 scalar T"),
-    ];
-    let non_list_field_names_fmt = [("{}_contains", "contains single scalar T")];
-
-    generate_where_input_filters(
-        field_name,
-        &scalar_type,
-        &list_field_names_fmt,
-        &non_list_field_names_fmt,
-    )
-}
-
 fn relation_field_def<'src>(
     field_name: &sdml_ast::Token<'src>,
     target_relation: &sdml_ast::FieldType<'src>,
@@ -555,95 +523,21 @@ userRole_not_in: [Role]"#;
     }
 
     #[test]
-    fn test_input_filters_list_field_def() {
+    fn test_input_logical_operations_def() {
         let expected_str = r#"
-"""contains single scalar T"""
-field_contains: String
-"""contains all scalars T"""
-field_contains_every: [String]
-"""contains atleast 1 scalar T"""
-field_contains_some: [String]"#;
-        let string_list_field_input_filters = list_field_def(
-            &sdml_ast::Token::Ident("field", Span::new(0, 0)),
-            &sdml_ast::Type::Primitive {
-                r#type: sdml_ast::PrimitiveType::ShortStr,
-                token: sdml_ast::Token::Ident(FIELD_TYPE_NAME_STRING, Span::new(0, 0)),
-            },
-        )
-        .expect("It should be a valid output");
-        let actual_str = string_list_field_input_filters
-            .into_iter()
-            .fold("".to_string(), |acc, x| format!("{}{}", acc, x));
-        assert_eq!(expected_str, actual_str)
-    }
-
-    /*
-        #[test]
-        fn test_input_filters_many_relation_field_def() {
-            let expected_str = r#"
-    """condition must be true for all nodes"""
-    posts_every: PostWhereInput
-    """condition must be true for at least 1 node"""
-    posts_some: PostWhereInput
-    """condition must be false for all nodes"""
-    posts_none: PostWhereInput
-    """is the relation field empty"""
-    posts_is_empty: Boolean"#;
-            let relation_field_input_filters = relation_field_def(
-                &sdml_ast::Token::Ident("posts", Span::new(0, 0)),
-                &sdml_ast::FieldType::new(
-                    sdml_ast::Type::Relation(sdml_ast::Token::Ident("Post", Span::new(0, 0))),
-                    false,
-                    true,
-                ),
-            )
-            .expect("It should be a valid output");
-            let actual_str = relation_field_input_filters
-                .into_iter()
-                .fold("".to_string(), |acc, x| format!("{}{}", acc, x));
-            assert_eq!(expected_str, actual_str)
-        }
-
-
-            #[test]
-            fn test_input_filters_one_relation_field_def() {
-                let expected_str = r#"
-        """condition must be true for related node"""
-        profile: ProfileWhereInput
-        """is the relation field null"""
-        profile_is_null: Boolean"#;
-                let relation_field_input_filters = relation_field_def(
-                    &sdml_ast::Token::Ident("profile", Span::new(0, 0)),
-                    &sdml_ast::FieldType::new(
-                        sdml_ast::Type::Relation(sdml_ast::Token::Ident("Profile", Span::new(0, 0))),
-                        false,
-                        false,
-                    ),
-                )
+"""Logical AND on all given filters."""
+AND: [UserWhereInput!]
+"""Logical OR on all given filters."""
+OR: [UserWhereInput!]
+"""Logical NOT on all given filters combined by AND."""
+NOT: [UserWhereInput!]"#;
+        let logical_operations =
+            logical_operations_def(&sdml_ast::Token::Ident("User", Span::new(0, 0)))
                 .expect("It should be a valid output");
-                let actual_str = relation_field_input_filters
-                    .into_iter()
-                    .fold("".to_string(), |acc, x| format!("{}{}", acc, x));
-                assert_eq!(expected_str, actual_str)
-            }
-
-            #[test]
-            fn test_input_logical_operations_def() {
-                let expected_str = r#"
-        """Logical AND on all given filters."""
-        AND: [UserWhereInput!]
-        """Logical OR on all given filters."""
-        OR: [UserWhereInput!]
-        """Logical NOT on all given filters combined by AND."""
-        NOT: [UserWhereInput!]"#;
-                let logical_operations =
-                    logical_operations_def(&sdml_ast::Token::Ident("User", Span::new(0, 0)))
-                        .expect("It should be a valid output");
-                let actual_str = logical_operations
-                    .into_iter()
-                    .fold("".to_string(), |acc, x| format!("{acc}{x}"));
-                println!("{}", actual_str);
-                assert_eq!(expected_str, actual_str);
-            }
-            */
+        let actual_str = logical_operations
+            .into_iter()
+            .fold("".to_string(), |acc, x| format!("{acc}{x}"));
+        println!("{}", actual_str);
+        assert_eq!(expected_str, actual_str);
+    }
 }

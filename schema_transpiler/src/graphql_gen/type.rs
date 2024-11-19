@@ -235,10 +235,7 @@ mod tests {
     use sdml_parser::parser;
     use std::fs;
 
-    use crate::graphql_gen::{
-        aux_type,
-        r#type::{type_and_aux_types_def, type_def},
-    };
+    use crate::graphql_gen::r#type::{type_and_aux_types_def, type_def};
 
     #[test]
     fn test_type_def() {

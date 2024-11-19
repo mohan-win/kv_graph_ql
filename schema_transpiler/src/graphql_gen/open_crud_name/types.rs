@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 //! Defines necessary abstractions to capture (OpenCRUD)[https://github.com/opencrud/opencrud]
 //! types and interfaces **names** in rust.
 //!

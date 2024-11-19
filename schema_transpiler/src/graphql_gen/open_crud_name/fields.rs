@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 //! Defines necessary abstractions to capture (OpenCRUD)[https://github.com/opencrud/opencrud]
 //! field **names** in rust.
 use convert_case::{self, Casing};
@@ -70,7 +71,6 @@ impl FieldNamedUnformatted for Field {
             Self::ConnectPos(connect_pos_input_field) => {
                 connect_pos_input_field.common_name_str()
             }
-            _ => panic!("These fields needs to be used in-context of a model."),
         }
     }
 }
