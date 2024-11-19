@@ -7,17 +7,10 @@ use crate::registry;
 /// for a query, mutation, and subscription operations.
 pub struct __Schema<'a> {
     registry: &'a registry::Registry,
-    visible_types: &'a HashSet<&'a str>,
 }
 
 impl<'a> __Schema<'a> {
-    pub fn new(
-        registry: &'a registry::Registry,
-        visible_types: &'a HashSet<&'a str>,
-    ) -> Self {
-        __Schema {
-            registry,
-            visible_types,
-        }
+    pub fn new(registry: &'a registry::Registry) -> Self {
+        __Schema { registry }
     }
 }

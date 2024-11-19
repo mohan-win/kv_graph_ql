@@ -9,7 +9,6 @@ use super::r#type::__Type;
 /// optionally a default value.
 pub struct __InputValue<'a> {
     pub registry: &'a registry::Registry,
-    pub visible_types: &'a HashSet<&'a str>,
     pub input_value: &'a registry::MetaInputValue,
 }
 
@@ -26,7 +25,7 @@ impl<'a> __InputValue<'a> {
 
     #[inline]
     fn r#type(&self) -> __Type<'a> {
-        __Type::new(self.registry, self.visible_types, &self.input_value.ty)
+        __Type::new(self.registry, &self.input_value.ty)
     }
 
     #[inline]

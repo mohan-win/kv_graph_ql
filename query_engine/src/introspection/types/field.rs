@@ -8,7 +8,6 @@ use super::{input_value::__InputValue, r#type::__Type};
 /// has a name, potentially a list of arguments and a return type.
 pub struct __Field<'a> {
     pub registry: &'a registry::Registry,
-    pub visible_types: &'a HashSet<&'a str>,
     pub field: &'a registry::MetaField,
 }
 
@@ -32,7 +31,6 @@ impl<'a> __Field<'a> {
             .values()
             .map(|input_value| __InputValue {
                 registry: self.registry,
-                visible_types: self.visible_types,
                 input_value,
             })
             .collect()
@@ -40,7 +38,7 @@ impl<'a> __Field<'a> {
 
     #[inline]
     fn r#type(&self) -> __Type<'a> {
-        __Type::new(self.registry, self.visible_types, &self.field.ty)
+        __Type::new(self.registry, &self.field.ty)
     }
 
     #[inline]
