@@ -1,7 +1,7 @@
 use super::*;
 
 /// Get connection type and its edge, definition for given model.
-pub(in crate::graphql_gen) fn connection_types_def<'src>(
+pub fn connection_types_def<'src>(
     model_name: &sdml_ast::Token<'src>,
 ) -> GraphQLGenResult<Vec<TypeDefinition>> {
     let mut result = vec![];
@@ -83,8 +83,7 @@ fn edge_type_def<'src>(
     })
 }
 
-pub(in crate::graphql_gen) fn page_info_type_def<'src>(
-) -> GraphQLGenResult<TypeDefinition> {
+pub fn page_info_type_def<'src>() -> GraphQLGenResult<TypeDefinition> {
     Ok(TypeDefinition {
         extend: false,
         description: None,
@@ -141,8 +140,7 @@ pub(in crate::graphql_gen) fn page_info_type_def<'src>(
     })
 }
 
-pub(in crate::graphql_gen) fn aggregage_type_def<'src>(
-) -> GraphQLGenResult<TypeDefinition> {
+pub fn aggregage_type_def<'src>() -> GraphQLGenResult<TypeDefinition> {
     Ok(TypeDefinition {
         extend: false,
         description: None,

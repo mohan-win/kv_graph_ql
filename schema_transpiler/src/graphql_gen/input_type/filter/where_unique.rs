@@ -4,7 +4,7 @@ use super::*;
 /// Generates WhereUniqueInput filter type for the given model.
 /// When this fitler gets passed as an argument,
 /// it will exactly match *at-most* 1 record in the graphQL response.
-pub(in crate::graphql_gen) fn where_unique_unique_input_def<'src>(
+pub fn where_unique_unique_input_def<'src>(
     model: &sdml_ast::ModelDecl<'src>,
 ) -> GraphQLGenResult<TypeDefinition> {
     // Note: SDML validates / ensures that only scalar fields can have @unique attribute

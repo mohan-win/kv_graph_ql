@@ -5,7 +5,7 @@ use super::*;
 /// * {ModelName}CreateInput,
 /// * {ModelName}CreateOneInlineInput,
 /// * {ModelName}CreateManyInlineInput.
-pub(in crate::graphql_gen) fn create_input_types_def<'src>(
+pub fn create_input_types_def<'src>(
     model: &sdml_ast::ModelDecl<'src>,
 ) -> GraphQLGenResult<Vec<TypeDefinition>> {
     Ok(vec![

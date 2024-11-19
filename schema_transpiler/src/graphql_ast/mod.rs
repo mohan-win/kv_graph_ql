@@ -9,5 +9,5 @@
 
 mod service_document;
 
-pub use graphql_value::*;
-pub use service_document::*;
+pub(crate) use graphql_value::*;
+pub(crate) use service_document::*;

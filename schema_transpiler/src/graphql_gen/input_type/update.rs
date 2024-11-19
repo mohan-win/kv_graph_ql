@@ -11,7 +11,7 @@ use super::*;
 /// * {ModelName}UpdateWithNestedWhereUniqueInput,
 /// * {ModelName}UpsertWithNestedWhereUniqueInput,
 /// * {ModelName}ConnectInput.
-pub(in crate::graphql_gen) fn update_input_types_def<'src>(
+pub fn update_input_types_def<'src>(
     model: &sdml_ast::ModelDecl<'src>,
 ) -> GraphQLGenResult<Vec<TypeDefinition>> {
     let mut result = Vec::new();
@@ -106,9 +106,7 @@ fn upsert_input_def<'src>(
 /// Returns `true` if updateMany API and type is relevant for the model.
 /// Ex. If Model has only @unique & @id fields, then updateMany API won't be
 /// relevant for it.
-pub(in crate::graphql_gen) fn has_update_many_input<'src>(
-    model: &ModelDecl<'src>,
-) -> bool {
+pub fn has_update_many_input<'src>(model: &ModelDecl<'src>) -> bool {
     let fields = model.get_fields();
     fields
         .get_rest(sdml_ast::ModelIndexedFieldsFilter::All)
@@ -429,8 +427,7 @@ fn connect_input_def<'src>(
     })
 }
 
-pub(in crate::graphql_gen) fn connect_position_input_def(
-) -> GraphQLGenResult<TypeDefinition> {
+pub fn connect_position_input_def() -> GraphQLGenResult<TypeDefinition> {
     let fields = vec![
         // after
         InputValueDefinition {

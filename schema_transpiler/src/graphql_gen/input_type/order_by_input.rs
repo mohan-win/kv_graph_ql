@@ -1,7 +1,7 @@
 use super::*;
 
 /// Generates OrderByInput enum for the given model's scalar fields.
-pub(in crate::graphql_gen) fn order_by_input_enum_def<'src>(
+pub fn order_by_input_enum_def<'src>(
     model: &sdml_ast::ModelDecl<'src>,
 ) -> GraphQLGenResult<TypeDefinition> {
     let mut scalar_fields = model.fields.iter().filter(|fld| fld.field_type.is_scalar());

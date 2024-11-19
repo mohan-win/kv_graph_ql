@@ -1,0 +1,50 @@
+config db {
+    provider = "foundationDB"
+}
+
+model User {
+    userId      ShortStr     @id @default(auto()) 
+    email       ShortStr     @unique
+    name        ShortStr?     
+    nickNames  ShortStr[]    @indexed
+    role        Role         @default(USER) @indexed
+    mentees     User[]       @relation(name: "UsersMentor")
+    mentor      User?        @relation(name: "UsersMentor", field: mentorEmail, references: email)
+    mentorEmail ShortStr?    
+    spouse      User?        @relation(name: "UsersSpouse", field: spouseUserId, references: userId)
+    spouseUserId ShortStr?   @unique
+    profile     Profile? @relation(name: "UserOnProfile")
+    posts       Post[]       @relation(name: "UserOnPost")
+}
+
+model Profile {
+    profileId  ShortStr      @id @default(auto())
+    bio        LongStr?
+    user       User          @relation(name: "UserOnProfile", field: userEmail, references: email)
+    userEmail  ShortStr      @unique 
+}
+
+model Post {
+    postId      ShortStr    @id @default(auto())
+    createdAt   DateTime    @default(now()) @indexed
+    updatedAt   DateTime
+    title       ShortStr
+    published   Boolean     @default(false)
+    author      User        @relation(name: "UserOnPost", field: authorId, references: userId)
+    authorId    ShortStr
+    categoryIds ShortStr[]
+    category    Category[]  @relation(name: "CategoriesOnPost", field: categoryIds, references: categoryId)
+
+}
+
+model Category {
+    categoryId  ShortStr      @id @default(auto())
+    name        ShortStr      @unique
+    postIDs     ShortStr[] 
+    posts       Post[]        @relation(name: "CategoriesOnPost", field: postIDs, references: postId)
+}
+
+enum Role {
+    USER
+    ADMIN
+}

@@ -2,7 +2,7 @@
 use super::*;
 
 /// Generates where input type for the given model.
-pub(in crate::graphql_gen) fn where_input_def<'src>(
+pub fn where_input_def<'src>(
     model: &sdml_ast::ModelDecl<'src>,
 ) -> GraphQLGenResult<TypeDefinition> {
     let mut filters = logical_operations_def(&model.name)?;

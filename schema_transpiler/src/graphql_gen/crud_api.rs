@@ -1,18 +1,23 @@
 //! Code-gen for OpenCRUD query API.
-
 use super::*;
 
 /// Generate type system definitions for CRUD apis as per OpenCRUD spec.
-pub(in crate::graphql_gen) fn crud_api_def<'src>(
+pub fn crud_api_def<'src>(
     data_model: &sdml_ast::DataModel<'src>,
 ) -> GraphQLGenResult<Vec<TypeSystemDefinition>> {
     let mut api_type_defs = Vec::new();
     // Custom Scalars.
-    api_type_defs.push(TypeSystemDefinition::Type(scalar_date_time_def()));
+    api_type_defs.push(TypeSystemDefinition::Type(misc_type::scalar_date_time_def()));
     // Custom Directives.
-    api_type_defs.push(TypeSystemDefinition::Directive(directive_map_def()));
-    api_type_defs.push(TypeSystemDefinition::Directive(directive_unique_def()));
-    api_type_defs.push(TypeSystemDefinition::Directive(directive_indexed_def()));
+    api_type_defs.push(TypeSystemDefinition::Directive(
+        misc_type::directive_map_def(),
+    ));
+    api_type_defs.push(TypeSystemDefinition::Directive(
+        misc_type::directive_unique_def(),
+    ));
+    api_type_defs.push(TypeSystemDefinition::Directive(
+        misc_type::directive_indexed_def(),
+    ));
 
     // Root query type.
     api_type_defs.push(TypeSystemDefinition::Type(
@@ -24,7 +29,7 @@ pub(in crate::graphql_gen) fn crud_api_def<'src>(
     ));
 
     // Root Node interface.
-    api_type_defs.push(TypeSystemDefinition::Type(interface_node_def()));
+    api_type_defs.push(TypeSystemDefinition::Type(misc_type::interface_node_def()));
     // Enums
     let mut api_type_defs =
         data_model
@@ -106,12 +111,12 @@ mod tests {
             .into_result()
             .unwrap();
         let sdml_ast = parser::semantic_analysis(sdml_decls).unwrap();
-        let query_api = crud_api_def(&sdml_ast).unwrap();
-        let mut actual_query_api_graphql_str =
-            query_api.iter().fold("".to_string(), |acc, graphql_ty| {
+        let crud_api = crud_api_def(&sdml_ast).unwrap();
+        let mut actual_crud_api_graphql_str =
+            crud_api.iter().fold("".to_string(), |acc, graphql_ty| {
                 format!("{}{}", acc, graphql_ty.to_string())
             });
-        actual_query_api_graphql_str.retain(|c| !c.is_whitespace());
-        assert_eq!(expected_graphql_str, actual_query_api_graphql_str);
+        actual_crud_api_graphql_str.retain(|c| !c.is_whitespace());
+        assert_eq!(expected_graphql_str, actual_crud_api_graphql_str);
     }
 }

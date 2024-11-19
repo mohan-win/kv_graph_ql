@@ -1,0 +1,1376 @@
+"""A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the date-timeformat outlined in section 5.6 of the RFC 3339 profile of the ISO 8601 standard for representationof dates and times using the Gregorian calendar."""
+scalar DateTime
+
+"""This object field maps to a different field name in SDML model."""
+directive @map(
+"""SDML model field name"""
+name: String!
+) on
+| FIELD_DEFINITION
+
+"""When applied to an object field, the value of the field should be unique across all object instances of the same type"""
+directive @unique on
+| FIELD_DEFINITION
+
+"""When applied to an object field, the field will be indexed in the underlying data store for faster search & retrival."""
+directive @indexed on
+| FIELD_DEFINITION
+
+type Query {
+node(
+id: ID!
+): Node
+user(
+where: UserWhereUniqueInput!
+): User
+users(
+where: UserWhereInput
+orderBy: UserOrderByInput
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): [User!]!
+usersConnection(
+where: UserWhereInput
+orderBy: UserOrderByInput
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): UserConnection!
+profile(
+where: ProfileWhereUniqueInput!
+): Profile
+profiles(
+where: ProfileWhereInput
+orderBy: ProfileOrderByInput
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): [Profile!]!
+profilesConnection(
+where: ProfileWhereInput
+orderBy: ProfileOrderByInput
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): ProfileConnection!
+post(
+where: PostWhereUniqueInput!
+): Post
+posts(
+where: PostWhereInput
+orderBy: PostOrderByInput
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): [Post!]!
+postsConnection(
+where: PostWhereInput
+orderBy: PostOrderByInput
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): PostConnection!
+category(
+where: CategoryWhereUniqueInput!
+): Category
+categories(
+where: CategoryWhereInput
+orderBy: CategoryOrderByInput
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): [Category!]!
+categoriesConnection(
+where: CategoryWhereInput
+orderBy: CategoryOrderByInput
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): CategoryConnection!
+}
+
+type Mutation {
+"""Returns newly created 'User' object if successful."""
+createUser(
+data: UserCreateInput!
+): User
+"""Returns the updated 'User' object if successful."""
+updateUser(
+where: UserWhereUniqueInput!
+data: UserUpdateInput!
+): User
+"""Returns the deleted 'User' object if successful."""
+deleteUser(
+where: UserWhereUniqueInput!
+): User
+"""Returns the upserted (either created new or updated) 'User' object if successful."""
+upsertUser(
+where: UserWhereUniqueInput!
+data: UserUpsertInput!
+): User
+"""Returns the deleted 'User' objects."""
+deleteManyUsersConnection(
+where: UserWhereInput!
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): UserConnection!
+"""Returns the updated 'User' objects."""
+updateManyUsersConnection(
+where: UserWhereInput!
+data: UserUpdateManyInput!
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): UserConnection!
+"""Returns newly created 'Profile' object if successful."""
+createProfile(
+data: ProfileCreateInput!
+): Profile
+"""Returns the updated 'Profile' object if successful."""
+updateProfile(
+where: ProfileWhereUniqueInput!
+data: ProfileUpdateInput!
+): Profile
+"""Returns the deleted 'Profile' object if successful."""
+deleteProfile(
+where: ProfileWhereUniqueInput!
+): Profile
+"""Returns the upserted (either created new or updated) 'Profile' object if successful."""
+upsertProfile(
+where: ProfileWhereUniqueInput!
+data: ProfileUpsertInput!
+): Profile
+"""Returns the deleted 'Profile' objects."""
+deleteManyProfilesConnection(
+where: ProfileWhereInput!
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): ProfileConnection!
+"""Returns the updated 'Profile' objects."""
+updateManyProfilesConnection(
+where: ProfileWhereInput!
+data: ProfileUpdateManyInput!
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): ProfileConnection!
+"""Returns newly created 'Post' object if successful."""
+createPost(
+data: PostCreateInput!
+): Post
+"""Returns the updated 'Post' object if successful."""
+updatePost(
+where: PostWhereUniqueInput!
+data: PostUpdateInput!
+): Post
+"""Returns the deleted 'Post' object if successful."""
+deletePost(
+where: PostWhereUniqueInput!
+): Post
+"""Returns the upserted (either created new or updated) 'Post' object if successful."""
+upsertPost(
+where: PostWhereUniqueInput!
+data: PostUpsertInput!
+): Post
+"""Returns the deleted 'Post' objects."""
+deleteManyPostsConnection(
+where: PostWhereInput!
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): PostConnection!
+"""Returns the updated 'Post' objects."""
+updateManyPostsConnection(
+where: PostWhereInput!
+data: PostUpdateManyInput!
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): PostConnection!
+"""Returns newly created 'Category' object if successful."""
+createCategory(
+data: CategoryCreateInput!
+): Category
+"""Returns the updated 'Category' object if successful."""
+updateCategory(
+where: CategoryWhereUniqueInput!
+data: CategoryUpdateInput!
+): Category
+"""Returns the deleted 'Category' object if successful."""
+deleteCategory(
+where: CategoryWhereUniqueInput!
+): Category
+"""Returns the upserted (either created new or updated) 'Category' object if successful."""
+upsertCategory(
+where: CategoryWhereUniqueInput!
+data: CategoryUpsertInput!
+): Category
+"""Returns the deleted 'Category' objects."""
+deleteManyCategoriesConnection(
+where: CategoryWhereInput!
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): CategoryConnection!
+}
+
+"""Node interface as per Relay GraphQL Global Object Identification Spec. https://relay.dev/docs/guides/graphql-server-specification/#object-identification"""
+interface Node {
+"""ID field with globally unique ID"""
+id: ID! @unique
+}
+
+enum Role {
+USER
+ADMIN
+}
+
+type PageInfo {
+"""When paginating forwards, are there more items ?"""
+hasNextPage: Boolean!
+"""When paginating backwards, are there more items ?"""
+hasPreviousPage: Boolean!
+"""When paginating backwards, cursor to continue."""
+startCursor: String
+"""When paginating forwards, cursor to continue."""
+endCursor: String
+"""Number of items in current page."""
+pageSize: Int
+}
+
+type Aggregate {
+count: Int!
+}
+
+input ConnectPositionInput {
+"""Connect after the speficied ID."""
+after: ID
+"""Connect before the speficied ID."""
+before: ID
+"""Connect at the first position."""
+start: Boolean
+"""Connect at the last position [default]."""
+end: Boolean
+}
+
+"""The where filter which can match zero or more objects"""
+input UserWhereInput {
+"""Logical AND on all given filters."""
+AND: [UserWhereInput!]
+"""Logical OR on all given filters."""
+OR: [UserWhereInput!]
+"""Logical NOT on all given filters combined by AND."""
+NOT: [UserWhereInput!]
+"""equals"""
+id: String
+"""not equals"""
+id_not: String
+"""contains substring"""
+id_contains: String
+"""doesn't contain substring"""
+id_not_contains: String
+id_starts_with: String
+id_not_starts_with: String
+id_ends_with: String
+id_not_ends_with: String
+"""less than"""
+id_lt: String
+"""less than or equals"""
+id_lte: String
+"""greater than"""
+id_gt: String
+"""greater than or equals"""
+id_gte: String
+"""in list"""
+id_in: [String]
+"""not in list"""
+id_not_in: [String]
+"""equals"""
+email: String
+"""not equals"""
+email_not: String
+"""contains substring"""
+email_contains: String
+"""doesn't contain substring"""
+email_not_contains: String
+email_starts_with: String
+email_not_starts_with: String
+email_ends_with: String
+email_not_ends_with: String
+"""less than"""
+email_lt: String
+"""less than or equals"""
+email_lte: String
+"""greater than"""
+email_gt: String
+"""greater than or equals"""
+email_gte: String
+"""in list"""
+email_in: [String]
+"""not in list"""
+email_not_in: [String]
+"""equals"""
+name: String
+"""not equals"""
+name_not: String
+"""contains substring"""
+name_contains: String
+"""doesn't contain substring"""
+name_not_contains: String
+name_starts_with: String
+name_not_starts_with: String
+name_ends_with: String
+name_not_ends_with: String
+"""less than"""
+name_lt: String
+"""less than or equals"""
+name_lte: String
+"""greater than"""
+name_gt: String
+"""greater than or equals"""
+name_gte: String
+"""in list"""
+name_in: [String]
+"""not in list"""
+name_not_in: [String]
+"""equals"""
+nickNames: String
+"""not equals"""
+nickNames_not: String
+"""contains substring"""
+nickNames_contains: String
+"""doesn't contain substring"""
+nickNames_not_contains: String
+nickNames_starts_with: String
+nickNames_not_starts_with: String
+nickNames_ends_with: String
+nickNames_not_ends_with: String
+"""less than"""
+nickNames_lt: String
+"""less than or equals"""
+nickNames_lte: String
+"""greater than"""
+nickNames_gt: String
+"""greater than or equals"""
+nickNames_gte: String
+"""in list"""
+nickNames_in: [String]
+"""not in list"""
+nickNames_not_in: [String]
+"""equals"""
+role: Role
+"""not equals"""
+role_not: Role
+"""in list"""
+role_in: [Role]
+"""not in list"""
+role_not_in: [Role]
+"""condition must be true for all nodes"""
+mentees_every: UserWhereInput
+"""condition must be true for at least 1 node"""
+mentees_some: UserWhereInput
+"""condition must be false for all nodes"""
+mentees_none: UserWhereInput
+"""is the relation field empty"""
+mentees_is_empty: Boolean
+"""condition must be true for related node"""
+mentor: UserWhereInput
+"""is the relation field null"""
+mentor_is_null: Boolean
+"""equals"""
+mentorEmail: String
+"""not equals"""
+mentorEmail_not: String
+"""contains substring"""
+mentorEmail_contains: String
+"""doesn't contain substring"""
+mentorEmail_not_contains: String
+mentorEmail_starts_with: String
+mentorEmail_not_starts_with: String
+mentorEmail_ends_with: String
+mentorEmail_not_ends_with: String
+"""less than"""
+mentorEmail_lt: String
+"""less than or equals"""
+mentorEmail_lte: String
+"""greater than"""
+mentorEmail_gt: String
+"""greater than or equals"""
+mentorEmail_gte: String
+"""in list"""
+mentorEmail_in: [String]
+"""not in list"""
+mentorEmail_not_in: [String]
+"""condition must be true for related node"""
+spouse: UserWhereInput
+"""is the relation field null"""
+spouse_is_null: Boolean
+"""equals"""
+spouseUserId: String
+"""not equals"""
+spouseUserId_not: String
+"""contains substring"""
+spouseUserId_contains: String
+"""doesn't contain substring"""
+spouseUserId_not_contains: String
+spouseUserId_starts_with: String
+spouseUserId_not_starts_with: String
+spouseUserId_ends_with: String
+spouseUserId_not_ends_with: String
+"""less than"""
+spouseUserId_lt: String
+"""less than or equals"""
+spouseUserId_lte: String
+"""greater than"""
+spouseUserId_gt: String
+"""greater than or equals"""
+spouseUserId_gte: String
+"""in list"""
+spouseUserId_in: [String]
+"""not in list"""
+spouseUserId_not_in: [String]
+"""condition must be true for related node"""
+profile: ProfileWhereInput
+"""is the relation field null"""
+profile_is_null: Boolean
+"""condition must be true for all nodes"""
+posts_every: PostWhereInput
+"""condition must be true for at least 1 node"""
+posts_some: PostWhereInput
+"""condition must be false for all nodes"""
+posts_none: PostWhereInput
+"""is the relation field empty"""
+posts_is_empty: Boolean
+}
+
+"""The where unique filter which can match at-most 1 object."""
+input UserWhereUniqueInput {
+id: ID
+email: String
+spouseUserId: String
+}
+
+"""Order by input for User's scalar fields"""
+enum UserOrderByInput {
+id_ASC
+id_DSC
+email_ASC
+email_DSC
+name_ASC
+name_DSC
+role_ASC
+role_DSC
+mentorEmail_ASC
+mentorEmail_DSC
+spouseUserId_ASC
+spouseUserId_DSC
+}
+
+"""User"""
+type User implements Node {
+id: ID! @map(name: "userId") @unique
+email: String! @unique
+name: String
+nickNames: [String!]! @indexed
+role: Role! @indexed
+mentees(
+where: UserWhereInput
+orderBy: UserOrderByInput
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): [User!]!
+menteesConnection(
+where: UserWhereInput
+orderBy: UserOrderByInput
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): [UserConnection!]!
+mentor: User
+mentorEmail: String
+spouse: User
+spouseUserId: String @unique
+profile: Profile
+posts(
+where: PostWhereInput
+orderBy: PostOrderByInput
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): [Post!]!
+postsConnection(
+where: PostWhereInput
+orderBy: PostOrderByInput
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): [PostConnection!]!
+}
+
+type UserEdge {
+node: User!
+cursor: String!
+}
+
+type UserConnection {
+pageInfo: PageInfo!
+edges: [UserEdge!]!
+aggregate: Aggregate!
+}
+
+input UserCreateInput {
+email: String!
+name: String
+nickNames: [String!]!
+"""Default value 'USER' will be assigned if no value is passed to this input arg."""
+role: Role
+mentees: UserCreateManyInlineInput
+mentor: UserCreateOneInlineInput
+spouse: UserCreateOneInlineInput
+profile: ProfileCreateOneInlineInput
+posts: PostCreateManyInlineInput
+}
+
+input UserCreateOneInlineInput {
+create: UserCreateInput
+connect: UserWhereUniqueInput
+}
+
+input UserCreateManyInlineInput {
+create: [UserCreateInput!]
+connect: [UserWhereUniqueInput!]
+}
+
+input UserUpdateInput {
+email: String
+name: String
+nickNames: [String!]
+role: Role
+mentees: UserUpdateManyInlineInput
+mentor: UserUpdateOneInlineInput
+spouse: UserUpdateOneInlineInput
+profile: ProfileUpdateOneInlineInput
+posts: PostUpdateManyInlineInput
+}
+
+input UserUpsertInput {
+create: UserCreateInput!
+update: UserUpdateInput!
+}
+
+input UserUpdateManyInput {
+name: String
+nickNames: [String!]
+role: Role
+}
+
+input UserUpdateOneInlineInput {
+"""Create and connect a new 'User' object."""
+create: UserCreateInput
+"""Update 'User' object if exists."""
+update: UserUpdateWithNestedWhereUniqueInput
+"""Upsert 'User' object."""
+upsert: UserUpsertWithNestedWhereUniqueInput
+"""Connect an existing 'User' object."""
+connect: UserWhereUniqueInput
+"""Disconnect 'User' object."""
+disconnect: Boolean
+"""Delete 'User' object."""
+delete: Boolean
+}
+
+input UserUpdateManyInlineInput {
+"""Create and connect multiple new 'User' objects."""
+create: [UserCreateInput!]
+"""Update multiple 'User' objects if exists."""
+update: [UserUpdateWithNestedWhereUniqueInput!]
+"""Upsert multiple 'User' objects."""
+upsert: [UserUpsertWithNestedWhereUniqueInput!]
+"""Connect multiple existing 'User' objects."""
+connect: [UserConnectInput!]
+"""Replace existing relation with multiple 'User' objects."""
+set: [UserWhereUniqueInput!]
+"""Disconnect multiple 'User' objects from relation."""
+disconnect: [UserWhereUniqueInput!]
+"""Delete multiple 'User' objects."""
+delete: [UserWhereUniqueInput!]
+}
+
+input UserUpdateWithNestedWhereUniqueInput {
+where: UserWhereUniqueInput!
+data: UserUpdateInput!
+}
+
+input UserUpsertWithNestedWhereUniqueInput {
+where: UserWhereUniqueInput!
+data: UserUpsertInput!
+}
+
+input UserConnectInput {
+"""'User' object to connect"""
+where: UserWhereUniqueInput!
+"""Specify the position in the list of connected objects, by-defult will add it to end of the list."""
+position: ConnectPositionInput
+}
+
+"""The where filter which can match zero or more objects"""
+input ProfileWhereInput {
+"""Logical AND on all given filters."""
+AND: [ProfileWhereInput!]
+"""Logical OR on all given filters."""
+OR: [ProfileWhereInput!]
+"""Logical NOT on all given filters combined by AND."""
+NOT: [ProfileWhereInput!]
+"""equals"""
+id: String
+"""not equals"""
+id_not: String
+"""contains substring"""
+id_contains: String
+"""doesn't contain substring"""
+id_not_contains: String
+id_starts_with: String
+id_not_starts_with: String
+id_ends_with: String
+id_not_ends_with: String
+"""less than"""
+id_lt: String
+"""less than or equals"""
+id_lte: String
+"""greater than"""
+id_gt: String
+"""greater than or equals"""
+id_gte: String
+"""in list"""
+id_in: [String]
+"""not in list"""
+id_not_in: [String]
+"""equals"""
+bio: String
+"""not equals"""
+bio_not: String
+"""contains substring"""
+bio_contains: String
+"""doesn't contain substring"""
+bio_not_contains: String
+bio_starts_with: String
+bio_not_starts_with: String
+bio_ends_with: String
+bio_not_ends_with: String
+"""less than"""
+bio_lt: String
+"""less than or equals"""
+bio_lte: String
+"""greater than"""
+bio_gt: String
+"""greater than or equals"""
+bio_gte: String
+"""in list"""
+bio_in: [String]
+"""not in list"""
+bio_not_in: [String]
+"""condition must be true for related node"""
+user: UserWhereInput
+"""is the relation field null"""
+user_is_null: Boolean
+"""equals"""
+userEmail: String
+"""not equals"""
+userEmail_not: String
+"""contains substring"""
+userEmail_contains: String
+"""doesn't contain substring"""
+userEmail_not_contains: String
+userEmail_starts_with: String
+userEmail_not_starts_with: String
+userEmail_ends_with: String
+userEmail_not_ends_with: String
+"""less than"""
+userEmail_lt: String
+"""less than or equals"""
+userEmail_lte: String
+"""greater than"""
+userEmail_gt: String
+"""greater than or equals"""
+userEmail_gte: String
+"""in list"""
+userEmail_in: [String]
+"""not in list"""
+userEmail_not_in: [String]
+}
+
+"""The where unique filter which can match at-most 1 object."""
+input ProfileWhereUniqueInput {
+id: ID
+userEmail: String
+}
+
+"""Order by input for Profile's scalar fields"""
+enum ProfileOrderByInput {
+id_ASC
+id_DSC
+bio_ASC
+bio_DSC
+userEmail_ASC
+userEmail_DSC
+}
+
+"""Profile"""
+type Profile implements Node {
+id: ID! @map(name: "profileId") @unique
+bio: String
+user: User!
+userEmail: String! @unique
+}
+
+type ProfileEdge {
+node: Profile!
+cursor: String!
+}
+
+type ProfileConnection {
+pageInfo: PageInfo!
+edges: [ProfileEdge!]!
+aggregate: Aggregate!
+}
+
+input ProfileCreateInput {
+bio: String
+user: UserCreateOneInlineInput
+}
+
+input ProfileCreateOneInlineInput {
+create: ProfileCreateInput
+connect: ProfileWhereUniqueInput
+}
+
+input ProfileCreateManyInlineInput {
+create: [ProfileCreateInput!]
+connect: [ProfileWhereUniqueInput!]
+}
+
+input ProfileUpdateInput {
+bio: String
+user: UserUpdateOneInlineInput
+}
+
+input ProfileUpsertInput {
+create: ProfileCreateInput!
+update: ProfileUpdateInput!
+}
+
+input ProfileUpdateManyInput {
+bio: String
+}
+
+input ProfileUpdateOneInlineInput {
+"""Create and connect a new 'Profile' object."""
+create: ProfileCreateInput
+"""Update 'Profile' object if exists."""
+update: ProfileUpdateWithNestedWhereUniqueInput
+"""Upsert 'Profile' object."""
+upsert: ProfileUpsertWithNestedWhereUniqueInput
+"""Connect an existing 'Profile' object."""
+connect: ProfileWhereUniqueInput
+"""Disconnect 'Profile' object."""
+disconnect: Boolean
+"""Delete 'Profile' object."""
+delete: Boolean
+}
+
+input ProfileUpdateManyInlineInput {
+"""Create and connect multiple new 'Profile' objects."""
+create: [ProfileCreateInput!]
+"""Update multiple 'Profile' objects if exists."""
+update: [ProfileUpdateWithNestedWhereUniqueInput!]
+"""Upsert multiple 'Profile' objects."""
+upsert: [ProfileUpsertWithNestedWhereUniqueInput!]
+"""Connect multiple existing 'Profile' objects."""
+connect: [ProfileConnectInput!]
+"""Replace existing relation with multiple 'Profile' objects."""
+set: [ProfileWhereUniqueInput!]
+"""Disconnect multiple 'Profile' objects from relation."""
+disconnect: [ProfileWhereUniqueInput!]
+"""Delete multiple 'Profile' objects."""
+delete: [ProfileWhereUniqueInput!]
+}
+
+input ProfileUpdateWithNestedWhereUniqueInput {
+where: ProfileWhereUniqueInput!
+data: ProfileUpdateInput!
+}
+
+input ProfileUpsertWithNestedWhereUniqueInput {
+where: ProfileWhereUniqueInput!
+data: ProfileUpsertInput!
+}
+
+input ProfileConnectInput {
+"""'Profile' object to connect"""
+where: ProfileWhereUniqueInput!
+"""Specify the position in the list of connected objects, by-defult will add it to end of the list."""
+position: ConnectPositionInput
+}
+
+"""The where filter which can match zero or more objects"""
+input PostWhereInput {
+"""Logical AND on all given filters."""
+AND: [PostWhereInput!]
+"""Logical OR on all given filters."""
+OR: [PostWhereInput!]
+"""Logical NOT on all given filters combined by AND."""
+NOT: [PostWhereInput!]
+"""equals"""
+id: String
+"""not equals"""
+id_not: String
+"""contains substring"""
+id_contains: String
+"""doesn't contain substring"""
+id_not_contains: String
+id_starts_with: String
+id_not_starts_with: String
+id_ends_with: String
+id_not_ends_with: String
+"""less than"""
+id_lt: String
+"""less than or equals"""
+id_lte: String
+"""greater than"""
+id_gt: String
+"""greater than or equals"""
+id_gte: String
+"""in list"""
+id_in: [String]
+"""not in list"""
+id_not_in: [String]
+"""equals"""
+createdAt: DateTime
+"""not equals"""
+createdAt_not: DateTime
+"""less than"""
+createdAt_lt: DateTime
+"""less than or equals"""
+createdAt_lte: DateTime
+"""greater than"""
+createdAt_gt: DateTime
+"""greater than or equals"""
+createdAt_gte: DateTime
+"""in list"""
+createdAt_in: [DateTime]
+"""not in list"""
+createdAt_not_in: [DateTime]
+"""equals"""
+updatedAt: DateTime
+"""not equals"""
+updatedAt_not: DateTime
+"""less than"""
+updatedAt_lt: DateTime
+"""less than or equals"""
+updatedAt_lte: DateTime
+"""greater than"""
+updatedAt_gt: DateTime
+"""greater than or equals"""
+updatedAt_gte: DateTime
+"""in list"""
+updatedAt_in: [DateTime]
+"""not in list"""
+updatedAt_not_in: [DateTime]
+"""equals"""
+title: String
+"""not equals"""
+title_not: String
+"""contains substring"""
+title_contains: String
+"""doesn't contain substring"""
+title_not_contains: String
+title_starts_with: String
+title_not_starts_with: String
+title_ends_with: String
+title_not_ends_with: String
+"""less than"""
+title_lt: String
+"""less than or equals"""
+title_lte: String
+"""greater than"""
+title_gt: String
+"""greater than or equals"""
+title_gte: String
+"""in list"""
+title_in: [String]
+"""not in list"""
+title_not_in: [String]
+"""equals"""
+published: Boolean
+"""not equals"""
+published_not: Boolean
+"""condition must be true for related node"""
+author: UserWhereInput
+"""is the relation field null"""
+author_is_null: Boolean
+"""equals"""
+authorId: String
+"""not equals"""
+authorId_not: String
+"""contains substring"""
+authorId_contains: String
+"""doesn't contain substring"""
+authorId_not_contains: String
+authorId_starts_with: String
+authorId_not_starts_with: String
+authorId_ends_with: String
+authorId_not_ends_with: String
+"""less than"""
+authorId_lt: String
+"""less than or equals"""
+authorId_lte: String
+"""greater than"""
+authorId_gt: String
+"""greater than or equals"""
+authorId_gte: String
+"""in list"""
+authorId_in: [String]
+"""not in list"""
+authorId_not_in: [String]
+"""equals"""
+categoryIds: String
+"""not equals"""
+categoryIds_not: String
+"""contains substring"""
+categoryIds_contains: String
+"""doesn't contain substring"""
+categoryIds_not_contains: String
+categoryIds_starts_with: String
+categoryIds_not_starts_with: String
+categoryIds_ends_with: String
+categoryIds_not_ends_with: String
+"""less than"""
+categoryIds_lt: String
+"""less than or equals"""
+categoryIds_lte: String
+"""greater than"""
+categoryIds_gt: String
+"""greater than or equals"""
+categoryIds_gte: String
+"""in list"""
+categoryIds_in: [String]
+"""not in list"""
+categoryIds_not_in: [String]
+"""condition must be true for all nodes"""
+category_every: CategoryWhereInput
+"""condition must be true for at least 1 node"""
+category_some: CategoryWhereInput
+"""condition must be false for all nodes"""
+category_none: CategoryWhereInput
+"""is the relation field empty"""
+category_is_empty: Boolean
+}
+
+"""The where unique filter which can match at-most 1 object."""
+input PostWhereUniqueInput {
+id: ID
+}
+
+"""Order by input for Post's scalar fields"""
+enum PostOrderByInput {
+id_ASC
+id_DSC
+createdAt_ASC
+createdAt_DSC
+updatedAt_ASC
+updatedAt_DSC
+title_ASC
+title_DSC
+published_ASC
+published_DSC
+authorId_ASC
+authorId_DSC
+}
+
+"""Post"""
+type Post implements Node {
+id: ID! @map(name: "postId") @unique
+createdAt: DateTime! @indexed
+updatedAt: DateTime!
+title: String!
+published: Boolean!
+author: User!
+authorId: String!
+categoryIds: [String!]!
+category(
+where: CategoryWhereInput
+orderBy: CategoryOrderByInput
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): [Category!]!
+categoryConnection(
+where: CategoryWhereInput
+orderBy: CategoryOrderByInput
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): [CategoryConnection!]!
+}
+
+type PostEdge {
+node: Post!
+cursor: String!
+}
+
+type PostConnection {
+pageInfo: PageInfo!
+edges: [PostEdge!]!
+aggregate: Aggregate!
+}
+
+input PostCreateInput {
+"""Default value 'now' will be assigned if no value is passed to this input arg."""
+createdAt: DateTime
+updatedAt: DateTime!
+title: String!
+"""Default value 'false' will be assigned if no value is passed to this input arg."""
+published: Boolean
+author: UserCreateOneInlineInput
+category: CategoryCreateManyInlineInput
+}
+
+input PostCreateOneInlineInput {
+create: PostCreateInput
+connect: PostWhereUniqueInput
+}
+
+input PostCreateManyInlineInput {
+create: [PostCreateInput!]
+connect: [PostWhereUniqueInput!]
+}
+
+input PostUpdateInput {
+createdAt: DateTime
+updatedAt: DateTime
+title: String
+published: Boolean
+author: UserUpdateOneInlineInput
+category: CategoryUpdateManyInlineInput
+}
+
+input PostUpsertInput {
+create: PostCreateInput!
+update: PostUpdateInput!
+}
+
+input PostUpdateManyInput {
+createdAt: DateTime
+updatedAt: DateTime
+title: String
+published: Boolean
+}
+
+input PostUpdateOneInlineInput {
+"""Create and connect a new 'Post' object."""
+create: PostCreateInput
+"""Update 'Post' object if exists."""
+update: PostUpdateWithNestedWhereUniqueInput
+"""Upsert 'Post' object."""
+upsert: PostUpsertWithNestedWhereUniqueInput
+"""Connect an existing 'Post' object."""
+connect: PostWhereUniqueInput
+"""Disconnect 'Post' object."""
+disconnect: Boolean
+"""Delete 'Post' object."""
+delete: Boolean
+}
+
+input PostUpdateManyInlineInput {
+"""Create and connect multiple new 'Post' objects."""
+create: [PostCreateInput!]
+"""Update multiple 'Post' objects if exists."""
+update: [PostUpdateWithNestedWhereUniqueInput!]
+"""Upsert multiple 'Post' objects."""
+upsert: [PostUpsertWithNestedWhereUniqueInput!]
+"""Connect multiple existing 'Post' objects."""
+connect: [PostConnectInput!]
+"""Replace existing relation with multiple 'Post' objects."""
+set: [PostWhereUniqueInput!]
+"""Disconnect multiple 'Post' objects from relation."""
+disconnect: [PostWhereUniqueInput!]
+"""Delete multiple 'Post' objects."""
+delete: [PostWhereUniqueInput!]
+}
+
+input PostUpdateWithNestedWhereUniqueInput {
+where: PostWhereUniqueInput!
+data: PostUpdateInput!
+}
+
+input PostUpsertWithNestedWhereUniqueInput {
+where: PostWhereUniqueInput!
+data: PostUpsertInput!
+}
+
+input PostConnectInput {
+"""'Post' object to connect"""
+where: PostWhereUniqueInput!
+"""Specify the position in the list of connected objects, by-defult will add it to end of the list."""
+position: ConnectPositionInput
+}
+
+"""The where filter which can match zero or more objects"""
+input CategoryWhereInput {
+"""Logical AND on all given filters."""
+AND: [CategoryWhereInput!]
+"""Logical OR on all given filters."""
+OR: [CategoryWhereInput!]
+"""Logical NOT on all given filters combined by AND."""
+NOT: [CategoryWhereInput!]
+"""equals"""
+id: String
+"""not equals"""
+id_not: String
+"""contains substring"""
+id_contains: String
+"""doesn't contain substring"""
+id_not_contains: String
+id_starts_with: String
+id_not_starts_with: String
+id_ends_with: String
+id_not_ends_with: String
+"""less than"""
+id_lt: String
+"""less than or equals"""
+id_lte: String
+"""greater than"""
+id_gt: String
+"""greater than or equals"""
+id_gte: String
+"""in list"""
+id_in: [String]
+"""not in list"""
+id_not_in: [String]
+"""equals"""
+name: String
+"""not equals"""
+name_not: String
+"""contains substring"""
+name_contains: String
+"""doesn't contain substring"""
+name_not_contains: String
+name_starts_with: String
+name_not_starts_with: String
+name_ends_with: String
+name_not_ends_with: String
+"""less than"""
+name_lt: String
+"""less than or equals"""
+name_lte: String
+"""greater than"""
+name_gt: String
+"""greater than or equals"""
+name_gte: String
+"""in list"""
+name_in: [String]
+"""not in list"""
+name_not_in: [String]
+"""equals"""
+postIDs: String
+"""not equals"""
+postIDs_not: String
+"""contains substring"""
+postIDs_contains: String
+"""doesn't contain substring"""
+postIDs_not_contains: String
+postIDs_starts_with: String
+postIDs_not_starts_with: String
+postIDs_ends_with: String
+postIDs_not_ends_with: String
+"""less than"""
+postIDs_lt: String
+"""less than or equals"""
+postIDs_lte: String
+"""greater than"""
+postIDs_gt: String
+"""greater than or equals"""
+postIDs_gte: String
+"""in list"""
+postIDs_in: [String]
+"""not in list"""
+postIDs_not_in: [String]
+"""condition must be true for all nodes"""
+posts_every: PostWhereInput
+"""condition must be true for at least 1 node"""
+posts_some: PostWhereInput
+"""condition must be false for all nodes"""
+posts_none: PostWhereInput
+"""is the relation field empty"""
+posts_is_empty: Boolean
+}
+
+"""The where unique filter which can match at-most 1 object."""
+input CategoryWhereUniqueInput {
+id: ID
+name: String
+}
+
+"""Order by input for Category's scalar fields"""
+enum CategoryOrderByInput {
+id_ASC
+id_DSC
+name_ASC
+name_DSC
+}
+
+"""Category"""
+type Category implements Node {
+id: ID! @map(name: "categoryId") @unique
+name: String! @unique
+postIDs: [String!]!
+posts(
+where: PostWhereInput
+orderBy: PostOrderByInput
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): [Post!]!
+postsConnection(
+where: PostWhereInput
+orderBy: PostOrderByInput
+skip: Int
+after: ID
+before: ID
+first: Int
+last: Int
+): [PostConnection!]!
+}
+
+type CategoryEdge {
+node: Category!
+cursor: String!
+}
+
+type CategoryConnection {
+pageInfo: PageInfo!
+edges: [CategoryEdge!]!
+aggregate: Aggregate!
+}
+
+input CategoryCreateInput {
+name: String!
+posts: PostCreateManyInlineInput
+}
+
+input CategoryCreateOneInlineInput {
+create: CategoryCreateInput
+connect: CategoryWhereUniqueInput
+}
+
+input CategoryCreateManyInlineInput {
+create: [CategoryCreateInput!]
+connect: [CategoryWhereUniqueInput!]
+}
+
+input CategoryUpdateInput {
+name: String
+posts: PostUpdateManyInlineInput
+}
+
+input CategoryUpsertInput {
+create: CategoryCreateInput!
+update: CategoryUpdateInput!
+}
+
+input CategoryUpdateOneInlineInput {
+"""Create and connect a new 'Category' object."""
+create: CategoryCreateInput
+"""Update 'Category' object if exists."""
+update: CategoryUpdateWithNestedWhereUniqueInput
+"""Upsert 'Category' object."""
+upsert: CategoryUpsertWithNestedWhereUniqueInput
+"""Connect an existing 'Category' object."""
+connect: CategoryWhereUniqueInput
+"""Disconnect 'Category' object."""
+disconnect: Boolean
+"""Delete 'Category' object."""
+delete: Boolean
+}
+
+input CategoryUpdateManyInlineInput {
+"""Create and connect multiple new 'Category' objects."""
+create: [CategoryCreateInput!]
+"""Update multiple 'Category' objects if exists."""
+update: [CategoryUpdateWithNestedWhereUniqueInput!]
+"""Upsert multiple 'Category' objects."""
+upsert: [CategoryUpsertWithNestedWhereUniqueInput!]
+"""Connect multiple existing 'Category' objects."""
+connect: [CategoryConnectInput!]
+"""Replace existing relation with multiple 'Category' objects."""
+set: [CategoryWhereUniqueInput!]
+"""Disconnect multiple 'Category' objects from relation."""
+disconnect: [CategoryWhereUniqueInput!]
+"""Delete multiple 'Category' objects."""
+delete: [CategoryWhereUniqueInput!]
+}
+
+input CategoryUpdateWithNestedWhereUniqueInput {
+where: CategoryWhereUniqueInput!
+data: CategoryUpdateInput!
+}
+
+input CategoryUpsertWithNestedWhereUniqueInput {
+where: CategoryWhereUniqueInput!
+data: CategoryUpsertInput!
+}
+
+input CategoryConnectInput {
+"""'Category' object to connect"""
+where: CategoryWhereUniqueInput!
+"""Specify the position in the list of connected objects, by-defult will add it to end of the list."""
+position: ConnectPositionInput
+}

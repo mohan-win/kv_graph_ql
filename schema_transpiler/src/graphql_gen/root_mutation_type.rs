@@ -9,7 +9,7 @@ use super::*;
 ///  * `models` - array of models in sdml.
 /// ### Returns.
 /// Root level mutation type definition.
-pub(in crate::graphql_gen) fn root_mutation_type_def<'src>(
+pub fn root_mutation_type_def<'src>(
     models: &Vec<&sdml_ast::ModelDecl<'src>>,
 ) -> GraphQLGenResult<TypeDefinition> {
     let fields = models.iter().try_fold(Vec::new(), |mut acc, model| {

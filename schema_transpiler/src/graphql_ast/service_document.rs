@@ -1,3 +1,8 @@
+//! The ServiceDocument types defined here are similar to types defined in
+//! graphql_parser crate except that,
+//! 1. These types exclude Position information, as they are not relevant for graphql_gen module.
+//! 2. Includes display_helpers, to convert these ServiceDocument::* types into GraphQL SDL.
+
 use super::*;
 
 pub mod display_helpers;
@@ -284,7 +289,7 @@ impl Type {
 
     /// Create a type from the type string.
     #[must_use]
-    pub(crate) fn new_from_str(ty: &str) -> Option<Self> {
+    pub fn new_from_str(ty: &str) -> Option<Self> {
         let (nullable, ty) = if let Some(rest) = ty.strip_suffix('!') {
             (false, rest)
         } else {
@@ -302,10 +307,10 @@ impl Type {
     }
 
     /// Returns the graphql type name for the given SDML primitve type.
-    pub(crate) fn map_sdml_type_to_graphql_ty_name(
+    pub fn map_sdml_type_to_graphql_ty_name(
         r#type: &sdml_parser::ast::PrimitiveType,
     ) -> String {
-        use crate::graphql_gen::open_crud_name::{
+        use crate::graphql_gen::{
             FIELD_TYPE_NAME_BOOL, FIELD_TYPE_NAME_INT, FIELD_TYPE_NAME_STRING,
             FIELD_TYPE_SCALAR_DATETIME,
         };

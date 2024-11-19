@@ -1114,10 +1114,8 @@ reason: String = "No longer supported"
                 InputValueDefinition {
                     description: None,
                     name: Name::new("reason"),
-                    ty: Type::new_from_str(
-                        crate::graphql_gen::open_crud_name::FIELD_TYPE_NAME_STRING,
-                    )
-                    .unwrap(),
+                    ty: Type::new_from_str(crate::graphql_gen::FIELD_TYPE_NAME_STRING)
+                        .unwrap(),
                     default_value: Some(ConstValue::String(
                         "No longer supported".to_string(),
                     )),
