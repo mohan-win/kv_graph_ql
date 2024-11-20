@@ -2,12 +2,170 @@
 //! meta types.
 use graphql_parser::types::{
     ConstDirective, EnumValueDefinition, FieldDefinition, InputValueDefinition,
+    TypeDefinition, TypeKind,
 };
 use indexmap::IndexMap;
 
 use super::{
     Deprecation, MetaDirectiveInvocation, MetaEnumValue, MetaField, MetaInputValue,
+    MetaType,
 };
+
+impl From<TypeDefinition> for MetaType {
+    fn from(value: TypeDefinition) -> Self {
+        match value.kind {
+            TypeKind::Scalar => from_scalar_type(value),
+            TypeKind::Object(_) => from_object_type(value),
+            TypeKind::Interface(_) => from_interface_type(value),
+            TypeKind::Union(_) => from_union_type(value),
+            TypeKind::Enum(_) => from_enum_type(value),
+            TypeKind::InputObject(_) => from_input_obj(value),
+        }
+    }
+}
+
+fn from_scalar_type(value: TypeDefinition) -> MetaType {
+    if let TypeKind::Scalar = value.kind {
+        MetaType::Scalar {
+            name: value.name.node.to_string(),
+            description: value.description.map(|desc| desc.node),
+            is_valid: None, // ToDo:: Add scalar validator.
+            specified_by_url: None,
+        }
+    } else {
+        panic!("value is not of type Scalar")
+    }
+}
+
+fn from_object_type(value: TypeDefinition) -> MetaType {
+    if let TypeKind::Object(obj_ty) = value.kind {
+        MetaType::Object {
+            name: value.name.node.to_string(),
+            description: value.description.map(|desc| desc.node),
+            implements: obj_ty
+                .implements
+                .into_iter()
+                .map(|interface| interface.node.to_string())
+                .collect(),
+            fields: obj_ty
+                .fields
+                .into_iter()
+                .map(|field| (field.node.name.node.to_string(), field.node.into()))
+                .collect(),
+            is_subscription: false,
+            directive_invocations: value
+                .directives
+                .into_iter()
+                .map(|directive| directive.node.into())
+                .collect(),
+        }
+    } else {
+        panic!("Value is not of type object.")
+    }
+}
+
+fn from_interface_type(value: TypeDefinition) -> MetaType {
+    if let TypeKind::Interface(interface_ty) = value.kind {
+        MetaType::Interface {
+            name: value.name.node.to_string(),
+            description: value.description.map(|desc| desc.node),
+            implements: interface_ty
+                .implements
+                .into_iter()
+                .map(|interface| interface.node.to_string())
+                .collect(),
+            fields: interface_ty
+                .fields
+                .into_iter()
+                .map(|field| (field.node.name.node.to_string(), field.node.into()))
+                .collect(),
+            directive_invocations: value
+                .directives
+                .into_iter()
+                .map(|directive| directive.node.into())
+                .collect(),
+        }
+    } else {
+        panic!("Value is not of type interface.")
+    }
+}
+
+fn from_union_type(value: TypeDefinition) -> MetaType {
+    if let TypeKind::Union(union_ty) = value.kind {
+        MetaType::Union {
+            name: value.name.node.to_string(),
+            description: value.description.map(|desc| desc.node),
+            possible_types: union_ty
+                .members
+                .into_iter()
+                .map(|member| member.node.to_string())
+                .collect(),
+        }
+    } else {
+        panic!("Value is not of type union.")
+    }
+}
+
+fn from_enum_type(value: TypeDefinition) -> MetaType {
+    if let TypeKind::Enum(enum_ty) = value.kind {
+        MetaType::Enum {
+            name: value.name.node.to_string(),
+            description: value.description.map(|desc| desc.node),
+            enum_values: enum_ty
+                .values
+                .into_iter()
+                .map(|enum_value| {
+                    (
+                        enum_value.node.value.node.to_string(),
+                        enum_value.node.into(),
+                    )
+                })
+                .collect(),
+            directive_invocations: value
+                .directives
+                .into_iter()
+                .map(|directive| directive.node.into())
+                .collect(),
+        }
+    } else {
+        panic!("Value is not of type enum.")
+    }
+}
+
+fn from_input_obj(mut value: TypeDefinition) -> MetaType {
+    if let TypeKind::InputObject(input_obj) = value.kind {
+        let oneof_directive_pos = value
+            .directives
+            .iter()
+            .position(|directive| directive.node.name.node.as_str() == "oneOf");
+        let oneof = oneof_directive_pos.map_or(false, |pos| {
+            value.directives.remove(pos); // Removing "oneOf" from directives array.
+            true
+        });
+        MetaType::InputObject {
+            name: value.name.node.to_string(),
+            description: value.description.map(|desc| desc.node),
+            input_fields: input_obj
+                .fields
+                .into_iter()
+                .map(|input_field| {
+                    (
+                        input_field.node.name.node.to_string(),
+                        input_field.node.into(),
+                    )
+                })
+                .collect(),
+            oneof,
+            directive_invocations: value
+                .directives
+                .into_iter()
+                .map(|directive| directive.node.into())
+                .collect(),
+        }
+    } else {
+        panic!("Value is not of type input object.")
+    }
+}
 
 impl From<ConstDirective> for MetaDirectiveInvocation {
     fn from(value: ConstDirective) -> Self {
@@ -98,7 +256,7 @@ impl From<EnumValueDefinition> for MetaEnumValue {
         MetaEnumValue {
             name: value.value.node.to_string(),
             description: value.description.map(|desc| desc.node),
-            deprecation: deprecation,
+            deprecation,
             directive_invocations: value
                 .directives
                 .into_iter()

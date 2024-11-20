@@ -123,7 +123,8 @@ impl<'a> __Type<'a> {
     }
 
     fn interfaces(&self) -> Option<Vec<__Type<'a>>> {
-        if let TypeDetail::Named(registry::MetaType::Object { name, .. }) = &self.detail {
+        panic!("Revisit this as implemented interfaces are directly stored in the MetaType::Object");
+        /*if let TypeDetail::Named(registry::MetaType::Object { name, .. }) = &self.detail {
             self.registry.implements.get(name).map(|implements| {
                 implements
                     .iter()
@@ -132,11 +133,12 @@ impl<'a> __Type<'a> {
             })
         } else {
             None
-        }
+        }*/
     }
 
     fn possible_types(&self) -> Option<Vec<__Type<'a>>> {
-        if let TypeDetail::Named(registry::MetaType::Interface {
+        panic!("Revisit this as possible types needs to constructed from Registry info.");
+        /*if let TypeDetail::Named(registry::MetaType::Interface {
             possible_types, ..
         })
         | TypeDetail::Named(registry::MetaType::Union { possible_types, .. }) =
@@ -150,7 +152,7 @@ impl<'a> __Type<'a> {
             )
         } else {
             None
-        }
+        }*/
     }
 
     fn enum_values(&self, include_deprecated: bool) -> Option<Vec<__EnumValue>> {

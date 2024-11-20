@@ -185,6 +185,7 @@ impl MetaTypeId {
                 name: fake_type_name.to_string(),
                 description: None,
                 fields: Default::default(),
+                implements: Default::default(),
                 is_subscription: false,
                 directive_invocations: vec![],
             },
@@ -192,7 +193,7 @@ impl MetaTypeId {
                 name: fake_type_name.to_string(),
                 description: None,
                 fields: Default::default(),
-                possible_types: Default::default(),
+                implements: Default::default(),
                 directive_invocations: vec![],
             },
             MetaTypeId::Union => MetaType::Union {
@@ -255,15 +256,17 @@ pub enum MetaType {
     ///
     /// Reference: <https://spec.graphql.org/October2021/#sec-Objects>
     Object {
-        /// The name of the object
+        /// The name of the object.
         name: String,
-        /// The description of the object
+        /// The description of the object.
         description: Option<String>,
-        /// The fields of the object type
+        /// Interfaces implemented by this object.
+        implements: IndexSet<String>,
+        /// The fields of the object type.
         fields: IndexMap<String, MetaField>,
-        /// Indicates whether it is a subscription object
+        /// Indicates whether it is a subscription object.
         is_subscription: bool,
-        /// custom directive invocations
+        /// Custom directive invocations.
         directive_invocations: Vec<MetaDirectiveInvocation>,
     },
     /// Interface
@@ -274,11 +277,10 @@ pub enum MetaType {
         name: String,
         /// The description of the interface
         description: Option<String>,
+        /// Interfaces implemented by this interface.
+        implements: IndexSet<String>,
         /// The fields of the interface
         fields: IndexMap<String, MetaField>,
-        /// The object types that implement this interface
-        /// Add fields to an entity that's defined in another service
-        possible_types: IndexSet<String>,
         /// custom directive invocations
         directive_invocations: Vec<MetaDirectiveInvocation>,
     },
@@ -381,21 +383,23 @@ impl MetaType {
 
     #[inline]
     pub fn is_possible_type(&self, type_name: &str) -> bool {
-        match self {
+        unimplemented!("to be implemented!");
+        /*match self {
             Self::Interface { possible_types, .. } => possible_types.contains(type_name),
             Self::Union { possible_types, .. } => possible_types.contains(type_name),
             Self::Object { name, .. } => name == type_name,
             _ => false,
-        }
+        }*/
     }
 
     #[inline]
     pub fn possible_types(&self) -> Option<&IndexSet<String>> {
-        match self {
+        unimplemented!("to be implemented");
+        /*match self {
             Self::Interface { possible_types, .. } => Some(possible_types),
             Self::Union { possible_types, .. } => Some(possible_types),
             _ => None,
-        }
+        }*/
     }
 
     pub fn type_overlap(&self, ty: &MetaType) -> bool {
