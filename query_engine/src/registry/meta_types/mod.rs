@@ -1,14 +1,9 @@
 //! Impements necessary meta-data types for introspection.
-use crate::graphql_parser::types::{
-    BaseType as ParsedBaseType, Type as ParsedType, VariableDefinition,
-};
 use crate::{introspection::types::__DirectiveLocation, Value};
 use indexmap::{map::IndexMap, set::IndexSet};
-use std::{
-    collections::{BTreeMap, HashMap, HashSet},
-    fmt,
-    sync::Arc,
-};
+use std::{fmt, sync::Arc};
+
+pub mod from_service_doc;
 
 fn strip_brackets(type_name: &str) -> Option<&str> {
     type_name

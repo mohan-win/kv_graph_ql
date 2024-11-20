@@ -282,6 +282,8 @@ dependencies = [
  "graphql_parser",
  "graphql_value",
  "indexmap",
+ "schema_transpiler",
+ "sdml_parser",
  "serde",
  "serde_json",
 ]
