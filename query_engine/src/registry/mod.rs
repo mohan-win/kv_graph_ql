@@ -42,11 +42,11 @@ pub struct Registry {
 
 impl Registry {
     /// Builds the registry for the given ServiceDocument.
-    pub fn build_registry(schema_ast: ServiceDocument) -> Self {
+    pub fn build_registry(schema_doc: ServiceDocument) -> Self {
         let mut registry = Registry::default();
         // Note: Since schema_traspiler::graphql_gen uses default root
         // operation type names, We don't need to bother about TypeSystemDefinition::Schema.
-        schema_ast
+        schema_doc
             .definitions
             .into_iter()
             .for_each(|def| match def {

@@ -172,52 +172,6 @@ pub enum MetaTypeId {
     InputObject,
 }
 
-impl MetaTypeId {
-    pub(crate) fn create_fake_type(&self, fake_type_name: &'static str) -> MetaType {
-        match self {
-            MetaTypeId::Scalar => MetaType::Scalar {
-                name: fake_type_name.to_string(),
-                description: None,
-                is_valid: None,
-                specified_by_url: None,
-            },
-            MetaTypeId::Object => MetaType::Object {
-                name: fake_type_name.to_string(),
-                description: None,
-                fields: Default::default(),
-                implements: Default::default(),
-                is_subscription: false,
-                directive_invocations: vec![],
-            },
-            MetaTypeId::Interface => MetaType::Interface {
-                name: fake_type_name.to_string(),
-                description: None,
-                fields: Default::default(),
-                implements: Default::default(),
-                directive_invocations: vec![],
-            },
-            MetaTypeId::Union => MetaType::Union {
-                name: fake_type_name.to_string(),
-                description: None,
-                possible_types: Default::default(),
-            },
-            MetaTypeId::Enum => MetaType::Enum {
-                name: fake_type_name.to_string(),
-                description: None,
-                enum_values: Default::default(),
-                directive_invocations: vec![],
-            },
-            MetaTypeId::InputObject => MetaType::InputObject {
-                name: fake_type_name.to_string(),
-                description: None,
-                input_fields: Default::default(),
-                oneof: false,
-                directive_invocations: vec![],
-            },
-        }
-    }
-}
-
 impl fmt::Display for MetaTypeId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
