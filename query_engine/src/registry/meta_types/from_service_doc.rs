@@ -1,14 +1,16 @@
 //! Implements From conversion trait to convert from relevant parser::type::service::* into
 //! meta types.
 use graphql_parser::types::{
-    ConstDirective, EnumValueDefinition, FieldDefinition, InputValueDefinition,
-    TypeDefinition, TypeKind,
+    ConstDirective, DirectiveDefinition, DirectiveLocation, EnumValueDefinition,
+    FieldDefinition, InputValueDefinition, TypeDefinition, TypeKind, TypeSystemDefinition,
 };
 use indexmap::IndexMap;
 
+use crate::introspection::types::__DirectiveLocation;
+
 use super::{
-    Deprecation, MetaDirectiveInvocation, MetaEnumValue, MetaField, MetaInputValue,
-    MetaType,
+    Deprecation, MetaDirective, MetaDirectiveInvocation, MetaEnumValue, MetaField,
+    MetaInputValue, MetaType,
 };
 
 impl From<TypeDefinition> for MetaType {
@@ -262,6 +264,70 @@ impl From<EnumValueDefinition> for MetaEnumValue {
                 .into_iter()
                 .map(|directive| directive.node.into())
                 .collect(),
+        }
+    }
+}
+
+impl From<DirectiveLocation> for __DirectiveLocation {
+    fn from(value: DirectiveLocation) -> Self {
+        match value {
+            DirectiveLocation::Query => Self::QUERY,
+
+            DirectiveLocation::Mutation => Self::MUTATION,
+
+            DirectiveLocation::Subscription => Self::SUBSCRIPTION,
+
+            DirectiveLocation::Field => Self::FIELD,
+
+            DirectiveLocation::FragmentDefinition => Self::FIELD_DEFINITION,
+
+            DirectiveLocation::FragmentSpread => Self::FRAGMENT_SPREAD,
+
+            DirectiveLocation::InlineFragment => Self::INLINE_FRAGMENT,
+
+            DirectiveLocation::Schema => Self::SCHEMA,
+
+            DirectiveLocation::Scalar => Self::SCALAR,
+
+            DirectiveLocation::Object => Self::OBJECT,
+
+            DirectiveLocation::FieldDefinition => Self::FIELD_DEFINITION,
+
+            DirectiveLocation::ArgumentDefinition => Self::ARGUMENT_DEFINITION,
+
+            DirectiveLocation::Interface => Self::INTERFACE,
+
+            DirectiveLocation::Union => Self::UNION,
+
+            DirectiveLocation::Enum => Self::ENUM,
+
+            DirectiveLocation::EnumValue => Self::ENUM_VALUE,
+
+            DirectiveLocation::InputObject => Self::INPUT_OBJECT,
+
+            DirectiveLocation::InputFieldDefinition => Self::INPUT_FIELD_DEFINITION,
+
+            DirectiveLocation::VariableDefinition => Self::VARIABLE_DEFINITION,
+        }
+    }
+}
+
+impl From<DirectiveDefinition> for MetaDirective {
+    fn from(value: DirectiveDefinition) -> Self {
+        MetaDirective {
+            name: value.name.node.to_string(),
+            description: value.description.map(|desc| desc.node),
+            locations: value
+                .locations
+                .into_iter()
+                .map(|loc| loc.node.into())
+                .collect(),
+            args: value
+                .arguments
+                .into_iter()
+                .map(|arg| (arg.node.name.node.to_string(), arg.node.into()))
+                .collect(),
+            is_repeatable: value.is_repeatable,
         }
     }
 }

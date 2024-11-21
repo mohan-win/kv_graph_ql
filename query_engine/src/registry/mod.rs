@@ -3,7 +3,8 @@ mod meta_types;
 pub use meta_types::*;
 
 use crate::graphql_parser::types::{
-    BaseType as ParsedBaseType, Type as ParsedType, VariableDefinition,
+    BaseType as ParsedBaseType, ServiceDocument, Type as ParsedType,
+    TypeSystemDefinition, VariableDefinition,
 };
 use crate::{
     introspection::types::__DirectiveLocation, schema::IntrospectionMode, Value,
@@ -31,6 +32,40 @@ pub struct Registry {
 }
 
 impl Registry {
+    /// Builds the registry for the given ServiceDocument.
+    pub(crate) fn build_registry(schema_ast: ServiceDocument) -> Self {
+        let mut registry = Registry::default();
+        // Note: Since schema_traspiler::graphql_gen uses default root
+        // operation type names, We don't need to bother about TypeSystemDefinition::Schema.
+        schema_ast
+            .definitions
+            .into_iter()
+            .for_each(|def| match def {
+                TypeSystemDefinition::Schema(_) => {
+                    panic!("The root operation types should have default name.")
+                }
+                TypeSystemDefinition::Directive(directive) => {
+                    registry.add_directive(directive.node.into())
+                }
+                TypeSystemDefinition::Type(ty) => registry.add_type(ty.node.into()),
+            });
+        registry.query_type = registry
+            .types
+            .get("Query")
+            .map(|_| "Query".to_string())
+            .expect("There should be a root query type named `Query`");
+        registry.mutation_type = Some(
+            registry
+                .types
+                .get("Mutation")
+                .map(|_| "Mutation".to_string())
+                .expect("There should be root mutation type named `Mutation`"),
+        );
+        registry.subscription_type = None;
+        registry.introspection_mode = IntrospectionMode::default();
+
+        registry
+    }
     pub(crate) fn add_system_types(&mut self) {
         self.add_directive(MetaDirective {
             name: "skip".into(),
@@ -52,7 +87,6 @@ impl Registry {
                 args
             },
             is_repeatable: false,
-            composable: None
         });
 
         self.add_directive(MetaDirective {
@@ -82,7 +116,6 @@ impl Registry {
                 args
             },
             is_repeatable: false,
-            composable: None,
         });
 
         self.add_directive(MetaDirective {
@@ -101,7 +134,6 @@ impl Registry {
                 args
             },
             is_repeatable: false,
-            composable: None
         });
 
         self.add_directive(MetaDirective {
@@ -110,34 +142,20 @@ impl Registry {
             locations: vec![__DirectiveLocation::INPUT_OBJECT],
             args: Default::default(),
             is_repeatable: false,
-            composable: None,
         });
 
         // Create system scalars.
-        self.create_type(
-            &mut Self::boolean_scalar_type,
-            "Boolean",
-            MetaTypeId::Scalar,
-        );
-        self.create_type(&mut Self::integer_scalar_type, "Int", MetaTypeId::Scalar);
-        self.create_type(&mut Self::float_scalar_type, "Float", MetaTypeId::Scalar);
-        self.create_type(&mut Self::id_scalar_type, "ID", MetaTypeId::Scalar);
-        self.create_type(&mut Self::string_scalar_type, "String", MetaTypeId::Scalar);
+        self.add_type(Self::boolean_scalar_type());
+        self.add_type(Self::integer_scalar_type());
+        self.add_type(Self::float_scalar_type());
+        self.add_type(Self::id_scalar_type());
+        self.add_type(Self::string_scalar_type());
     }
 
-    fn create_type<F: FnMut(&mut Registry) -> MetaType>(
-        &mut self,
-        f: &mut F,
-        name: &str,
-        type_id: MetaTypeId,
-    ) {
-        const FAKE_TYPE_NAME: &'static str = "__fake_type__";
+    fn add_type(&mut self, r#type: MetaType) {
+        let (name, type_id) = (r#type.name(), r#type.type_id());
         match self.types.get(name) {
             Some(ty) => {
-                if FAKE_TYPE_NAME == ty.name() {
-                    return;
-                }
-
                 if !self.ignore_name_conflicts.contains(name) {
                     panic!(
                         "Already type `{}` already registered as `{}`",
@@ -145,7 +163,6 @@ impl Registry {
                         ty.type_id()
                     );
                 }
-
                 if ty.type_id() != type_id {
                     panic!(
                         "Register `{}` as `{}`, but already registered as `{}`",
@@ -156,22 +173,11 @@ impl Registry {
                 }
             }
             None => {
-                // Inserting a fake type before calling the function allowes recursive types
-                // to exist.
-                self.types
-                    .insert(name.to_string(), type_id.create_fake_type(FAKE_TYPE_NAME));
-                let ty = f(self);
-                *self.types.get_mut(name).unwrap() = ty;
+                self.types.insert(name.to_string(), r#type);
             }
         }
     }
-
-    pub fn add_directive(&mut self, directive: MetaDirective) {
-        self.directives
-            .insert(directive.name.to_string(), directive);
-    }
-
-    pub fn add_implements(&mut self, ty: &str, interface: &str) {
+    fn add_implements(&mut self, ty: &str, interface: &str) {
         self.implements
             .entry(ty.to_string())
             .and_modify(|interfaces| {
@@ -182,6 +188,11 @@ impl Registry {
                 interfaces.insert(interface.to_string());
                 interfaces
             });
+    }
+
+    fn add_directive(&mut self, directive: MetaDirective) {
+        self.directives
+            .insert(directive.name.to_string(), directive);
     }
 
     pub fn concrete_type_by_name(&self, type_name: &str) -> Option<&MetaType> {
@@ -198,7 +209,7 @@ impl Registry {
         }
     }
 
-    fn boolean_scalar_type(_registry: &mut Registry) -> MetaType {
+    fn boolean_scalar_type() -> MetaType {
         MetaType::Scalar {
             name: "Boolean".to_string(),
             description: Some("Built-in scalar type for Boolean values".to_string()),
@@ -207,7 +218,7 @@ impl Registry {
         }
     }
 
-    fn integer_scalar_type(_registry: &mut Registry) -> MetaType {
+    fn integer_scalar_type() -> MetaType {
         MetaType::Scalar {
             name: "Int".to_string(),
             description: Some("Built-in scalar type for Int values".to_string()),
@@ -216,7 +227,7 @@ impl Registry {
         }
     }
 
-    fn float_scalar_type(_registry: &mut Registry) -> MetaType {
+    fn float_scalar_type() -> MetaType {
         MetaType::Scalar {
             name: "Float".to_string(),
             description: Some("Built-in scalar type for Int values".to_string()),
@@ -225,7 +236,7 @@ impl Registry {
         }
     }
 
-    fn id_scalar_type(_registry: &mut Registry) -> MetaType {
+    fn id_scalar_type() -> MetaType {
         MetaType::Scalar {
             name: "ID".to_string(),
             description: Some("Built-in scalar type for ID values".to_string()),
@@ -234,7 +245,7 @@ impl Registry {
         }
     }
 
-    fn string_scalar_type(_registry: &mut Registry) -> MetaType {
+    fn string_scalar_type() -> MetaType {
         MetaType::Scalar {
             name: "String".to_string(),
             description: Some("Built-in scalar type for String values".to_string()),

@@ -426,5 +426,4 @@ pub struct MetaDirective {
     pub locations: Vec<__DirectiveLocation>,
     pub args: IndexMap<String, MetaInputValue>,
     pub is_repeatable: bool,
-    pub composable: Option<String>,
 }
