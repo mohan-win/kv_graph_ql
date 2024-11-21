@@ -123,36 +123,34 @@ impl<'a> __Type<'a> {
     }
 
     fn interfaces(&self) -> Option<Vec<__Type<'a>>> {
-        panic!("Revisit this as implemented interfaces are directly stored in the MetaType::Object");
-        /*if let TypeDetail::Named(registry::MetaType::Object { name, .. }) = &self.detail {
-            self.registry.implements.get(name).map(|implements| {
-                implements
-                    .iter()
-                    .map(|ty| __Type::new(self.registry, ty))
-                    .collect()
-            })
-        } else {
-            None
-        }*/
-    }
-
-    fn possible_types(&self) -> Option<Vec<__Type<'a>>> {
-        panic!("Revisit this as possible types needs to constructed from Registry info.");
-        /*if let TypeDetail::Named(registry::MetaType::Interface {
-            possible_types, ..
-        })
-        | TypeDetail::Named(registry::MetaType::Union { possible_types, .. }) =
+        if let TypeDetail::Named(registry::MetaType::Object { implements, .. })
+        | TypeDetail::Named(registry::MetaType::Interface { implements, .. }) =
             &self.detail
         {
             Some(
-                possible_types
+                implements
                     .iter()
                     .map(|ty| __Type::new(self.registry, ty))
                     .collect(),
             )
         } else {
             None
-        }*/
+        }
+    }
+
+    fn possible_types(&self) -> Option<Vec<__Type<'a>>> {
+        if let TypeDetail::Named(registry::MetaType::Interface { name, .. })
+        | TypeDetail::Named(registry::MetaType::Union { name, .. }) = &self.detail
+        {
+            self.registry.possible_types(name).map(|obj_ty_names| {
+                obj_ty_names
+                    .iter()
+                    .map(|ty_name| __Type::new(self.registry, ty_name))
+                    .collect()
+            })
+        } else {
+            None
+        }
     }
 
     fn enum_values(&self, include_deprecated: bool) -> Option<Vec<__EnumValue>> {

@@ -11,29 +11,38 @@ use crate::{
 };
 use core::panic;
 use indexmap::{map::IndexMap, set::IndexSet};
+use std::any::TypeId;
 use std::{
     collections::{BTreeMap, HashMap, HashSet},
     fmt,
     sync::Arc,
 };
 
+#[derive(Default)]
+pub struct ImplementedBy {
+    objects: IndexSet<String>,
+    interfaces: IndexSet<String>,
+}
+
 /// A type registry for schema.
 #[derive(Default)]
 pub struct Registry {
     pub types: BTreeMap<String, MetaType>,
     pub directives: BTreeMap<String, MetaDirective>,
-    pub implements: HashMap<String, IndexSet<String>>,
     pub query_type: String,
     pub mutation_type: Option<String>,
     pub subscription_type: Option<String>,
     pub introspection_mode: IntrospectionMode,
     pub ignore_name_conflicts: HashSet<String>,
     pub enable_suggestions: bool,
+
+    /// implementation map: Map<Key = Interface Type Name, Value = ImplementedBy>
+    implementation_map: HashMap<String, ImplementedBy>,
 }
 
 impl Registry {
     /// Builds the registry for the given ServiceDocument.
-    pub(crate) fn build_registry(schema_ast: ServiceDocument) -> Self {
+    pub fn build_registry(schema_ast: ServiceDocument) -> Self {
         let mut registry = Registry::default();
         // Note: Since schema_traspiler::graphql_gen uses default root
         // operation type names, We don't need to bother about TypeSystemDefinition::Schema.
@@ -63,10 +72,38 @@ impl Registry {
         );
         registry.subscription_type = None;
         registry.introspection_mode = IntrospectionMode::default();
+        registry.add_system_types(); // Add system types.
 
         registry
     }
-    pub(crate) fn add_system_types(&mut self) {
+
+    /// If the type of given name is an abstract type (i.e, Union, Interface).
+    /// This function returns possible concrete types for the given type.
+    pub fn possible_types(&self, type_name: &str) -> Option<&IndexSet<String>> {
+        self.types.get(type_name).map_or(None, |ty| match ty {
+            MetaType::Union { possible_types, .. } => Some(&possible_types),
+            MetaType::Interface { .. } => {
+                Some(&self.implementation_map[type_name].objects)
+            }
+            _ => None,
+        })
+    }
+
+    pub fn concrete_type_by_name(&self, type_name: &str) -> Option<&MetaType> {
+        self.types.get(MetaTypeName::concrete_typename(type_name))
+    }
+
+    pub fn concrete_type_by_parsed_type(
+        &self,
+        query_type: &ParsedType,
+    ) -> Option<&MetaType> {
+        match &query_type.base {
+            ParsedBaseType::Named(name) => self.types.get(name.as_str()),
+            ParsedBaseType::List(ty) => self.concrete_type_by_parsed_type(ty),
+        }
+    }
+
+    fn add_system_types(&mut self) {
         self.add_directive(MetaDirective {
             name: "skip".into(),
             description: Some("Directs the executor to skip this field or fragment when the `if` argument is true".to_string()),
@@ -173,40 +210,51 @@ impl Registry {
                 }
             }
             None => {
+                // Update implementation map for Object & Interface types.
+                match &r#type {
+                    MetaType::Object { implements, .. }
+                    | MetaType::Interface { implements, .. } => {
+                        self.update_implementation_map(
+                            r#type.name(),
+                            r#type.type_id(),
+                            implements,
+                        );
+                    }
+                    _ => {
+                        // Do Nothing.
+                    }
+                }
                 self.types.insert(name.to_string(), r#type);
             }
         }
     }
-    fn add_implements(&mut self, ty: &str, interface: &str) {
-        self.implements
-            .entry(ty.to_string())
-            .and_modify(|interfaces| {
-                interfaces.insert(interface.to_string());
-            })
-            .or_insert({
-                let mut interfaces = IndexSet::new();
-                interfaces.insert(interface.to_string());
-                interfaces
-            });
+
+    fn update_implementation_map(
+        &mut self,
+        ty_name: &str,
+        type_id: MetaTypeId,
+        interfaces: &IndexSet<String>,
+    ) {
+        interfaces.iter().for_each(|iface| {
+            self.implementation_map
+                .entry(iface.clone())
+                .and_modify(|implemented_by| {
+                    if type_id == MetaTypeId::Object {
+                        implemented_by.objects.insert(ty_name.to_string());
+                    } else if type_id == MetaTypeId::Interface {
+                        implemented_by.interfaces.insert(ty_name.to_string());
+                    } else {
+                        panic!(
+                            "Only Objects and Interfaces can implement other interfaces!"
+                        )
+                    }
+                });
+        });
     }
 
     fn add_directive(&mut self, directive: MetaDirective) {
         self.directives
             .insert(directive.name.to_string(), directive);
-    }
-
-    pub fn concrete_type_by_name(&self, type_name: &str) -> Option<&MetaType> {
-        self.types.get(MetaTypeName::concrete_typename(type_name))
-    }
-
-    pub fn concrete_type_by_parsed_type(
-        &self,
-        query_type: &ParsedType,
-    ) -> Option<&MetaType> {
-        match &query_type.base {
-            ParsedBaseType::Named(name) => self.types.get(name.as_str()),
-            ParsedBaseType::List(ty) => self.concrete_type_by_parsed_type(ty),
-        }
     }
 
     fn boolean_scalar_type() -> MetaType {
