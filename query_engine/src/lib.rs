@@ -1,3 +1,4 @@
+mod error;
 mod execution;
 mod introspection;
 mod registry;

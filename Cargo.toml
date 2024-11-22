@@ -29,3 +29,4 @@ indexmap = { version = "2", features = ["serde"] }
 bytes = { version = "1.6.0", features = ["serde"] }
 pluralizer = {version = "0.4.0"}
 convert_case = {version = "0.6.0"}
+thiserror = {version = "2"}
