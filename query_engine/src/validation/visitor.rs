@@ -1,9 +1,14 @@
 use std::collections::HashMap;
 
 use crate::graphql_parser::{
-    types::{ExecutableDocument, Field, FragmentDefinition, VariableDefinition},
+    types::{
+        Directive, ExecutableDocument, Field, FragmentDefinition, OperationDefinition,
+        Selection, SelectionSet, VariableDefinition,
+    },
     Pos, Positioned,
 };
+use graphql_parser::types::{FragmentSpread, InlineFragment};
+use graphql_value::Value;
 
 use crate::{
     error::{ServerError, ServerResult},
@@ -142,6 +147,176 @@ impl<'a> VisitorContext<'a> {
 pub(crate) enum VisitMode {
     Normal,
     Inline,
+}
+
+pub(crate) trait Visitor<'a> {
+    fn mode(&self) -> VisitMode {
+        VisitMode::Normal
+    }
+
+    fn enter_document(
+        &mut self,
+        _ctx: &mut VisitorContext<'a>,
+        _doc: &'a ExecutableDocument,
+    ) {
+    }
+    fn exit_document(
+        &mut self,
+        _ctx: &mut VisitorContext<'a>,
+        _doc: &'a ExecutableDocument,
+    ) {
+    }
+
+    fn enter_operation_definition(
+        &mut self,
+        _ctx: &mut VisitorContext<'a>,
+        _operation_definition: &'a Positioned<OperationDefinition>,
+    ) {
+    }
+    fn exit_operation_definition(
+        &mut self,
+        _ctx: &mut VisitorContext<'a>,
+        _operation_definition: &'a Positioned<OperationDefinition>,
+    ) {
+    }
+
+    fn enter_fragment_definition(
+        &mut self,
+        _ctx: &mut VisitorContext<'a>,
+        _name: &'a Name,
+        _fragment_definition: &'a Positioned<FragmentDefinition>,
+    ) {
+    }
+    fn exit_fragment_definition(
+        &mut self,
+        _ctx: &mut VisitorContext<'a>,
+        _name: &'a Name,
+        _fragment_definition: &'a Positioned<FragmentDefinition>,
+    ) {
+    }
+
+    fn enter_variable_definition(
+        &mut self,
+        _ctx: &mut VisitorContext<'a>,
+        _variable_definition: &'a Positioned<VariableDefinition>,
+    ) {
+    }
+    fn exit_variable_definition(
+        &mut self,
+        _ctx: &mut VisitorContext<'a>,
+        _variable_definition: &'a Positioned<VariableDefinition>,
+    ) {
+    }
+
+    fn enter_directive(
+        &mut self,
+        _ctx: &mut VisitorContext<'a>,
+        _directive: &'a Positioned<Directive>,
+    ) {
+    }
+    fn exit_directive(
+        &mut self,
+        _ctx: &mut VisitorContext<'a>,
+        _directive: &'a Positioned<Directive>,
+    ) {
+    }
+
+    fn enter_argument(
+        &mut self,
+        _ctx: &'a VisitorContext<'a>,
+        _name: &'a Positioned<Name>,
+        _value: Positioned<Value>,
+    ) {
+    }
+    fn exit_argument(
+        &mut self,
+        _ctx: &'a VisitorContext<'a>,
+        _name: &'a Positioned<Name>,
+        _value: Positioned<Value>,
+    ) {
+    }
+
+    fn enter_selection_set(
+        &mut self,
+        _ctx: &mut VisitorContext<'a>,
+        _selection_set: &'a Positioned<SelectionSet>,
+    ) {
+    }
+    fn exit_selection_set(
+        &mut self,
+        _ctx: &mut VisitorContext<'a>,
+        _selection_set: &'a Positioned<SelectionSet>,
+    ) {
+    }
+
+    fn enter_selection(
+        &mut self,
+        _ctx: &mut VisitorContext<'a>,
+        _selection: &'a Positioned<Selection>,
+    ) {
+    }
+    fn exit_selection(
+        &mut self,
+        _ctx: &mut VisitorContext<'a>,
+        _selection: &'a Positioned<Selection>,
+    ) {
+    }
+
+    fn enter_field(
+        &mut self,
+        _ctx: &mut VisitorContext<'a>,
+        _field: &'a Positioned<Field>,
+    ) {
+    }
+    fn exit_field(
+        &mut self,
+        _ctx: &mut VisitorContext<'a>,
+        _field: &'a Positioned<Field>,
+    ) {
+    }
+
+    fn enter_fragment_spread(
+        &mut self,
+        _ctx: &mut VisitorContext<'a>,
+        _fragment_spread: &'a Positioned<FragmentSpread>,
+    ) {
+    }
+    fn exit_fragment_spread(
+        &mut self,
+        _ctx: &mut VisitorContext<'a>,
+        _fragment_spread: &'a Positioned<FragmentSpread>,
+    ) {
+    }
+
+    fn enter_inline_fragment(
+        &mut self,
+        _ctx: &mut VisitorContext<'a>,
+        _inline_fragment: &'a Positioned<InlineFragment>,
+    ) {
+    }
+    fn exit_inline_fragment(
+        &mut self,
+        _ctx: &mut VisitorContext<'a>,
+        _inline_fragment: &'a Positioned<InlineFragment>,
+    ) {
+    }
+
+    fn enter_input_value(
+        &mut self,
+        _ctx: &mut VisitorContext<'a>,
+        _pos: Pos,
+        _expected_type: &Option<MetaTypeName<'a>>,
+        _value: &Value,
+    ) {
+    }
+    fn exit_input_value(
+        &mut self,
+        _ctx: &mut VisitorContext<'a>,
+        _pos: Pos,
+        _expected_type: &Option<MetaTypeName<'a>>,
+        _value: &Value,
+    ) {
+    }
 }
 
 #[derive(Debug, PartialEq)]
