@@ -6,8 +6,8 @@ use std::{
     sync::Arc,
 };
 
+use crate::Value;
 use graphql_parser::{self as parser, Pos};
-use graphql_value::Value;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 

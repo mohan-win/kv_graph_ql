@@ -1,7 +1,8 @@
-use graphql_parser::types::ExecutableDocument;
-use graphql_value::Variables;
+mod visitor;
 
-use crate::{error::ServerError, registry::Registry};
+use graphql_parser::types::ExecutableDocument;
+
+use crate::{error::ServerError, registry::Registry, Variables};
 
 #[derive(Debug, Clone, Copy)]
 pub struct ValidationResult {
