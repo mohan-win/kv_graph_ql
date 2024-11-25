@@ -225,14 +225,14 @@ pub(crate) trait Visitor<'a> {
         &mut self,
         _ctx: &'a VisitorContext<'a>,
         _name: &'a Positioned<Name>,
-        _value: Positioned<Value>,
+        _value: &'a Positioned<Value>,
     ) {
     }
     fn exit_argument(
         &mut self,
         _ctx: &'a VisitorContext<'a>,
         _name: &'a Positioned<Name>,
-        _value: Positioned<Value>,
+        _value: &'a Positioned<Value>,
     ) {
     }
 
@@ -316,6 +316,246 @@ pub(crate) trait Visitor<'a> {
         _expected_type: &Option<MetaTypeName<'a>>,
         _value: &Value,
     ) {
+    }
+}
+
+pub(crate) struct VisitorNil;
+
+impl VisitorNil {
+    pub(crate) fn with<V>(self, visitor: V) -> VisitorCons<V, Self> {
+        VisitorCons(visitor, self)
+    }
+}
+
+pub(crate) struct VisitorCons<A, B>(A, B);
+
+impl<A, B> VisitorCons<A, B> {
+    pub(crate) const fn with<V>(self, visitor: V) -> VisitorCons<V, Self> {
+        VisitorCons(visitor, self)
+    }
+}
+
+impl<'a> Visitor<'a> for VisitorNil {}
+
+impl<'a, A, B> Visitor<'a> for VisitorCons<A, B>
+where
+    A: Visitor<'a> + 'a,
+    B: Visitor<'a> + 'a,
+{
+    fn mode(&self) -> VisitMode {
+        self.0.mode()
+    }
+
+    fn enter_document(
+        &mut self,
+        ctx: &mut VisitorContext<'a>,
+        doc: &'a ExecutableDocument,
+    ) {
+        self.0.enter_document(ctx, doc);
+        self.1.enter_document(ctx, doc);
+    }
+    fn exit_document(
+        &mut self,
+        ctx: &mut VisitorContext<'a>,
+        doc: &'a ExecutableDocument,
+    ) {
+        self.0.exit_document(ctx, doc);
+        self.1.exit_document(ctx, doc);
+    }
+
+    fn enter_operation_definition(
+        &mut self,
+        ctx: &mut VisitorContext<'a>,
+        operation_definition: &'a Positioned<OperationDefinition>,
+    ) {
+        self.0.enter_operation_definition(ctx, operation_definition);
+        self.1.enter_operation_definition(ctx, operation_definition);
+    }
+    fn exit_operation_definition(
+        &mut self,
+        ctx: &mut VisitorContext<'a>,
+        operation_definition: &'a Positioned<OperationDefinition>,
+    ) {
+        self.0.exit_operation_definition(ctx, operation_definition);
+        self.1.exit_operation_definition(ctx, operation_definition);
+    }
+
+    fn enter_fragment_definition(
+        &mut self,
+        ctx: &mut VisitorContext<'a>,
+        name: &'a Name,
+        fragment_definition: &'a Positioned<FragmentDefinition>,
+    ) {
+        self.0
+            .enter_fragment_definition(ctx, name, fragment_definition);
+        self.1
+            .enter_fragment_definition(ctx, name, fragment_definition);
+    }
+    fn exit_fragment_definition(
+        &mut self,
+        ctx: &mut VisitorContext<'a>,
+        name: &'a Name,
+        fragment_definition: &'a Positioned<FragmentDefinition>,
+    ) {
+        self.0
+            .exit_fragment_definition(ctx, name, fragment_definition);
+        self.1
+            .exit_fragment_definition(ctx, name, fragment_definition);
+    }
+
+    fn enter_variable_definition(
+        &mut self,
+        ctx: &mut VisitorContext<'a>,
+        variable_definition: &'a Positioned<VariableDefinition>,
+    ) {
+        self.0.enter_variable_definition(ctx, variable_definition);
+        self.1.enter_variable_definition(ctx, variable_definition);
+    }
+    fn exit_variable_definition(
+        &mut self,
+        ctx: &mut VisitorContext<'a>,
+        variable_definition: &'a Positioned<VariableDefinition>,
+    ) {
+        self.0.exit_variable_definition(ctx, variable_definition);
+        self.1.exit_variable_definition(ctx, variable_definition);
+    }
+
+    fn enter_directive(
+        &mut self,
+        ctx: &mut VisitorContext<'a>,
+        directive: &'a Positioned<Directive>,
+    ) {
+        self.0.enter_directive(ctx, directive);
+        self.1.enter_directive(ctx, directive);
+    }
+    fn exit_directive(
+        &mut self,
+        ctx: &mut VisitorContext<'a>,
+        directive: &'a Positioned<Directive>,
+    ) {
+        self.0.exit_directive(ctx, directive);
+        self.1.exit_directive(ctx, directive);
+    }
+
+    fn enter_argument(
+        &mut self,
+        ctx: &'a VisitorContext<'a>,
+        name: &'a Positioned<Name>,
+        value: &'a Positioned<Value>,
+    ) {
+        self.0.enter_argument(ctx, name, value);
+        self.1.enter_argument(ctx, name, value);
+    }
+    fn exit_argument(
+        &mut self,
+        ctx: &'a VisitorContext<'a>,
+        name: &'a Positioned<Name>,
+        value: &'a Positioned<Value>,
+    ) {
+        self.0.exit_argument(ctx, name, value);
+        self.1.exit_argument(ctx, name, value);
+    }
+
+    fn enter_selection_set(
+        &mut self,
+        ctx: &mut VisitorContext<'a>,
+        selection_set: &'a Positioned<SelectionSet>,
+    ) {
+        self.0.enter_selection_set(ctx, selection_set);
+        self.1.enter_selection_set(ctx, selection_set);
+    }
+    fn exit_selection_set(
+        &mut self,
+        ctx: &mut VisitorContext<'a>,
+        selection_set: &'a Positioned<SelectionSet>,
+    ) {
+        self.0.exit_selection_set(ctx, selection_set);
+        self.1.exit_selection_set(ctx, selection_set);
+    }
+
+    fn enter_selection(
+        &mut self,
+        ctx: &mut VisitorContext<'a>,
+        selection: &'a Positioned<Selection>,
+    ) {
+        self.0.enter_selection(ctx, selection);
+        self.1.enter_selection(ctx, selection);
+    }
+    fn exit_selection(
+        &mut self,
+        ctx: &mut VisitorContext<'a>,
+        selection: &'a Positioned<Selection>,
+    ) {
+        self.0.exit_selection(ctx, selection);
+        self.1.exit_selection(ctx, selection);
+    }
+
+    fn enter_field(
+        &mut self,
+        ctx: &mut VisitorContext<'a>,
+        field: &'a Positioned<Field>,
+    ) {
+        self.0.enter_field(ctx, field);
+        self.1.enter_field(ctx, field);
+    }
+    fn exit_field(&mut self, ctx: &mut VisitorContext<'a>, field: &'a Positioned<Field>) {
+        self.0.exit_field(ctx, field);
+        self.1.exit_field(ctx, field);
+    }
+
+    fn enter_fragment_spread(
+        &mut self,
+        ctx: &mut VisitorContext<'a>,
+        fragment_spread: &'a Positioned<FragmentSpread>,
+    ) {
+        self.0.enter_fragment_spread(ctx, fragment_spread);
+        self.1.enter_fragment_spread(ctx, fragment_spread);
+    }
+    fn exit_fragment_spread(
+        &mut self,
+        ctx: &mut VisitorContext<'a>,
+        fragment_spread: &'a Positioned<FragmentSpread>,
+    ) {
+        self.0.exit_fragment_spread(ctx, fragment_spread);
+        self.1.exit_fragment_spread(ctx, fragment_spread);
+    }
+
+    fn enter_inline_fragment(
+        &mut self,
+        ctx: &mut VisitorContext<'a>,
+        inline_fragment: &'a Positioned<InlineFragment>,
+    ) {
+        self.0.enter_inline_fragment(ctx, inline_fragment);
+        self.1.enter_inline_fragment(ctx, inline_fragment);
+    }
+    fn exit_inline_fragment(
+        &mut self,
+        ctx: &mut VisitorContext<'a>,
+        inline_fragment: &'a Positioned<InlineFragment>,
+    ) {
+        self.0.exit_inline_fragment(ctx, inline_fragment);
+        self.1.exit_inline_fragment(ctx, inline_fragment);
+    }
+
+    fn enter_input_value(
+        &mut self,
+        ctx: &mut VisitorContext<'a>,
+        pos: Pos,
+        expected_type: &Option<MetaTypeName<'a>>,
+        value: &Value,
+    ) {
+        self.0.enter_input_value(ctx, pos, expected_type, value);
+        self.1.enter_input_value(ctx, pos, expected_type, value);
+    }
+    fn exit_input_value(
+        &mut self,
+        ctx: &mut VisitorContext<'a>,
+        pos: Pos,
+        expected_type: &Option<MetaTypeName<'a>>,
+        value: &Value,
+    ) {
+        self.0.exit_input_value(ctx, pos, expected_type, value);
+        self.1.exit_input_value(ctx, pos, expected_type, value);
     }
 }
 
