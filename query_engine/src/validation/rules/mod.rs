@@ -1,0 +1,1 @@
+mod arguments_of_correct_type;
