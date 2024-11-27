@@ -8,28 +8,28 @@ use super::r#type::__Type;
 /// are represented as Input Values which describe their type and
 /// optionally a default value.
 pub struct __InputValue<'a> {
-    pub registry: &'a registry::Registry,
-    pub input_value: &'a registry::MetaInputValue,
+  pub registry: &'a registry::Registry,
+  pub input_value: &'a registry::MetaInputValue,
 }
 
 impl<'a> __InputValue<'a> {
-    #[inline]
-    fn name(&self) -> &str {
-        &self.input_value.name
-    }
+  #[inline]
+  fn name(&self) -> &str {
+    &self.input_value.name
+  }
 
-    #[inline]
-    fn description(&self) -> Option<&str> {
-        self.input_value.description.as_deref()
-    }
+  #[inline]
+  fn description(&self) -> Option<&str> {
+    self.input_value.description.as_deref()
+  }
 
-    #[inline]
-    fn r#type(&self) -> __Type<'a> {
-        __Type::new(self.registry, &self.input_value.ty)
-    }
+  #[inline]
+  fn r#type(&self) -> __Type<'a> {
+    __Type::new(self.registry, &self.input_value.ty)
+  }
 
-    #[inline]
-    fn default_value(&self) -> Option<&str> {
-        self.input_value.default_value.as_deref()
-    }
+  #[inline]
+  fn default_value(&self) -> Option<&str> {
+    self.input_value.default_value.as_deref()
+  }
 }
