@@ -13,6 +13,7 @@ use crate::{
     },
 };
 
+#[derive(Default)]
 pub struct ArgumentsOfCorrectType<'a> {
     current_args: Option<&'a IndexMap<String, MetaInputValue>>,
 }
@@ -93,5 +94,44 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
         _field: &'a Positioned<Field>,
     ) {
         self.current_args = None;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    use crate::validation;
+
+    pub fn factory<'a>() -> ArgumentsOfCorrectType<'a> {
+        ArgumentsOfCorrectType::default()
+    }
+
+    #[test]
+    fn good_null_value() {
+        expect_pass_rule!(
+            factory,
+            r#"
+        {
+            complicatedArgs {
+                intArgField(intArg: null)
+            }
+        }
+        "#,
+        );
+    }
+
+    #[test]
+    fn null_into_int() {
+        expect_fail_rule!(
+            factory,
+            r#"
+        {
+            complicatedArgs {
+                nonNullIntArgField(nonNullIntArg: null)
+            }
+        }
+        "#
+        );
     }
 }

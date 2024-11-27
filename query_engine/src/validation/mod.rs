@@ -1,3 +1,6 @@
+#[cfg(test)]
+#[macro_use]
+mod test_harness;
 mod rules;
 mod utlis;
 mod visitor;
