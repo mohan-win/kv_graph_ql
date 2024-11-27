@@ -1,13 +1,18 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Display};
 
-use crate::graphql_parser::{
-    types::{
-        Directive, ExecutableDocument, Field, FragmentDefinition, OperationDefinition,
-        Selection, SelectionSet, VariableDefinition,
+use crate::{
+    graphql_parser::{
+        types::{
+            Directive, ExecutableDocument, Field, FragmentDefinition,
+            OperationDefinition, Selection, SelectionSet, VariableDefinition,
+        },
+        Pos, Positioned,
     },
-    Pos, Positioned,
+    registry::MetaType,
 };
-use graphql_parser::types::{FragmentSpread, InlineFragment};
+use graphql_parser::types::{
+    FragmentSpread, InlineFragment, OperationType, TypeCondition,
+};
 use graphql_value::Value;
 
 use crate::{
@@ -223,14 +228,14 @@ pub(crate) trait Visitor<'a> {
 
     fn enter_argument(
         &mut self,
-        _ctx: &'a VisitorContext<'a>,
+        _ctx: &mut VisitorContext<'a>,
         _name: &'a Positioned<Name>,
         _value: &'a Positioned<Value>,
     ) {
     }
     fn exit_argument(
         &mut self,
-        _ctx: &'a VisitorContext<'a>,
+        _ctx: &mut VisitorContext<'a>,
         _name: &'a Positioned<Name>,
         _value: &'a Positioned<Value>,
     ) {
@@ -439,7 +444,7 @@ where
 
     fn enter_argument(
         &mut self,
-        ctx: &'a VisitorContext<'a>,
+        ctx: &mut VisitorContext<'a>,
         name: &'a Positioned<Name>,
         value: &'a Positioned<Value>,
     ) {
@@ -448,7 +453,7 @@ where
     }
     fn exit_argument(
         &mut self,
-        ctx: &'a VisitorContext<'a>,
+        ctx: &mut VisitorContext<'a>,
         name: &'a Positioned<Name>,
         value: &'a Positioned<Value>,
     ) {
@@ -559,6 +564,285 @@ where
     }
 }
 
+pub(crate) fn visit<'a, V: Visitor<'a>>(
+    v: &mut V,
+    ctx: &mut VisitorContext<'a>,
+    doc: &'a ExecutableDocument,
+) {
+    v.enter_document(ctx, doc);
+
+    for (name, fragment) in &doc.fragments {
+        ctx.with_type(
+            ctx.registry
+                .types
+                .get(fragment.node.type_condition.node.on.node.as_str()),
+            |ctx| visit_fragment_definition(v, ctx, name, fragment),
+        );
+    }
+
+    for (name, operation) in doc.operations.iter() {
+        visit_operation_definition(v, ctx, name, operation);
+    }
+
+    v.exit_document(ctx, doc);
+}
+
+fn visit_operation_definition<'a, V: Visitor<'a>>(
+    v: &mut V,
+    ctx: &mut VisitorContext<'a>,
+    name: Option<&Name>,
+    operation: &'a Positioned<OperationDefinition>,
+) {
+    v.enter_operation_definition(ctx, operation);
+    let root_name = match &operation.node.ty {
+        OperationType::Query => Some(&*ctx.registry.query_type),
+        OperationType::Mutation => ctx.registry.mutation_type.as_deref(),
+        OperationType::Subscription => ctx.registry.subscription_type.as_deref(),
+    };
+    if let Some(root_name) = root_name {
+        ctx.with_type(Some(&ctx.registry.types[root_name]), |ctx| {
+            visit_variable_definitions(v, ctx, &operation.node.variable_definitions);
+            visit_directives(v, ctx, &operation.node.directives);
+            visit_selection_set(v, ctx, &operation.node.selection_set);
+        });
+    } else {
+        ctx.report_error(
+            vec![operation.pos],
+            format!("Schema not configured for {}s", operation.node.ty),
+        );
+    }
+    v.exit_operation_definition(ctx, operation);
+}
+
+fn visit_selection_set<'a, V: Visitor<'a>>(
+    v: &mut V,
+    ctx: &mut VisitorContext<'a>,
+    selection_set: &'a Positioned<SelectionSet>,
+) {
+    if !selection_set.node.items.is_empty() {
+        v.enter_selection_set(ctx, selection_set);
+        for selection in &selection_set.node.items {
+            visit_selection(v, ctx, selection);
+        }
+        v.exit_selection_set(ctx, selection_set);
+    }
+}
+
+fn visit_selection<'a, V: Visitor<'a>>(
+    v: &mut V,
+    ctx: &mut VisitorContext<'a>,
+    selection: &'a Positioned<Selection>,
+) {
+    v.enter_selection(ctx, selection);
+    match &selection.node {
+        Selection::Field(field) => {
+            if field.node.name.node != "__typename" {
+                ctx.with_type(
+                    ctx.current_type()
+                        .and_then(|ty| ty.field_by_name(&field.node.name.node))
+                        .and_then(|schema_field| {
+                            ctx.registry.concrete_type_by_name(&schema_field.ty)
+                        }),
+                    |ctx| visit_field(v, ctx, field),
+                );
+            } else if ctx.current_type().map(|ty| match ty {
+                MetaType::Object {
+                    is_subscription, ..
+                } => *is_subscription,
+                _ => false,
+            }) == Some(true)
+            {
+                ctx.report_error(
+                    vec![field.pos],
+                    r#"Unknown field "__typename" on type "Subscription""#,
+                );
+            }
+        }
+        Selection::FragmentSpread(fragment_spread) => {
+            visit_fragment_spread(v, ctx, fragment_spread)
+        }
+        Selection::InlineFragment(inline_fragment) => {
+            if let Some(TypeCondition { on: name }) = &inline_fragment
+                .node
+                .type_condition
+                .as_ref()
+                .map(|c| &c.node)
+            {
+                ctx.with_type(ctx.registry.types.get(name.node.as_str()), |ctx| {
+                    visit_inline_fragment(v, ctx, inline_fragment)
+                });
+            } else {
+                visit_inline_fragment(v, ctx, inline_fragment)
+            }
+        }
+    }
+    v.exit_selection(ctx, selection);
+}
+
+fn visit_field<'a, V: Visitor<'a>>(
+    v: &mut V,
+    ctx: &mut VisitorContext<'a>,
+    field: &'a Positioned<Field>,
+) {
+    v.enter_field(ctx, field);
+
+    for (name, value) in &field.node.arguments {
+        v.enter_argument(ctx, name, value);
+        let expected_ty = ctx
+            .parent_type()
+            .and_then(|ty| ty.field_by_name(&field.node.name.node))
+            .and_then(|schema_field| schema_field.args.get(&*name.node))
+            .map(|input_ty| MetaTypeName::create(&input_ty.ty));
+        ctx.with_input_type(expected_ty, |ctx| {
+            visit_input_value(v, ctx, field.pos, expected_ty, &value.node);
+        });
+        v.exit_argument(ctx, name, value);
+    }
+
+    visit_directives(v, ctx, &field.node.directives);
+    visit_selection_set(v, ctx, &field.node.selection_set);
+    v.exit_field(ctx, field);
+}
+
+fn visit_input_value<'a, V: Visitor<'a>>(
+    v: &mut V,
+    ctx: &mut VisitorContext<'a>,
+    pos: Pos,
+    expected_ty: Option<MetaTypeName<'a>>,
+    value: &'a Value,
+) {
+    v.enter_input_value(ctx, pos, &expected_ty, value);
+
+    match value {
+        Value::List(values) => {
+            if let Some(expected_ty) = expected_ty {
+                let elem_ty = expected_ty.unwrap_non_null();
+                if let MetaTypeName::List(expected_ty) = elem_ty {
+                    values.iter().for_each(|value| {
+                        visit_input_value(
+                            v,
+                            ctx,
+                            pos,
+                            Some(MetaTypeName::create(expected_ty)),
+                            value,
+                        );
+                    });
+                }
+            }
+        }
+        Value::Object(values) => {
+            if let Some(expected_ty) = expected_ty {
+                let expected_ty = expected_ty.unwrap_non_null();
+                if let MetaTypeName::Named(expected_ty) = expected_ty {
+                    if let Some(MetaType::InputObject { input_fields, .. }) = ctx
+                        .registry
+                        .types
+                        .get(MetaTypeName::concrete_typename(expected_ty))
+                    {
+                        for (item_key, item_value) in values {
+                            if let Some(input_value) = input_fields.get(item_key.as_str())
+                            {
+                                visit_input_value(
+                                    v,
+                                    ctx,
+                                    pos,
+                                    Some(MetaTypeName::create(&input_value.ty)),
+                                    item_value,
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        _ => {}
+    }
+
+    v.exit_input_value(ctx, pos, &expected_ty, value);
+}
+
+fn visit_variable_definitions<'a, V: Visitor<'a>>(
+    v: &mut V,
+    ctx: &mut VisitorContext<'a>,
+    variable_definitions: &'a [Positioned<VariableDefinition>],
+) {
+    for d in variable_definitions {
+        v.enter_variable_definition(ctx, d);
+        v.exit_variable_definition(ctx, d);
+    }
+}
+
+fn visit_directives<'a, V: Visitor<'a>>(
+    v: &mut V,
+    ctx: &mut VisitorContext<'a>,
+    directives: &'a [Positioned<Directive>],
+) {
+    for d in directives {
+        v.enter_directive(ctx, d);
+
+        let schema_directive = ctx.registry.directives.get(d.node.name.node.as_str());
+
+        for (name, value) in &d.node.arguments {
+            v.enter_argument(ctx, name, value);
+            let expected_ty = schema_directive
+                .and_then(|schema_directive| {
+                    schema_directive.args.get(name.node.as_str())
+                })
+                .map(|input_ty| MetaTypeName::create(&input_ty.ty));
+            ctx.with_input_type(expected_ty, |ctx| {
+                visit_input_value(v, ctx, d.pos, expected_ty, &value.node);
+            });
+
+            v.exit_argument(ctx, name, value);
+        }
+
+        v.exit_directive(ctx, d);
+    }
+}
+
+fn visit_fragment_definition<'a, V: Visitor<'a>>(
+    v: &mut V,
+    ctx: &mut VisitorContext<'a>,
+    name: &'a Name,
+    fragment: &'a Positioned<FragmentDefinition>,
+) {
+    if v.mode() == VisitMode::Normal {
+        v.enter_fragment_definition(ctx, name, fragment);
+        visit_directives(v, ctx, &fragment.node.directives);
+        visit_selection_set(v, ctx, &fragment.node.selection_set);
+        v.exit_fragment_definition(ctx, name, fragment);
+    }
+}
+
+fn visit_fragment_spread<'a, V: Visitor<'a>>(
+    v: &mut V,
+    ctx: &mut VisitorContext<'a>,
+    fragment_spread: &'a Positioned<FragmentSpread>,
+) {
+    v.enter_fragment_spread(ctx, fragment_spread);
+    visit_directives(v, ctx, &fragment_spread.node.directives);
+    if v.mode() == VisitMode::Inline {
+        if let Some(fragment) = ctx
+            .fragments
+            .get(fragment_spread.node.fragment_name.node.as_str())
+        {
+            visit_selection_set(v, ctx, &fragment.node.selection_set);
+        }
+    }
+    v.exit_fragment_spread(ctx, fragment_spread);
+}
+
+fn visit_inline_fragment<'a, V: Visitor<'a>>(
+    v: &mut V,
+    ctx: &mut VisitorContext<'a>,
+    inline_fragment: &'a Positioned<InlineFragment>,
+) {
+    v.enter_inline_fragment(ctx, inline_fragment);
+    visit_directives(v, ctx, &inline_fragment.node.directives);
+    visit_selection_set(v, ctx, &inline_fragment.node.selection_set);
+    v.exit_inline_fragment(ctx, inline_fragment);
+}
+
 #[derive(Debug, PartialEq)]
 pub(crate) struct RuleError {
     pub(crate) locations: Vec<Pos>,
@@ -570,6 +854,39 @@ impl RuleError {
         RuleError {
             locations,
             message: msg.into(),
+        }
+    }
+}
+
+impl Display for RuleError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (idx, loc) in self.locations.iter().enumerate() {
+            if idx == 0 {
+                write!(f, "[")?;
+            } else {
+                write!(f, ", ")?;
+            }
+
+            write!(f, "{}:{}", loc.line, loc.column)?;
+
+            if idx == self.locations.len() - 1 {
+                write!(f, "] ")?;
+            }
+        }
+
+        write!(f, "{}", self.message)?;
+        Ok(())
+    }
+}
+
+impl From<RuleError> for ServerError {
+    fn from(e: RuleError) -> Self {
+        Self {
+            message: e.message,
+            source: None,
+            locations: e.locations,
+            path: Vec::new(),
+            extensions: None,
         }
     }
 }
