@@ -94,7 +94,6 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
 mod tests {
 
   use super::*;
-  use crate::validation;
 
   pub fn factory<'a>() -> ArgumentsOfCorrectType<'a> {
     ArgumentsOfCorrectType::default()
