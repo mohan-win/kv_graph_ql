@@ -42,7 +42,7 @@ where
   }
 }
 
-pub(crate) fn expect_pass_rule_<'a, V, F>(doc: &'a ExecutableDocument, factory: F)
+pub(crate) fn expect_passes_rule_<'a, V, F>(doc: &'a ExecutableDocument, factory: F)
 where
   V: Visitor<'a> + 'a,
   F: Fn() -> V,
@@ -58,14 +58,14 @@ where
   }
 }
 
-macro_rules! expect_pass_rule {
+macro_rules! expect_passes_rule {
   ($factory:expr, $query_source:literal $(,)?) => {
     let doc = crate::graphql_parser::parse_query($query_source).expect("Parse error");
-    crate::validation::test_harness::expect_pass_rule_(&doc, $factory);
+    crate::validation::test_harness::expect_passes_rule_(&doc, $factory);
   };
 }
 
-pub(crate) fn expect_fail_rule_<'a, V, F>(doc: &'a ExecutableDocument, factory: F)
+pub(crate) fn expect_fails_rule_<'a, V, F>(doc: &'a ExecutableDocument, factory: F)
 where
   V: Visitor<'a> + 'a,
   F: Fn() -> V,
@@ -75,9 +75,9 @@ where
   }
 }
 
-macro_rules! expect_fail_rule {
+macro_rules! expect_fails_rule {
   ($factory:expr, $query_source:literal $(,)?) => {
     let doc = crate::graphql_parser::parse_query($query_source).expect("Parse error");
-    crate::validation::test_harness::expect_fail_rule_(&doc, $factory);
+    crate::validation::test_harness::expect_fails_rule_(&doc, $factory);
   };
 }

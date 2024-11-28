@@ -101,7 +101,7 @@ mod tests {
 
   #[test]
   fn good_null_value() {
-    expect_pass_rule!(
+    expect_passes_rule!(
       factory,
       r#"
         {
@@ -115,7 +115,7 @@ mod tests {
 
   #[test]
   fn null_into_int() {
-    expect_fail_rule!(
+    expect_fails_rule!(
       factory,
       r#"
         {
@@ -124,6 +124,76 @@ mod tests {
             }
         }
         "#
+    );
+  }
+
+  #[test]
+  fn good_int_value() {
+    expect_passes_rule!(
+      factory,
+      r#"
+        {
+          complicatedArgs {
+            intArgField(intArg: 2)
+          }
+        }
+    "#,
+    );
+  }
+
+  #[test]
+  fn good_boolean_value() {
+    expect_passes_rule!(
+      factory,
+      r#"
+        {
+          complicatedArgs {
+            booleanArgField(booleanArg: true)
+          }
+        }
+    "#,
+    );
+  }
+
+  #[test]
+  fn good_string_value() {
+    expect_passes_rule!(
+      factory,
+      r#"
+        {
+          complicatedArgs {
+            stringArgField(stringArg: "foo")
+          }
+        }
+    "#,
+    );
+  }
+
+  #[test]
+  fn good_float_value() {
+    expect_passes_rule!(
+      factory,
+      r#"
+        {
+          complicatedArgs {
+            floatArgField(floatArg: 1.1)
+          }
+        }
+    "#,
+    );
+  }
+
+  #[test]
+  fn int_into_float() {
+    expect_passes_rule!(
+      factory,
+      r#"
+        {
+          complicatedArgs {
+            floatArgField(floatArg: 1)
+          }
+        }
+    "#,
     );
   }
 }
