@@ -1,6 +1,28 @@
-use crate::graphql_parser::types::ExecutableDocument;
+use crate::{
+  graphql_parser::{self, types::ExecutableDocument},
+  registry::Registry,
+};
 
-use super::visitor::{RuleError, Visitor};
+use super::visitor::{self, visit, RuleError, Visitor, VisitorContext};
+use once_cell::sync::Lazy;
+use std::fs;
+
+fn build_registry(
+  schema_file_path: &str,
+) -> Result<Registry, Box<dyn std::error::Error>> {
+  let schema_file = fs::read_to_string(schema_file_path)?;
+  let service_doc = graphql_parser::parse_schema(schema_file)?;
+  let registry = Registry::build_registry(service_doc);
+  Ok(registry)
+}
+
+static REGISTRY: Lazy<Registry> = Lazy::new(|| {
+  build_registry(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/test_data/validation/test_schema.graphql"
+  ))
+  .expect("Unable to build registry")
+});
 
 pub(crate) fn validate<'a, V, F>(
   doc: &'a ExecutableDocument,
@@ -10,7 +32,14 @@ where
   V: Visitor<'a> + 'a,
   F: Fn() -> V,
 {
-  unimplemented!()
+  let mut ctx = VisitorContext::new(&*REGISTRY, doc, None);
+  let mut visitor = factory();
+  visit(&mut visitor, &mut ctx, doc);
+  if ctx.errors.is_empty() {
+    Ok(())
+  } else {
+    Err(ctx.errors)
+  }
 }
 
 pub(crate) fn expect_pass_rule_<'a, V, F>(doc: &'a ExecutableDocument, factory: F)
