@@ -96,17 +96,13 @@ type ComplicatedArgs {
   ): String
 }
 
-type QueryRoot {
+type Query {
   human(id: ID): Human
   dog: Dog
   cat: Cat
   pet: Pet
   catOrDog: CatOrDog
   complicatedArgs: ComplicatedArgs
-}
-
-schema {
-  query: QueryRoot
 }
 
 directive @onField on FIELD

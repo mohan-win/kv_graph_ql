@@ -63,13 +63,10 @@ impl Registry {
       .get("Query")
       .map(|_| "Query".to_string())
       .expect("There should be a root query type named `Query`");
-    registry.mutation_type = Some(
-      registry
-        .types
-        .get("Mutation")
-        .map(|_| "Mutation".to_string())
-        .expect("There should be root mutation type named `Mutation`"),
-    );
+    registry.mutation_type = registry
+      .types
+      .get("Mutation")
+      .map(|_| "Mutation".to_string());
     registry.subscription_type = None;
     registry.introspection_mode = IntrospectionMode::default();
     registry.add_system_types(); // Add system types.
