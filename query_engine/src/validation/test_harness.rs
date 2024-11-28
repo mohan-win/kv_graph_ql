@@ -54,8 +54,8 @@ where
       }
       println!("{}", err.message);
     }
+    panic!("Expected rule to pass, but errors found.");
   }
-  panic!("Expected rule to pass, but errors found.");
 }
 
 macro_rules! expect_pass_rule {
