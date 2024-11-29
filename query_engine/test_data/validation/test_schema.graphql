@@ -1,3 +1,5 @@
+scalar DateTime
+
 interface Mammal {
   mother: Mammal
   father: Mammal
@@ -80,6 +82,8 @@ type ComplicatedArgs {
   idArgField(idArg: ID): String
   stringListArgField(stringListArg: [String]): String
   stringListNonNullArgField(stringListNonNullArg: [String!]): String
+  dateArgField(dateArg: DateTime): String
+  nonNullDateArgField(nonNullDateArg: DateTime!): String
   complexArgField(complexArg: ComplexInput): String
   multipleReqs(req1: Int!, req2: Int!): String
   nonNullFieldWithDefault(arg: Int! = 0): String

@@ -1,6 +1,6 @@
 //! Impements necessary meta-data types for introspection.
 mod meta_types;
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 pub use meta_types::*;
 
 use crate::graphql_parser::types::{
@@ -185,7 +185,6 @@ impl Registry {
     self.add_type(<f64 as InputType>::create_type_info());
     self.add_type(<String as InputType>::create_type_info());
     self.add_type(crate::scalar::id::ID::create_type_info());
-    self.add_type(chrono::DateTime::<Utc>::create_type_info());
   }
 
   fn add_type(&mut self, r#type: MetaType) {
@@ -216,10 +215,20 @@ impl Registry {
             self.update_implementation_map(r#type.name(), r#type.type_id(), implements);
           }
           _ => {
-            // Do Nothing.
+            // Do nothing.
           }
         }
-        self.types.insert(name.to_string(), r#type);
+        // Check for known custom scalars.
+        match r#type {
+          MetaType::Scalar { name, .. } if name.eq("DateTime") => {
+            self
+              .types
+              .insert(name.to_string(), DateTime::<Utc>::create_type_info());
+          }
+          _ => {
+            self.types.insert(name.to_string(), r#type);
+          }
+        }
       }
     }
   }

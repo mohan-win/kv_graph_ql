@@ -600,6 +600,34 @@ mod tests {
   }
 
   #[test]
+  fn good_date_time_value() {
+    expect_passes_rule!(
+      factory,
+      r#"
+    {
+      complicatedArgs {
+        dateArgField(dateArg: "2023-11-29T14:23:00Z")
+      }
+    }
+    "#
+    );
+  }
+
+  #[test]
+  fn incorrect_date_time_value() {
+    expect_fails_rule!(
+      factory,
+      r#"
+    {
+      complicatedArgs {
+        dateArgField(dateArg: 10)
+      }
+    }
+    "#
+    );
+  }
+
+  #[test]
   fn good_list_value() {
     expect_passes_rule!(
       factory,
