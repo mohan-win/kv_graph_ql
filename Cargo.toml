@@ -31,3 +31,4 @@ pluralizer = {version = "0.4.0"}
 convert_case = {version = "0.6.0"}
 thiserror = {version = "2"}
 once_cell = {version = "1.20"}
+chrono = {version = "0.4"}

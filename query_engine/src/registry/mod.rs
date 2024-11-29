@@ -1,11 +1,13 @@
 //! Impements necessary meta-data types for introspection.
 mod meta_types;
+use chrono::Utc;
 pub use meta_types::*;
 
 use crate::graphql_parser::types::{
   BaseType as ParsedBaseType, ServiceDocument, Type as ParsedType, TypeSystemDefinition,
   VariableDefinition,
 };
+use crate::InputType;
 use crate::{
   introspection::types::__DirectiveLocation, schema::IntrospectionMode, Value,
 };
@@ -178,11 +180,12 @@ impl Registry {
         });
 
     // Create system scalars.
-    self.add_type(Self::boolean_scalar_type());
-    self.add_type(Self::integer_scalar_type());
-    self.add_type(Self::float_scalar_type());
-    self.add_type(Self::id_scalar_type());
-    self.add_type(Self::string_scalar_type());
+    self.add_type(<bool as InputType>::create_type_info());
+    self.add_type(<i32 as InputType>::create_type_info());
+    self.add_type(<f64 as InputType>::create_type_info());
+    self.add_type(<String as InputType>::create_type_info());
+    self.add_type(crate::scalar::id::ID::create_type_info());
+    self.add_type(chrono::DateTime::<Utc>::create_type_info());
   }
 
   fn add_type(&mut self, r#type: MetaType) {
@@ -247,50 +250,5 @@ impl Registry {
     self
       .directives
       .insert(directive.name.to_string(), directive);
-  }
-
-  fn boolean_scalar_type() -> MetaType {
-    MetaType::Scalar {
-      name: "Boolean".to_string(),
-      description: Some("Built-in scalar type for Boolean values".to_string()),
-      is_valid: None,
-      specified_by_url: None,
-    }
-  }
-
-  fn integer_scalar_type() -> MetaType {
-    MetaType::Scalar {
-      name: "Int".to_string(),
-      description: Some("Built-in scalar type for Int values".to_string()),
-      is_valid: None,
-      specified_by_url: None,
-    }
-  }
-
-  fn float_scalar_type() -> MetaType {
-    MetaType::Scalar {
-      name: "Float".to_string(),
-      description: Some("Built-in scalar type for Int values".to_string()),
-      is_valid: None,
-      specified_by_url: None,
-    }
-  }
-
-  fn id_scalar_type() -> MetaType {
-    MetaType::Scalar {
-      name: "ID".to_string(),
-      description: Some("Built-in scalar type for ID values".to_string()),
-      is_valid: None,
-      specified_by_url: None,
-    }
-  }
-
-  fn string_scalar_type() -> MetaType {
-    MetaType::Scalar {
-      name: "String".to_string(),
-      description: Some("Built-in scalar type for String values".to_string()),
-      is_valid: None,
-      specified_by_url: None,
-    }
   }
 }

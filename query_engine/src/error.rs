@@ -6,7 +6,7 @@ use std::{
   sync::Arc,
 };
 
-use crate::Value;
+use crate::{InputType, Value};
 use graphql_parser::{self as parser, Pos};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -137,25 +137,61 @@ pub type ServerResult<T> = std::result::Result<T, ServerError>;
 
 /// An error parsing an input value.
 ///
-pub struct InputValueError {
+/// This type is generic over T as it uses T's type name when converting to a
+/// regular error
+pub struct InputValueError<T> {
   message: String,
   extensions: Option<ErrorExtensionValues>,
+  phantom: PhantomData<T>,
 }
 
-impl InputValueError {
+impl<T: InputType> InputValueError<T> {
   fn new(message: String, extensions: Option<ErrorExtensionValues>) -> Self {
     Self {
       message,
       extensions,
+      phantom: PhantomData,
     }
   }
 
   /// The expected input type didn't match the actual input type.
-  pub fn expected_type(expected: &str, actual: Value) -> Self {
+  #[must_use]
+  pub fn expected_type(actual: Value) -> Self {
     Self::new(
-      format!(r#"Expected input type "{}", found "{}" "#, expected, actual),
+      format!(
+        r#"Expected input type "{}", found "{}" "#,
+        T::type_name(),
+        actual
+      ),
       None,
     )
+  }
+
+  /// A custom error message.
+  ///
+  /// Any type that implements `Display` is automatically converted to this if
+  /// you use `?` operator.
+  pub fn custom(msg: impl Display) -> Self {
+    Self::new(
+      format!(r#"Failed to parse "{}": {}"#, T::type_name(), msg),
+      None,
+    )
+  }
+
+  /// Propogate the error message to a different type.
+  pub fn propogate<U: InputType>(self) -> InputValueError<U> {
+    if T::type_name() != U::type_name() {
+      InputValueError::new(
+        format!(
+          r#"{} (occured while parsing"{}")"#,
+          self.message,
+          U::type_name(),
+        ),
+        self.extensions,
+      )
+    } else {
+      InputValueError::new(self.message, self.extensions)
+    }
   }
 
   pub fn with_extension(&mut self, name: impl AsRef<str>, value: impl Into<Value>) {
@@ -173,8 +209,14 @@ impl InputValueError {
   }
 }
 
+impl<T: InputType, E: Display> From<E> for InputValueError<T> {
+  fn from(error: E) -> Self {
+    Self::custom(error)
+  }
+}
+
 /// An error parsing a value of type `T`.
-pub type InputValueResult<T> = Result<T, InputValueError>;
+pub type InputValueResult<T> = Result<T, InputValueError<T>>;
 
 #[derive(Clone, Serialize)]
 /// An error with a message and optional extensions.

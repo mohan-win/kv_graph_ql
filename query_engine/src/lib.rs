@@ -4,9 +4,11 @@ mod error;
 mod execution;
 mod introspection;
 mod registry;
+mod scalar;
 mod schema;
 mod validation;
 
+pub use error::{InputValueError, InputValueResult};
 pub use graphql_parser;
 use serde::{Deserialize, Serialize};
 use serde_json::Result;

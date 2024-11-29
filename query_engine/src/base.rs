@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use crate::{error::InputValueResult, Value};
+use crate::{registry::MetaType, InputValueResult, Value};
 
 /// Represents a GraphQL input type.
 pub trait InputType: Send + Sync + Sized {
@@ -11,6 +11,8 @@ pub trait InputType: Send + Sync + Sized {
   /// `i32::RawValueType` is `i32`
   /// `Option<i32>::RawValueType` is `i32`.
   type RawValueType;
+
+  fn create_type_info() -> MetaType;
 
   fn type_name() -> Cow<'static, str>;
 
