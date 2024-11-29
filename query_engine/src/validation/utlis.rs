@@ -86,6 +86,8 @@ pub fn is_valid_input_value(
             }
           }
           ConstValue::String(name) => {
+            // Note: As per GraphQL spec, string literal which is equalant to
+            // enum value should raise error. But allowing it for practical purposes.
             if !enum_values.contains_key(name.as_str()) {
               Some(valid_error(
                 &path_node,

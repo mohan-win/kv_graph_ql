@@ -519,19 +519,43 @@ mod tests {
     );
   }
 
-  // #[test]
-  // fn string_into_enum() {
-  //     expect_fails_rule!(
-  //         factory,
-  //         r#"
-  //         {
-  //           dog {
-  //             doesKnowCommand(dogCommand: "SIT")
-  //           }
-  //         }
-  //     "#,
-  //     );
-  // }
+  #[test]
+  fn string_into_enum() {
+    // Note: As per spec, string literals are not allowed in enums place.
+    // but for practical reasons allowed enum value string literals and disallowing others.
+    expect_passes_rule!(
+      factory,
+      r#"
+          {
+            dog {
+              doesKnowCommand(dogCommand: "SIT")
+            }
+          }
+      "#,
+    );
+
+    expect_fails_rule!(
+      factory,
+      r#"
+          {
+            dog {
+              doesKnowCommand(dogCommand: "sit")
+            }
+          }
+      "#,
+    );
+
+    expect_fails_rule!(
+      factory,
+      r#"
+          {
+            dog {
+              doesKnowCommand(dogCommand: "Unknown to Dog")
+            }
+          }
+      "#,
+    );
+  }
 
   #[test]
   fn boolean_into_enum() {
