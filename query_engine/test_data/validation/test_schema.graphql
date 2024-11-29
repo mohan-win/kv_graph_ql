@@ -65,15 +65,12 @@ input ComplexInput {
   stringListField: [String]
 }
 
-input OneOfInput @oneOf {
-  stringField: String
-  intField: Int
+input OneOfArg @oneOf {
+  b: String
+  a: Int
 }
 
 type ComplicatedArgs {
-  # TODO List
-  # TODO Coercion
-  # TODO NotNulls
   intArgField(intArg: Int): String
   nonNullIntArgField(nonNullIntArg: Int!): String
   stringArgField(stringArg: String): String
@@ -84,7 +81,6 @@ type ComplicatedArgs {
   stringListArgField(stringListArg: [String]): String
   stringListNonNullArgField(stringListNonNullArg: [String!]): String
   complexArgField(complexArg: ComplexInput): String
-  oneOfArgField(oneOfArg: OneOfInput): String
   multipleReqs(req1: Int!, req2: Int!): String
   nonNullFieldWithDefault(arg: Int! = 0): String
   multipleOpts(opt1: Int = 0, opt2: Int = 0): String
@@ -103,6 +99,8 @@ type Query {
   pet: Pet
   catOrDog: CatOrDog
   complicatedArgs: ComplicatedArgs
+  oneofArg(arg: OneOfArg!): String
+  oneofOpt(arg: OneOfArg): String
 }
 
 directive @onField on FIELD
