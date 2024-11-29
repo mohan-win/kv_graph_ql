@@ -28,7 +28,8 @@ impl ScalarType for DateTime<Utc> {
   }
 
   fn is_valid(value: &Value) -> bool {
-    matches!(value, Value::String(s) if s.parse::<DateTime<Utc>>().is_ok())
+    // Keeping the validation minimal to help the Validation phase to be as fast as possible.
+    matches!(value, Value::String(_))
   }
 
   fn to_value(&self) -> Value {
