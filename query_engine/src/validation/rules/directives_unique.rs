@@ -9,8 +9,8 @@ use crate::{
     Positioned,
   },
   validation::visitor::{Visitor, VisitorContext},
+  Name,
 };
-use graphql_value::Name;
 
 pub struct DirectivesUnique;
 

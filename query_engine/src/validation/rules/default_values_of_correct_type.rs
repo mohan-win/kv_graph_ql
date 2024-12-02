@@ -1,8 +1,6 @@
-use graphql_parser::types::BaseType;
-
 use crate::{
   context::{QueryPathNode, QueryPathSegment},
-  graphql_parser::types::VariableDefinition,
+  graphql_parser::types::{BaseType, VariableDefinition},
   graphql_parser::Positioned,
   validation::{
     utlis::is_valid_input_value,

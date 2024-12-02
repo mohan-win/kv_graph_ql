@@ -2,6 +2,7 @@
 #[macro_use]
 mod test_harness;
 mod rules;
+mod suggestion;
 mod utlis;
 mod visitor;
 
