@@ -18,6 +18,7 @@ impl<'a> Visitor<'a> for DirectivesUnique {
   fn enter_operation_definition(
     &mut self,
     ctx: &mut VisitorContext<'a>,
+    _name: Option<&'a Name>,
     operation_definition: &'a Positioned<OperationDefinition>,
   ) {
     check_duplicate_directive(ctx, &operation_definition.node.directives);

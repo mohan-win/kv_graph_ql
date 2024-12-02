@@ -7,6 +7,7 @@ use super::input_value::__InputValue;
 /// A Directive can be adjacent to many parts of the GraphQL language,
 /// a __DirectiveLocation describes one such possible adjacencies.
 #[allow(non_camel_case_types)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum __DirectiveLocation {
   /// Location adjacent to a query operation.
   QUERY,

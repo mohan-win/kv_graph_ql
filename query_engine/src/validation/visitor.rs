@@ -59,9 +59,13 @@ impl<'a> VisitorContext<'a> {
     ty: Option<&'a registry::MetaType>,
     mut f: F,
   ) {
+    // ToDo:: Remove.
+    let ty_name = ty.map(|ty| ty.name());
+    println!("Pushing to type_stack {:?}", ty_name);
     self.type_stack.push(ty);
     f(self);
     self.type_stack.pop();
+    println!("Poped from type stack. {:?}", ty_name);
   }
 
   pub(crate) fn with_input_type<F: FnMut(&mut VisitorContext<'a>)>(
@@ -176,12 +180,14 @@ pub(crate) trait Visitor<'a> {
   fn enter_operation_definition(
     &mut self,
     _ctx: &mut VisitorContext<'a>,
+    _name: Option<&'a Name>,
     _operation_definition: &'a Positioned<OperationDefinition>,
   ) {
   }
   fn exit_operation_definition(
     &mut self,
     _ctx: &mut VisitorContext<'a>,
+    _name: Option<&'a Name>,
     _operation_definition: &'a Positioned<OperationDefinition>,
   ) {
   }
@@ -364,18 +370,28 @@ where
   fn enter_operation_definition(
     &mut self,
     ctx: &mut VisitorContext<'a>,
+    name: Option<&'a Name>,
     operation_definition: &'a Positioned<OperationDefinition>,
   ) {
-    self.0.enter_operation_definition(ctx, operation_definition);
-    self.1.enter_operation_definition(ctx, operation_definition);
+    self
+      .0
+      .enter_operation_definition(ctx, name, operation_definition);
+    self
+      .1
+      .enter_operation_definition(ctx, name, operation_definition);
   }
   fn exit_operation_definition(
     &mut self,
     ctx: &mut VisitorContext<'a>,
+    name: Option<&'a Name>,
     operation_definition: &'a Positioned<OperationDefinition>,
   ) {
-    self.0.exit_operation_definition(ctx, operation_definition);
-    self.1.exit_operation_definition(ctx, operation_definition);
+    self
+      .0
+      .exit_operation_definition(ctx, name, operation_definition);
+    self
+      .1
+      .exit_operation_definition(ctx, name, operation_definition);
   }
 
   fn enter_fragment_definition(
@@ -584,10 +600,10 @@ pub(crate) fn visit<'a, V: Visitor<'a>>(
 fn visit_operation_definition<'a, V: Visitor<'a>>(
   v: &mut V,
   ctx: &mut VisitorContext<'a>,
-  name: Option<&Name>,
+  name: Option<&'a Name>,
   operation: &'a Positioned<OperationDefinition>,
 ) {
-  v.enter_operation_definition(ctx, operation);
+  v.enter_operation_definition(ctx, name, operation);
   let root_name = match &operation.node.ty {
     OperationType::Query => Some(&*ctx.registry.query_type),
     OperationType::Mutation => ctx.registry.mutation_type.as_deref(),
@@ -605,7 +621,7 @@ fn visit_operation_definition<'a, V: Visitor<'a>>(
       format!("Schema not configured for {}s", operation.node.ty),
     );
   }
-  v.exit_operation_definition(ctx, operation);
+  v.exit_operation_definition(ctx, name, operation);
 }
 
 fn visit_selection_set<'a, V: Visitor<'a>>(
