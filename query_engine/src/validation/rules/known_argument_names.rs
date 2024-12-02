@@ -66,7 +66,7 @@ impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
     &mut self,
     ctx: &mut VisitorContext<'a>,
     name: &'a Positioned<Name>,
-    value: &'a Positioned<Value>,
+    _value: &'a Positioned<Value>,
   ) {
     if let Some((args, arg_type)) = &self.current_args {
       if !args.contains_key(name.node.as_str()) {
