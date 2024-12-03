@@ -160,7 +160,7 @@ pub struct MetaEnumValue {
   pub directive_invocations: Vec<MetaDirectiveInvocation>,
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum MetaTypeId {
   Scalar,
   Object,
@@ -331,44 +331,6 @@ impl MetaType {
       self,
       Self::Enum { .. } | Self::Scalar { .. } | Self::InputObject { .. }
     )
-  }
-
-  #[inline]
-  pub fn is_possible_type(&self, type_name: &str) -> bool {
-    unimplemented!("to be implemented!");
-    /*match self {
-        Self::Interface { possible_types, .. } => possible_types.contains(type_name),
-        Self::Union { possible_types, .. } => possible_types.contains(type_name),
-        Self::Object { name, .. } => name == type_name,
-        _ => false,
-    }*/
-  }
-
-  #[inline]
-  pub fn possible_types(&self) -> Option<&IndexSet<String>> {
-    unimplemented!("to be implemented");
-    /*match self {
-        Self::Interface { possible_types, .. } => Some(possible_types),
-        Self::Union { possible_types, .. } => Some(possible_types),
-        _ => None,
-    }*/
-  }
-
-  pub fn type_overlap(&self, ty: &MetaType) -> bool {
-    if std::ptr::eq(self, ty) {
-      return true;
-    }
-    match (self.is_abstract(), ty.is_abstract()) {
-      (true, true) => self
-        .possible_types()
-        .iter()
-        .copied()
-        .flatten()
-        .any(|type_name| ty.is_possible_type(type_name)),
-      (true, false) => self.is_possible_type(ty.name()),
-      (false, true) => ty.is_possible_type(self.name()),
-      _ => false,
-    }
   }
 }
 

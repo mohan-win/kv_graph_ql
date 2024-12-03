@@ -140,7 +140,7 @@ impl<'a> __Type<'a> {
     if let TypeDetail::Named(registry::MetaType::Interface { name, .. })
     | TypeDetail::Named(registry::MetaType::Union { name, .. }) = &self.detail
     {
-      self.registry.possible_types(name).map(|obj_ty_names| {
+      self.registry.get_possible_types(name).map(|obj_ty_names| {
         obj_ty_names
           .iter()
           .map(|ty_name| __Type::new(self.registry, ty_name))

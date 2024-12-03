@@ -13,17 +13,65 @@ use crate::{
 };
 use core::panic;
 use indexmap::{map::IndexMap, set::IndexSet};
-use std::any::TypeId;
+use std::any::{type_name, TypeId};
 use std::{
   collections::{BTreeMap, HashMap, HashSet},
   fmt,
   sync::Arc,
 };
 
-#[derive(Default)]
-pub struct ImplementedBy {
-  objects: IndexSet<String>,
-  interfaces: IndexSet<String>,
+#[derive(Default, Debug)]
+struct InterfacesImplementedByMap {
+  by_obj_types: HashMap<String, IndexSet<String>>,
+  by_ifaces: HashMap<String, IndexSet<String>>,
+}
+
+impl InterfacesImplementedByMap {
+  /// Update the indirect interface implementations.
+  fn update_indirect_iface_implementatations() {}
+  fn possible_types(&self, ty_name: &str) -> &IndexSet<String> {
+    &self.by_obj_types[ty_name]
+  }
+  fn update(
+    &mut self,
+    ty_name: &str,
+    type_id: MetaTypeId,
+    implements: &IndexSet<String>,
+  ) {
+    assert!(
+      matches!(type_id, MetaTypeId::Object) || matches!(type_id, MetaTypeId::Interface),
+    );
+
+    implements.iter().for_each(|iface| match type_id {
+      MetaTypeId::Object => {
+        self
+          .by_obj_types
+          .entry(iface.clone())
+          .and_modify(|implemented_by| {
+            implemented_by.insert(ty_name.to_string());
+          })
+          .or_insert({
+            let mut implemented_by = IndexSet::default();
+            implemented_by.insert(ty_name.to_string());
+            implemented_by
+          });
+      }
+      MetaTypeId::Interface => {
+        self
+          .by_ifaces
+          .entry(iface.clone())
+          .and_modify(|implemented_by| {
+            implemented_by.insert(ty_name.to_string());
+          })
+          .or_insert({
+            let mut implemented_by = IndexSet::default();
+            implemented_by.insert(ty_name.to_string());
+            implemented_by
+          });
+      }
+      _ => panic!("Only objects or interfaces can implement other interfaces"),
+    });
+  }
 }
 
 /// A type registry for schema.
@@ -38,8 +86,7 @@ pub struct Registry {
   pub ignore_name_conflicts: HashSet<String>,
   pub enable_suggestions: bool,
 
-  /// implementation map: Map<Key = Interface Type Name, Value = ImplementedBy>
-  implementation_map: HashMap<String, ImplementedBy>,
+  implemented_by_map: InterfacesImplementedByMap,
 }
 
 impl Registry {
@@ -76,14 +123,58 @@ impl Registry {
     registry
   }
 
-  /// If the type of given name is an abstract type (i.e, Union, Interface).
-  /// This function returns possible concrete types for the given type.
-  pub fn possible_types(&self, type_name: &str) -> Option<&IndexSet<String>> {
+  /// Checks if the `abstract_ty` is implemented by the type identified by the `implemented_by_ty_name`.
+  #[inline]
+  pub fn is_possible_type(
+    &self,
+    abstract_ty: &MetaType,
+    implemented_by_ty_name: &str,
+  ) -> bool {
+    match abstract_ty {
+      MetaType::Interface { name, .. } | MetaType::Union { name, .. } => self
+        .get_possible_types(&name)
+        .map_or(false, |possible_types| {
+          possible_types.contains(implemented_by_ty_name)
+        }),
+      MetaType::Object { name, .. } => name.eq(implemented_by_ty_name),
+      _ => false,
+    }
+  }
+
+  /// If the type of given name is an abstract type (i.e, Union, Interface),
+  /// Then this function returns possible concrete types for the given type name.
+  #[inline]
+  pub fn get_possible_types(&self, type_name: &str) -> Option<&IndexSet<String>> {
     self.types.get(type_name).map_or(None, |ty| match ty {
       MetaType::Union { possible_types, .. } => Some(&possible_types),
-      MetaType::Interface { .. } => Some(&self.implementation_map[type_name].objects),
+      MetaType::Interface { .. } => {
+        Some(self.implemented_by_map.possible_types(type_name))
+      }
       _ => None,
     })
+  }
+
+  /// Checks if the given MetaTypes overlap.
+  /// * Arguments
+  /// - ty1 - Meta type one
+  /// - ty2 - Meta type two
+  /// * Returns
+  /// - `true` if the given types overlap.
+  pub fn type_overlap(&self, ty1: &MetaType, ty2: &MetaType) -> bool {
+    if std::ptr::eq(ty1, ty2) {
+      return true;
+    }
+    match (ty1.is_abstract(), ty2.is_abstract()) {
+      (true, true) => self
+        .get_possible_types(ty1.name())
+        .iter()
+        .copied()
+        .flatten()
+        .any(|type_name| self.is_possible_type(ty2, type_name)),
+      (true, false) => self.is_possible_type(ty1, ty2.name()),
+      (false, true) => self.is_possible_type(ty2, ty1.name()),
+      (false, false) => false,
+    }
   }
 
   pub fn concrete_type_by_name(&self, type_name: &str) -> Option<&MetaType> {
@@ -232,9 +323,15 @@ impl Registry {
       None => {
         // Update implementation map for Object & Interface types.
         match &r#type {
-          MetaType::Object { implements, .. }
-          | MetaType::Interface { implements, .. } => {
-            self.update_implementation_map(r#type.name(), r#type.type_id(), implements);
+          MetaType::Interface {
+            name, implements, ..
+          }
+          | MetaType::Object {
+            name, implements, ..
+          } => {
+            self
+              .implemented_by_map
+              .update(&name, r#type.type_id(), implements);
           }
           _ => {
             // Do nothing.
@@ -253,28 +350,6 @@ impl Registry {
         }
       }
     }
-  }
-
-  fn update_implementation_map(
-    &mut self,
-    ty_name: &str,
-    type_id: MetaTypeId,
-    interfaces: &IndexSet<String>,
-  ) {
-    interfaces.iter().for_each(|iface| {
-      self
-        .implementation_map
-        .entry(iface.clone())
-        .and_modify(|implemented_by| {
-          if type_id == MetaTypeId::Object {
-            implemented_by.objects.insert(ty_name.to_string());
-          } else if type_id == MetaTypeId::Interface {
-            implemented_by.interfaces.insert(ty_name.to_string());
-          } else {
-            panic!("Only Objects and Interfaces can implement other interfaces!")
-          }
-        });
-    });
   }
 
   fn add_directive(&mut self, directive: MetaDirective) {
