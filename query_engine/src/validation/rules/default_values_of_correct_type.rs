@@ -3,7 +3,7 @@ use crate::{
   graphql_parser::types::{BaseType, VariableDefinition},
   graphql_parser::Positioned,
   validation::{
-    utlis::is_valid_input_value,
+    utils::is_valid_input_value,
     visitor::{Visitor, VisitorContext},
   },
 };

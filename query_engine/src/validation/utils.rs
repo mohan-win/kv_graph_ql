@@ -1,14 +1,41 @@
 use std::collections::HashSet;
 
-use graphql_value::ConstValue;
+use graphql_value::{ConstValue, Value};
 
 use crate::{
   context::{QueryPathNode, QueryPathSegment},
   registry,
 };
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Scope<'a> {
+  Operation(Option<&'a str>),
+  Fragment(&'a str),
+}
+
 pub fn valid_error(path_node: &QueryPathNode, msg: String) -> String {
   format!("\"{}\", {}", path_node, msg)
+}
+
+pub fn referenced_variables(value: &Value) -> Vec<&str> {
+  let mut vars = Vec::new();
+  referenced_variables_to_vec(value, &mut vars);
+  vars
+}
+
+fn referenced_variables_to_vec<'a>(value: &'a Value, vars: &mut Vec<&'a str>) {
+  match value {
+    Value::Variable(name) => {
+      vars.push(name);
+    }
+    Value::List(values) => values
+      .iter()
+      .for_each(|value| referenced_variables_to_vec(value, vars)),
+    Value::Object(obj) => obj
+      .values()
+      .for_each(|value| referenced_variables_to_vec(value, vars)),
+    _ => {}
+  }
 }
 
 pub fn is_valid_input_value(

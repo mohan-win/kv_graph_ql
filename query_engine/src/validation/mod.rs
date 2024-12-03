@@ -3,7 +3,7 @@
 mod test_harness;
 mod rules;
 mod suggestion;
-mod utlis;
+mod utils;
 mod visitor;
 
 use graphql_parser::types::ExecutableDocument;

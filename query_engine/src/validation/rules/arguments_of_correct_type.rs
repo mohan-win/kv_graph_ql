@@ -8,7 +8,7 @@ use crate::{
   },
   registry::MetaInputValue,
   validation::{
-    utlis::is_valid_input_value,
+    utils::is_valid_input_value,
     visitor::{Visitor, VisitorContext},
   },
 };
