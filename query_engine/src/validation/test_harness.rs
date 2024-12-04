@@ -7,7 +7,7 @@ use super::visitor::{self, visit, RuleError, Visitor, VisitorContext};
 use once_cell::sync::Lazy;
 use std::fs;
 
-fn build_registry(
+pub(crate) fn build_registry(
   schema_file_path: &str,
 ) -> Result<Registry, Box<dyn std::error::Error>> {
   let schema_file = fs::read_to_string(schema_file_path)?;

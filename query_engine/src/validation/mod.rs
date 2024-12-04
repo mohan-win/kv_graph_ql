@@ -5,6 +5,7 @@ mod rules;
 mod suggestion;
 mod utils;
 mod visitor;
+mod visitors;
 
 use graphql_parser::types::ExecutableDocument;
 

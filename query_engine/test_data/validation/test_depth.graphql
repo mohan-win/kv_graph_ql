@@ -1,0 +1,10 @@
+type MyObj {
+  a: Int!
+  b: Int!
+  c: MyObj!
+}
+
+type Query {
+  value: Int!
+  obj: MyObj!
+}
