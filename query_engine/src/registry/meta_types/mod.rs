@@ -316,6 +316,14 @@ impl MetaType {
   }
 
   #[inline]
+  pub fn is_composite(&self) -> bool {
+    matches!(
+      self,
+      Self::Object { .. } | Self::Interface { .. } | Self::Union { .. }
+    )
+  }
+
+  #[inline]
   pub fn is_abstract(&self) -> bool {
     matches!(self, Self::Interface { .. } | Self::Union { .. })
   }
