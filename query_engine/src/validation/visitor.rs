@@ -59,13 +59,10 @@ impl<'a> VisitorContext<'a> {
     ty: Option<&'a registry::MetaType>,
     mut f: F,
   ) {
-    // ToDo:: Remove.
     let ty_name = ty.map(|ty| ty.name());
-    println!("Pushing to type_stack {:?}", ty_name);
     self.type_stack.push(ty);
     f(self);
     self.type_stack.pop();
-    println!("Poped from type stack. {:?}", ty_name);
   }
 
   pub(crate) fn with_input_type<F: FnMut(&mut VisitorContext<'a>)>(
