@@ -22,16 +22,36 @@ use std::{
 
 #[derive(Default, Debug)]
 struct InterfacesImplementedByMap {
+  /// Map<Key = InterfaceName, Value = Set(ObjectTypeNamesImplementingThisInterface)>
   by_obj_types: HashMap<String, IndexSet<String>>,
+  /// Map<Key = InterfaceName, Value = Set(InterfacesImplementingThisInterface)>
   by_ifaces: HashMap<String, IndexSet<String>>,
 }
 
 impl InterfacesImplementedByMap {
-  /// Update the indirect interface implementations.
-  fn update_indirect_iface_implementatations() {}
   fn possible_types(&self, ty_name: &str) -> &IndexSet<String> {
     &self.by_obj_types[ty_name]
   }
+
+  /// This method finds and updates the `by_obj_types` map with
+  /// indirect sub-object-types of the interfaces recorded in `by_ifaces` map.
+  fn update_indirect_sub_types(&mut self) {
+    for (base_iface, implementing_ifaces) in self.by_ifaces.iter() {
+      let indirect_types = implementing_ifaces.iter().fold(
+        IndexSet::new(),
+        |mut acc, implementing_iface| {
+          self
+            .by_obj_types
+            .get(implementing_iface)
+            .map(|obj_types| acc.extend(obj_types.iter().cloned()));
+          acc
+        },
+      );
+      let implemented_by = self.by_obj_types.entry(base_iface.clone()).or_default();
+      implemented_by.extend(indirect_types.into_iter());
+    }
+  }
+
   fn update(
     &mut self,
     ty_name: &str,
@@ -107,6 +127,7 @@ impl Registry {
         }
         TypeSystemDefinition::Type(ty) => registry.add_type(ty.node.into()),
       });
+    registry.implemented_by_map.update_indirect_sub_types();
     registry.query_type = registry
       .types
       .get("Query")
