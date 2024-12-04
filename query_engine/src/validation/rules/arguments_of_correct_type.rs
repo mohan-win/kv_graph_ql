@@ -1117,9 +1117,4 @@ mod tests {
       "#,
     );
   }
-
-  #[test]
-  fn test_variables_for_arg() {
-    unimplemented!()
-  }
 }
