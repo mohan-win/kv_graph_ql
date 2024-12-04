@@ -311,7 +311,7 @@ pub(crate) trait Visitor<'a> {
     _ctx: &mut VisitorContext<'a>,
     _pos: Pos,
     _expected_type: &Option<MetaTypeName<'a>>,
-    _value: &Value,
+    _value: &'a Value,
   ) {
   }
   fn exit_input_value(
@@ -319,7 +319,7 @@ pub(crate) trait Visitor<'a> {
     _ctx: &mut VisitorContext<'a>,
     _pos: Pos,
     _expected_type: &Option<MetaTypeName<'a>>,
-    _value: &Value,
+    _value: &'a Value,
   ) {
   }
 }
@@ -553,7 +553,7 @@ where
     ctx: &mut VisitorContext<'a>,
     pos: Pos,
     expected_type: &Option<MetaTypeName<'a>>,
-    value: &Value,
+    value: &'a Value,
   ) {
     self.0.enter_input_value(ctx, pos, expected_type, value);
     self.1.enter_input_value(ctx, pos, expected_type, value);
@@ -563,7 +563,7 @@ where
     ctx: &mut VisitorContext<'a>,
     pos: Pos,
     expected_type: &Option<MetaTypeName<'a>>,
-    value: &Value,
+    value: &'a Value,
   ) {
     self.0.exit_input_value(ctx, pos, expected_type, value);
     self.1.exit_input_value(ctx, pos, expected_type, value);
