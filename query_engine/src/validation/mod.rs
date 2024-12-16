@@ -7,10 +7,10 @@ mod utils;
 mod visitor;
 mod visitors;
 
-use graphql_parser::types::ExecutableDocument;
+use crate::graphql_parser::types::ExecutableDocument;
 use visitor::{visit, VisitorContext, VisitorNil};
 
-use crate::{error::ServerError, registry::Registry, Variables};
+use crate::{error::ServerError, graphql_value::Variables, registry::Registry};
 
 #[derive(Debug, Clone, Copy)]
 pub struct ValidationResult {

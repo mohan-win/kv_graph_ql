@@ -7,7 +7,9 @@ pub mod string;
 
 use std::{borrow::Cow, sync::Arc};
 
-use crate::{registry::MetaType, InputType, InputValueResult, Value};
+use crate::{
+  graphql_value::ConstValue as Value, registry::MetaType, InputType, InputValueResult,
+};
 
 /// All supported GraphQL scalars will conform to this trait.
 pub trait ScalarType: Sized + Sync + Send {

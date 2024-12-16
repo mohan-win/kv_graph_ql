@@ -9,7 +9,8 @@ use crate::graphql_parser::types::{
 };
 use crate::InputType;
 use crate::{
-  introspection::types::__DirectiveLocation, schema::IntrospectionMode, Value,
+  graphql_value::ConstValue as Value, introspection::types::__DirectiveLocation,
+  schema::IntrospectionMode,
 };
 use core::panic;
 use indexmap::{map::IndexMap, set::IndexSet};

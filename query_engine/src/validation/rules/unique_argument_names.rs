@@ -1,14 +1,12 @@
 use std::collections::HashSet;
 
-use graphql_value::Value;
-
 use crate::{
   graphql_parser::{
     types::{Directive, Field},
     Positioned,
   },
+  graphql_value::{Name, Value},
   validation::visitor::{Visitor, VisitorContext},
-  Name,
 };
 
 #[derive(Default)]

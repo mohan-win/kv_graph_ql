@@ -1,4 +1,3 @@
-use graphql_value::Value;
 use indexmap::map::IndexMap;
 
 use crate::{
@@ -6,12 +5,12 @@ use crate::{
     types::{Directive, Field},
     Positioned,
   },
+  graphql_value::{Name, Value},
   registry::MetaInputValue,
   validation::{
     suggestion::make_suggestion,
     visitor::{Visitor, VisitorContext},
   },
-  Name,
 };
 
 enum ArgType<'a> {

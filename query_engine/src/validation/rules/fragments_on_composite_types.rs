@@ -3,8 +3,8 @@ use crate::{
     types::{FragmentDefinition, InlineFragment},
     Positioned,
   },
+  graphql_value::Name,
   validation::visitor::{Visitor, VisitorContext},
-  Name,
 };
 #[derive(Default)]
 pub struct FragmentOnCompositeTypes;

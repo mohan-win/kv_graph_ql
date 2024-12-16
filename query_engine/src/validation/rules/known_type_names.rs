@@ -3,9 +3,9 @@ use crate::{
     types::{FragmentDefinition, InlineFragment, TypeCondition, VariableDefinition},
     Pos, Positioned,
   },
+  graphql_value::Name,
   registry::MetaTypeName,
   validation::visitor::{Visitor, VisitorContext},
-  Name,
 };
 
 #[derive(Default)]

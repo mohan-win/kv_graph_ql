@@ -1,7 +1,5 @@
 use std::collections::{HashMap, HashSet};
 
-use graphql_value::Value;
-
 use crate::{
   graphql_parser::{
     types::{
@@ -10,12 +8,12 @@ use crate::{
     },
     Pos, Positioned,
   },
+  graphql_value::{Name, Value},
   registry::MetaTypeName,
   validation::{
     utils::Scope,
     visitor::{Visitor, VisitorContext},
   },
-  Name,
 };
 
 #[derive(Default)]

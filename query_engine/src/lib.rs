@@ -10,14 +10,10 @@ mod validation;
 
 pub use error::{InputValueError, InputValueResult};
 pub use graphql_parser;
-use serde::{Deserialize, Serialize};
-use serde_json::Result;
+pub use graphql_value;
+use sdml_parser;
 
 pub use base::InputType;
-pub use graphql_value::{
-  from_value, to_value, value, ConstValue as Value, DeserializerError, Name, Number,
-  SerializerError, Variables,
-};
 
 #[cfg(test)]
 mod tests {}

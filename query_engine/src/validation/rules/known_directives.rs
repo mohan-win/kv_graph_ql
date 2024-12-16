@@ -6,9 +6,9 @@ use crate::{
     },
     Positioned,
   },
+  graphql_value::Name,
   introspection::types::__DirectiveLocation,
   validation::visitor::{Visitor, VisitorContext},
-  Name,
 };
 
 #[derive(Default)]

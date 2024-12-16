@@ -1,5 +1,7 @@
 //! Impements necessary meta-data types for introspection.
-use crate::{introspection::types::__DirectiveLocation, Value};
+use crate::{
+  graphql_value::ConstValue as Value, introspection::types::__DirectiveLocation,
+};
 use indexmap::{map::IndexMap, set::IndexSet};
 use std::{fmt, sync::Arc};
 

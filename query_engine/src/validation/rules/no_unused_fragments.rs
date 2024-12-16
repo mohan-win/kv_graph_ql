@@ -7,11 +7,11 @@ use crate::{
     },
     Pos, Positioned,
   },
+  graphql_value::Name,
   validation::{
     utils::Scope,
     visitor::{Visitor, VisitorContext},
   },
-  Name,
 };
 
 #[derive(Default)]

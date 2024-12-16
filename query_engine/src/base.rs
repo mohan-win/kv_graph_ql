@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use crate::{registry::MetaType, InputValueResult, Value};
+use crate::{graphql_value::ConstValue as Value, registry::MetaType, InputValueResult};
 
 /// Represents a GraphQL input type.
 pub trait InputType: Send + Sync + Sized {

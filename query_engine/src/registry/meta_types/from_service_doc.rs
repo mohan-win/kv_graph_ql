@@ -1,6 +1,6 @@
 //! Implements From conversion trait to convert from relevant parser::type::service::* into
 //! meta types.
-use graphql_parser::types::{
+use crate::graphql_parser::types::{
   ConstDirective, DirectiveDefinition, DirectiveLocation, EnumValueDefinition,
   FieldDefinition, InputValueDefinition, TypeDefinition, TypeKind, TypeSystemDefinition,
 };

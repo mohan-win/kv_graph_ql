@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use graphql_value::{ConstValue, Value};
+use crate::graphql_value::{ConstValue, Value};
 
 use crate::{
   context::{QueryPathNode, QueryPathSegment},

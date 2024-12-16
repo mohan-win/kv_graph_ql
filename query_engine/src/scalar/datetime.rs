@@ -1,5 +1,5 @@
 use super::ScalarType;
-use crate::{InputValueError, InputValueResult, Value};
+use crate::{graphql_value::ConstValue as Value, InputValueError, InputValueResult};
 use chrono::{DateTime, Utc};
 
 impl ScalarType for DateTime<Utc> {

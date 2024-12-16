@@ -1,5 +1,5 @@
 use super::ScalarType;
-use crate::{InputValueError, InputValueResult, Value};
+use crate::{graphql_value::ConstValue as Value, InputValueError, InputValueResult};
 
 impl ScalarType for String {
   type RawScalarType = Self;

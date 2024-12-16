@@ -5,8 +5,8 @@ use crate::{
     types::{OperationDefinition, VariableDefinition},
     Positioned,
   },
+  graphql_value::Name,
   validation::visitor::{Visitor, VisitorContext},
-  Name,
 };
 
 #[derive(Default)]

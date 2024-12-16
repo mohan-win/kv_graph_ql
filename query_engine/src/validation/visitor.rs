@@ -1,5 +1,8 @@
 use std::{collections::HashMap, fmt::Display};
 
+use crate::graphql_parser::types::{
+  FragmentSpread, InlineFragment, OperationType, TypeCondition,
+};
 use crate::{
   graphql_parser::{
     types::{
@@ -10,15 +13,14 @@ use crate::{
   },
   registry::MetaType,
 };
-use graphql_parser::types::{
-  FragmentSpread, InlineFragment, OperationType, TypeCondition,
-};
-use graphql_value::Value;
 
 use crate::{
   error::{ServerError, ServerResult},
+  graphql_value::Name,
+  graphql_value::Value,
+  graphql_value::Variables,
   registry::{self, MetaTypeName},
-  InputType, Name, Variables,
+  InputType,
 };
 
 pub struct VisitorContext<'a> {

@@ -6,8 +6,8 @@ use std::{
   sync::Arc,
 };
 
-use crate::{InputType, Value};
-use graphql_parser::{self as parser, Pos};
+use crate::graphql_parser::{self as parser, Pos};
+use crate::{graphql_value::ConstValue as Value, InputType};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 

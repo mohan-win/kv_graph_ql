@@ -5,8 +5,8 @@ use crate::{
     types::{ExecutableDocument, FragmentDefinition, FragmentSpread},
     Pos, Positioned,
   },
+  graphql_value::Name,
   validation::visitor::{RuleError, Visitor, VisitorContext},
-  Name,
 };
 
 struct CycleDetector<'a> {
