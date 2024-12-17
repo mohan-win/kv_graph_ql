@@ -515,3 +515,24 @@ impl<'a, T> ContextBase<'a, T> {
       .map_err(|e| e.into_server_error(pos))
   }
 }
+
+impl<'a> ContextBase<'a, &'a Positioned<Field>> {
+  #[doc(hidden)]
+  pub fn param_value<T: InputType>(
+    &self,
+    name: &str,
+    default: Option<fn() -> T>,
+  ) -> ServerResult<(Pos, T)> {
+    self.get_param_value(&self.item.node.arguments, name, default)
+  }
+}
+
+impl<'a> ContextBase<'a, &'a Positioned<Directive>> {
+  pub fn param_value<T: InputType>(
+    &self,
+    name: &str,
+    default: Option<fn() -> T>,
+  ) -> ServerResult<(Pos, T)> {
+    self.get_param_value(&self.item.node.arguments, name, default)
+  }
+}
