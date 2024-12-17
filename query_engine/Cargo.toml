@@ -14,4 +14,7 @@ indexmap.workspace = true
 thiserror.workspace = true
 once_cell.workspace = true
 chrono.workspace = true
+fnv.workspace = true
+http.workspace = true
+async-trait.workspace = true
 

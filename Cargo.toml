@@ -32,3 +32,21 @@ convert_case = {version = "0.6.0"}
 thiserror = {version = "2"}
 once_cell = {version = "1.20"}
 chrono = {version = "0.4"}
+future-util = {version = "0.3", features = [
+  "std",
+  "io",
+  "sink",
+  "async-await",
+  "async-await-macro",
+]}
+async-trait = {version = "0.1.83"}
+tokio = { version = "1.42.0", features = [
+  "macros",
+  "rt-multi-thread",
+  "sync",
+  "time",
+] }
+tokio-util = {version = "0.7.13", default-features = false}
+http = {version = "1.2.0"}
+fnv = {version = "1.0.3"}
+
