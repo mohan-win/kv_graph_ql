@@ -3,6 +3,7 @@ mod context;
 mod custom_directive;
 mod error;
 mod execution;
+mod executor;
 mod introspection;
 mod registry;
 mod request;
