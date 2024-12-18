@@ -278,4 +278,9 @@ pub enum ParseRequestError {
   /// An IO error occurred.
   #[error("{0}")]
   Io(#[from] std::io::Error),
+
+  /// This request is a batch request, but the server doesn't support
+  /// batch requests.
+  #[error("Batch request are not supported.")]
+  UnsupportedBatch,
 }
