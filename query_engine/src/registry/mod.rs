@@ -1,5 +1,7 @@
 //! Impements necessary meta-data types for introspection.
+mod cache_control;
 mod meta_types;
+pub use cache_control::CacheControl;
 use chrono::{DateTime, Utc};
 pub use meta_types::*;
 

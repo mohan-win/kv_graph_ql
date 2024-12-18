@@ -6,6 +6,7 @@ mod execution;
 mod introspection;
 mod registry;
 mod request;
+mod response;
 mod scalar;
 mod schema;
 mod validation;
@@ -19,6 +20,10 @@ pub use error::{
 };
 pub use graphql_parser;
 pub use graphql_value;
+pub use registry::CacheControl;
+pub use request::{BatchRequest, Request};
+pub use response::{BatchResponse, Response};
+pub use schema::{IntrospectionMode, SchemaEnv};
 use sdml_parser;
 
 #[cfg(test)]
