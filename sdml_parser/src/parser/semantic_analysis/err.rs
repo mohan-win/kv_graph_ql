@@ -1,7 +1,7 @@
 use chumsky::error::Rich as ChumskyError;
 use core::fmt;
 
-use crate::ast::Span;
+use crate::types::Span;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Error {

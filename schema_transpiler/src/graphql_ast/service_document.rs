@@ -255,12 +255,12 @@ pub enum TypeMod {
   ArrayOptional,
 }
 
-impl From<sdml_parser::ast::FieldTypeMod> for TypeMod {
-  fn from(value: sdml_parser::ast::FieldTypeMod) -> Self {
+impl From<sdml_parser::types::FieldTypeMod> for TypeMod {
+  fn from(value: sdml_parser::types::FieldTypeMod) -> Self {
     match value {
-      sdml_parser::ast::FieldTypeMod::NonOptional => TypeMod::NonOptional,
-      sdml_parser::ast::FieldTypeMod::Optional => TypeMod::Optional,
-      sdml_parser::ast::FieldTypeMod::Array => TypeMod::Array,
+      sdml_parser::types::FieldTypeMod::NonOptional => TypeMod::NonOptional,
+      sdml_parser::types::FieldTypeMod::Optional => TypeMod::Optional,
+      sdml_parser::types::FieldTypeMod::Array => TypeMod::Array,
     }
   }
 }
@@ -309,13 +309,13 @@ impl Type {
 
   /// Returns the graphql type name for the given SDML primitve type.
   pub fn map_sdml_type_to_graphql_ty_name(
-    r#type: &sdml_parser::ast::PrimitiveType,
+    r#type: &sdml_parser::types::PrimitiveType,
   ) -> String {
     use crate::graphql_gen::{
       FIELD_TYPE_NAME_BOOL, FIELD_TYPE_NAME_INT, FIELD_TYPE_NAME_STRING,
       FIELD_TYPE_SCALAR_DATETIME,
     };
-    use sdml_parser::ast::PrimitiveType;
+    use sdml_parser::types::PrimitiveType;
     match r#type {
       PrimitiveType::ShortStr | PrimitiveType::LongStr => FIELD_TYPE_NAME_STRING,
       PrimitiveType::DateTime => FIELD_TYPE_SCALAR_DATETIME,

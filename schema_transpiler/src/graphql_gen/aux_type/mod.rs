@@ -156,7 +156,7 @@ pub fn aggregage_type_def<'src>() -> GraphQLGenResult<TypeDefinition> {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use sdml_parser::ast::Span;
+  use sdml_parser::types::Span;
 
   #[test]
   fn test_aggregate_type_def() {
@@ -203,7 +203,7 @@ cursor: String!
 }
 "#;
     let user_edge_ty =
-      edge_type_def(&sdml_parser::ast::Token::Ident("User", Span::new(0, 0))).unwrap();
+      edge_type_def(&sdml_parser::types::Token::Ident("User", Span::new(0, 0))).unwrap();
     assert_eq!(expected_graphql_str, user_edge_ty.to_string())
   }
 
@@ -222,7 +222,7 @@ aggregate: Aggregate!
 }
 "#;
     let user_connection_types =
-      connection_types_def(&sdml_parser::ast::Token::Ident("User", Span::new(0, 0)))
+      connection_types_def(&sdml_parser::types::Token::Ident("User", Span::new(0, 0)))
         .unwrap();
     let actual_graphql_str = user_connection_types
       .into_iter()

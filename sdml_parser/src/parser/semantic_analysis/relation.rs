@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::ast::{AttribArg, FieldDecl, ModelDecl, NamedArg, RelationEdge, Token};
+use crate::types::{AttribArg, FieldDecl, ModelDecl, NamedArg, RelationEdge, Token};
 
 use super::{
   attribute::{

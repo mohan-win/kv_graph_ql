@@ -1,5 +1,4 @@
-mod ast;
 mod parser;
 
-pub use ast::*;
-pub use parser::*;
+pub mod types;
+pub use parser::parse;

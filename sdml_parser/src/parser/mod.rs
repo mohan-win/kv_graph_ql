@@ -1,6 +1,6 @@
 use std::ops::Div;
 
-use crate::ast::{
+use crate::types::{
   AttribArg, Attribute, ConfigDecl, ConfigPair, DataModel, Declaration, EnumDecl,
   FieldDecl, FieldType, FieldTypeMod, ModelDecl, NamedArg, PrimitiveType, Str, Token,
   Type,
@@ -252,7 +252,7 @@ mod tests {
   use std::{collections::HashMap, vec};
 
   use super::*;
-  use crate::ast::{ConfigValue, RelationEdge, Span};
+  use crate::types::{ConfigValue, RelationEdge, Span};
 
   #[test]
   fn test_string() {

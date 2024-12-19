@@ -1,4 +1,4 @@
-use crate::ast::{
+use crate::types::{
   DataModel, Declaration, EnumDecl, FieldDecl, ModelDecl, ModelIndexedFieldsFilter, Span,
   Type,
 };
@@ -210,7 +210,7 @@ fn validate_model_id_field(model: &ModelDecl) -> Result<(), Error> {
 
 #[cfg(test)]
 mod tests {
-  use crate::ast::Span;
+  use crate::types::Span;
 
   use super::*;
   use chumsky::prelude::*;

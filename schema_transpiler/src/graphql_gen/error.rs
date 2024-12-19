@@ -1,4 +1,4 @@
-use sdml_parser::ast::Span;
+use sdml_parser::types::Span;
 
 /// Errors during SDML to GraphQL transpilation.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -8,7 +8,7 @@ pub enum ErrorGraphQLGen {
     /// error details.
     error: String,
     /// position in SDML file.
-    pos: sdml_parser::ast::Span,
+    pos: sdml_parser::types::Span,
   },
 }
 

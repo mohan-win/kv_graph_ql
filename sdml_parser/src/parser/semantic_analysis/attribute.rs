@@ -3,7 +3,7 @@ use std::fmt;
 
 use chumsky::container::Seq;
 
-use crate::ast::{
+use crate::types::{
   AttribArg, Attribute, EnumDecl, FieldDecl, ModelDecl, NamedArg, Token, Type,
 };
 

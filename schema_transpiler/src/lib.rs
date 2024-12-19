@@ -1,7 +1,7 @@
 mod graphql_ast;
 mod graphql_gen;
 
-use sdml_parser::ast::{self as sdml_ast, DataModel};
+use sdml_parser::{self as sdml_ast, DataModel};
 
 /**
  * Public API
