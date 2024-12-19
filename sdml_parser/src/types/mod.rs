@@ -397,7 +397,7 @@ impl<'a> ModelFields<'a> {
 
 impl ModelDecl {
   /// Get Model fields.
-  pub fn get_fields(&self) -> ModelFields {
+  pub fn get_fields(&self) -> ModelFields<'_> {
     self.get_fields_internal(false) // IMPORTNAT: Don't allow unknown_field_type when fields are accessed from outside the crate.
   }
 
