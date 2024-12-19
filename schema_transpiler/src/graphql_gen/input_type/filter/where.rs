@@ -2,9 +2,7 @@
 use super::*;
 
 /// Generates where input type for the given model.
-pub fn where_input_def<'src>(
-  model: &sdml_ast::ModelDecl<'src>,
-) -> GraphQLGenResult<TypeDefinition> {
+pub fn where_input_def(model: &sdml_ast::ModelDecl) -> GraphQLGenResult<TypeDefinition> {
   let mut filters = logical_operations_def(&model.name)?;
   let model_field_filters = model.fields.iter().map(field_to_filters).try_fold(
     Vec::new(),
@@ -33,8 +31,8 @@ pub fn where_input_def<'src>(
 }
 
 /// Returns relevant filter arguments for the given field.
-fn field_to_filters<'src>(
-  field: &sdml_ast::FieldDecl<'src>,
+fn field_to_filters(
+  field: &sdml_ast::FieldDecl,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
   let field_type = &*field.field_type.r#type();
   match field_type {
@@ -73,18 +71,18 @@ fn field_to_filters<'src>(
 }
 
 /// Generates necessary filter arguments for id field.
-fn id_field_def<'src>(
-  field_name: &sdml_ast::Token<'src>,
+fn id_field_def(
+  field_name: &sdml_ast::Token,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
   string_field_def(&sdml_ast::Token::Ident(
-    &open_crud_name::fields::Field::Id.common_name(),
+    sdml_ast::Str::new(&open_crud_name::fields::Field::Id.common_name()),
     field_name.span(),
   ))
 }
 
 /// Generates necessary filter arguments for a string field.
-fn string_field_def<'src>(
-  field_name: &sdml_ast::Token<'src>,
+fn string_field_def(
+  field_name: &sdml_ast::Token,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
   let list_field_names_fmt = [("{}_in", "in list"), ("{}_not_in", "not in list")];
   let non_list_field_names_fmt = [
@@ -113,8 +111,8 @@ enum NumberType {
   Integer,
   Float,
 }
-fn number_field_def<'src>(
-  field_name: &sdml_ast::Token<'src>,
+fn number_field_def(
+  field_name: &sdml_ast::Token,
   number_type: NumberType,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
   // Names of the fields whose type is a list
@@ -140,8 +138,8 @@ fn number_field_def<'src>(
   )
 }
 
-fn boolean_field_def<'src>(
-  field_name: &sdml_ast::Token<'src>,
+fn boolean_field_def(
+  field_name: &sdml_ast::Token,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
   let non_list_field_names_fmt = [("{}", "equals"), ("{}_not", "not equals")];
   generate_where_input_filters(
@@ -152,8 +150,8 @@ fn boolean_field_def<'src>(
   )
 }
 
-fn datetime_field_def<'src>(
-  field_name: &sdml_ast::Token<'src>,
+fn datetime_field_def(
+  field_name: &sdml_ast::Token,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
   let list_field_names_fmt = [("{}_in", "in list"), ("{}_not_in", "not in list")];
   let non_list_field_names_fmt = [
@@ -172,9 +170,9 @@ fn datetime_field_def<'src>(
   )
 }
 
-fn enum_field_def<'src>(
-  field_name: &sdml_ast::Token<'src>,
-  r#type: &sdml_ast::Type<'src>,
+fn enum_field_def(
+  field_name: &sdml_ast::Token,
+  r#type: &sdml_ast::Type,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
   let enum_type_name = if let sdml_ast::Type::Enum { enum_ty_name } = r#type {
     enum_ty_name
@@ -196,9 +194,9 @@ fn enum_field_def<'src>(
   )
 }
 
-fn relation_field_def<'src>(
-  field_name: &sdml_ast::Token<'src>,
-  target_relation: &sdml_ast::FieldType<'src>,
+fn relation_field_def(
+  field_name: &sdml_ast::Token,
+  target_relation: &sdml_ast::FieldType,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
   let field_name = field_name
     .try_get_ident_name()
@@ -265,8 +263,8 @@ fn relation_field_def<'src>(
 /// Returns logical operation filters for where input type for the given model.
 /// ### Arguments
 /// * `model_name` - name of the model.
-fn logical_operations_def<'src>(
-  model_name: &sdml_ast::Token<'src>,
+fn logical_operations_def(
+  model_name: &sdml_ast::Token,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
   let model_name = model_name
     .try_get_ident_name()
@@ -309,13 +307,13 @@ fn logical_operations_def<'src>(
 /// It should be an array of tuple with 1st element being the field name, and 2nd element of tuple being its description.
 /// Ex. \[("{}", "equals"),("{}_not", "not equals")\]
 #[inline]
-fn generate_where_input_filters<'src>(
-  field_name: &sdml_ast::Token<'src>,
-  field_type_name: &'src str,
+fn generate_where_input_filters(
+  field_name: &sdml_ast::Token,
+  field_type_name: &str,
   list_field_names_fmt: &[(&str, &str)],
   non_list_field_names_fmt: &[(&str, &str)],
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
-  let field_name: &'src str = field_name
+  let field_name: &str = field_name
     .try_get_ident_name()
     .map_err(ErrorGraphQLGen::new_sdml_error)?;
   let non_list_fields =
@@ -345,9 +343,8 @@ fn generate_where_input_filters<'src>(
 mod tests {
   use std::fs;
 
-  use chumsky::prelude::*;
-  use sdml_ast::Span;
-  use sdml_parser::parser;
+  use sdml_ast::{Span, Str};
+  use sdml_parser;
 
   use super::*;
 
@@ -364,11 +361,7 @@ mod tests {
       "/test_data/input_type/user_where_input.sdml"
     ))
     .unwrap();
-    let sdml_declarations = parser::delcarations()
-      .parse(&sdml_str)
-      .into_output()
-      .expect("It should be a valid SDML.");
-    let data_model = parser::semantic_analysis(sdml_declarations)
+    let data_model = sdml_parser::parse(&sdml_str)
       .expect("A valid SDML file shouldn't fail in parsing.");
     let user_model_sdml_ast = data_model
       .models()
@@ -409,7 +402,7 @@ field_in: [String]
 """not in list"""
 field_not_in: [String]"#;
     let str_field_input_filters =
-      string_field_def(&sdml_ast::Token::Ident("field", Span::new(0, 0)))
+      string_field_def(&sdml_ast::Token::Ident(Str::new("field"), Span::new(0, 0)))
         .expect("It should be a valid output");
     let actual_str = str_field_input_filters
       .into_iter()
@@ -437,7 +430,7 @@ field_in: [Int]
 """not in list"""
 field_not_in: [Int]"#;
     let int_field_input_filters = number_field_def(
-      &sdml_ast::Token::Ident("field", Span::new(0, 0)),
+      &sdml_ast::Token::Ident(Str::new("field"), Span::new(0, 0)),
       NumberType::Integer,
     )
     .expect("It should be a valid output");
@@ -467,7 +460,7 @@ field_in: [Float]
 """not in list"""
 field_not_in: [Float]"#;
     let float_field_input_filters = number_field_def(
-      &sdml_ast::Token::Ident("field", Span::new(0, 0)),
+      &sdml_ast::Token::Ident(Str::new("field"), Span::new(0, 0)),
       NumberType::Float,
     )
     .expect("It should be a valid output");
@@ -485,7 +478,7 @@ field: Boolean
 """not equals"""
 field_not: Boolean"#;
     let boolean_field_input_filters =
-      boolean_field_def(&sdml_ast::Token::Ident("field", Span::new(0, 0)))
+      boolean_field_def(&sdml_ast::Token::Ident(Str::new("field"), Span::new(0, 0)))
         .expect("It should be a valid output");
     let actual_str = boolean_field_input_filters
       .into_iter()
@@ -505,9 +498,9 @@ userRole_in: [Role]
 """not in list"""
 userRole_not_in: [Role]"#;
     let enum_field_input_filters = enum_field_def(
-      &sdml_ast::Token::Ident("userRole", Span::new(0, 0)),
+      &sdml_ast::Token::Ident(Str::new("userRole"), Span::new(0, 0)),
       &sdml_ast::Type::Enum {
-        enum_ty_name: sdml_ast::Token::Ident("Role", Span::new(0, 0)),
+        enum_ty_name: sdml_ast::Token::Ident(Str::new("Role"), Span::new(0, 0)),
       },
     )
     .expect("It should be a valid output");
@@ -527,7 +520,7 @@ OR: [UserWhereInput!]
 """Logical NOT on all given filters combined by AND."""
 NOT: [UserWhereInput!]"#;
     let logical_operations =
-      logical_operations_def(&sdml_ast::Token::Ident("User", Span::new(0, 0)))
+      logical_operations_def(&sdml_ast::Token::Ident(Str::new("User"), Span::new(0, 0)))
         .expect("It should be a valid output");
     let actual_str = logical_operations
       .into_iter()

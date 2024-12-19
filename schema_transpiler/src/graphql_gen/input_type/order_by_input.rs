@@ -1,8 +1,8 @@
 use super::*;
 
 /// Generates OrderByInput enum for the given model's scalar fields.
-pub fn order_by_input_enum_def<'src>(
-  model: &sdml_ast::ModelDecl<'src>,
+pub fn order_by_input_enum_def(
+  model: &sdml_ast::ModelDecl,
 ) -> GraphQLGenResult<TypeDefinition> {
   let mut scalar_fields = model.fields.iter().filter(|fld| fld.field_type.is_scalar());
   let order_by_elements = scalar_fields.try_fold(Vec::new(), |mut acc, fld| {
@@ -44,8 +44,7 @@ pub fn order_by_input_enum_def<'src>(
 
 #[cfg(test)]
 mod tests {
-  use chumsky::prelude::*;
-  use sdml_parser::parser;
+  use sdml_parser;
   use std::fs;
 
   use super::*;
@@ -63,11 +62,7 @@ mod tests {
       "/test_data/input_type/user_order_by_input.sdml"
     ))
     .unwrap();
-    let sdml_declarations = parser::delcarations()
-      .parse(&sdml_str)
-      .into_output()
-      .expect("It should be a valid SDML.");
-    let data_model = parser::semantic_analysis(sdml_declarations)
+    let data_model = sdml_parser::parse(&sdml_str)
       .expect("A valid SDML file shouldn't fail in parsing.");
     let user_model_sdml_ast = data_model
       .models()

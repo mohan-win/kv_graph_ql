@@ -4,8 +4,8 @@ use super::*;
 /// Generates WhereUniqueInput filter type for the given model.
 /// When this fitler gets passed as an argument,
 /// it will exactly match *at-most* 1 record in the graphQL response.
-pub fn where_unique_unique_input_def<'src>(
-  model: &sdml_ast::ModelDecl<'src>,
+pub fn where_unique_unique_input_def(
+  model: &sdml_ast::ModelDecl,
 ) -> GraphQLGenResult<TypeDefinition> {
   // Note: SDML validates / ensures that only scalar fields can have @unique attribute
   // So we don't need to filter for scalar fields.
@@ -34,8 +34,8 @@ pub fn where_unique_unique_input_def<'src>(
   })
 }
 
-fn unique_scalar_field_to_filter<'src>(
-  field: &sdml_ast::FieldDecl<'src>,
+fn unique_scalar_field_to_filter(
+  field: &sdml_ast::FieldDecl,
 ) -> GraphQLGenResult<InputValueDefinition> {
   debug_assert!(
     field.has_id_attrib() | field.has_unique_attrib(),
@@ -98,10 +98,8 @@ fn unique_scalar_field_to_filter<'src>(
 #[cfg(test)]
 mod tests {
   use super::*;
+  use sdml_parser;
   use std::fs;
-
-  use chumsky::prelude::*;
-  use sdml_parser::parser;
 
   #[test]
   fn test_where_unique_def() {
@@ -116,11 +114,7 @@ mod tests {
       "/test_data/input_type/user_where_unique_input.sdml"
     ))
     .unwrap();
-    let sdml_declarations = parser::delcarations()
-      .parse(&sdml_str)
-      .into_output()
-      .expect("It should be a valid SDML.");
-    let data_model = parser::semantic_analysis(sdml_declarations)
+    let data_model = sdml_parser::parse(&sdml_str)
       .expect("A valid SDML file shouldn't fail in parsing.");
     let user_model_sdml_ast = data_model
       .models()

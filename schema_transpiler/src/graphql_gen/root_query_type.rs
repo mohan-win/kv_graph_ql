@@ -9,9 +9,7 @@ use super::*;
 /// * models - array of models in sdml.
 /// ## Returns
 /// Root level query type definition.
-pub fn root_query_type_def<'src>(
-  models: &Vec<&ModelDecl<'src>>,
-) -> GraphQLGenResult<TypeDefinition> {
+pub fn root_query_type_def(models: &Vec<&ModelDecl>) -> GraphQLGenResult<TypeDefinition> {
   let mut fields = Vec::new();
   fields.push(root_node_field()?);
   let fields = models.iter().try_fold(fields, |mut acc, model| {
@@ -47,8 +45,8 @@ fn root_node_field() -> GraphQLGenResult<FieldDefinition> {
 }
 
 /// Return root level query fields for given model.
-fn root_query_fields<'src>(
-  model_name: &sdml_ast::Token<'src>,
+fn root_query_fields(
+  model_name: &sdml_ast::Token,
 ) -> GraphQLGenResult<Vec<FieldDefinition>> {
   let model_name = model_name
     .try_get_ident_name()
@@ -101,8 +99,7 @@ fn root_query_fields<'src>(
 
 #[cfg(test)]
 mod test {
-  use chumsky::prelude::*;
-  use sdml_parser::parser;
+  use sdml_parser;
 
   use std::fs;
   #[test]
@@ -119,12 +116,8 @@ mod test {
     .unwrap();
     expected_graphql_str.retain(|c| !c.is_whitespace());
 
-    let sdml_ast = parser::delcarations()
-      .parse(&sdml_str)
-      .into_result()
-      .expect("It should be a valid sdml file");
     let sdml_ast =
-      parser::semantic_analysis(sdml_ast).expect("Semantic analysis should succeed!");
+      sdml_parser::parse(&sdml_str).expect("Semantic analysis should succeed!");
     let root_query_type = super::root_query_type_def(&sdml_ast.models_sorted()).unwrap();
     let mut actual_graphql_str = root_query_type.to_string();
     actual_graphql_str.retain(|c| !c.is_whitespace());

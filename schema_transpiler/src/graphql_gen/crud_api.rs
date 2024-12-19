@@ -2,8 +2,8 @@
 use super::*;
 
 /// Generate type system definitions for CRUD apis as per OpenCRUD spec.
-pub fn crud_api_def<'src>(
-  data_model: &sdml_ast::DataModel<'src>,
+pub fn crud_api_def(
+  data_model: &sdml_ast::DataModel,
 ) -> GraphQLGenResult<Vec<TypeSystemDefinition>> {
   let mut api_type_defs = Vec::new();
   // Custom Scalars.
@@ -88,8 +88,8 @@ pub fn crud_api_def<'src>(
 #[cfg(test)]
 mod tests {
   use super::*;
-  use chumsky::prelude::*;
-  use sdml_parser::parser;
+
+  use sdml_parser;
   use std::fs;
 
   #[test]
@@ -106,11 +106,7 @@ mod tests {
     .unwrap();
     expected_graphql_str.retain(|c| !c.is_whitespace());
 
-    let sdml_decls = parser::delcarations()
-      .parse(&sdml_str)
-      .into_result()
-      .unwrap();
-    let sdml_ast = parser::semantic_analysis(sdml_decls).unwrap();
+    let sdml_ast = sdml_parser::parse(&sdml_str).unwrap();
     let crud_api = crud_api_def(&sdml_ast).unwrap();
     let mut actual_crud_api_graphql_str =
       crud_api.iter().fold("".to_string(), |acc, graphql_ty| {

@@ -9,8 +9,8 @@ use super::*;
 ///  * `models` - array of models in sdml.
 /// ### Returns.
 /// Root level mutation type definition.
-pub fn root_mutation_type_def<'src>(
-  models: &Vec<&sdml_ast::ModelDecl<'src>>,
+pub fn root_mutation_type_def(
+  models: &Vec<&sdml_ast::ModelDecl>,
 ) -> GraphQLGenResult<TypeDefinition> {
   let fields = models.iter().try_fold(Vec::new(), |mut acc, model| {
     acc.extend(root_mutation_fields(model)?);
@@ -28,8 +28,8 @@ pub fn root_mutation_type_def<'src>(
   })
 }
 
-fn root_mutation_fields<'src>(
-  model: &sdml_ast::ModelDecl<'src>,
+fn root_mutation_fields(
+  model: &sdml_ast::ModelDecl,
 ) -> GraphQLGenResult<Vec<FieldDefinition>> {
   let model_name = model
     .name
@@ -260,8 +260,7 @@ fn root_mutation_fields<'src>(
 
 #[cfg(test)]
 mod tests {
-  use chumsky::prelude::*;
-  use sdml_parser::parser;
+  use sdml_parser;
   use std::fs;
 
   #[test]
@@ -278,12 +277,8 @@ mod tests {
     .unwrap();
     expected_graphql_str.retain(|c| !c.is_whitespace());
 
-    let sdml_ast = parser::delcarations()
-      .parse(&sdml_str)
-      .into_result()
-      .expect("It should be a valid sdml file");
     let sdml_ast =
-      parser::semantic_analysis(sdml_ast).expect("Semantic analysis should succeed!");
+      sdml_parser::parse(&sdml_str).expect("Semantic analysis should succeed!");
     let root_query_type =
       super::root_mutation_type_def(&sdml_ast.models_sorted()).unwrap();
     let mut actual_graphql_str = root_query_type.to_string();

@@ -3,8 +3,8 @@ use super::*;
 use aux_type::connection_types_def;
 
 /// Code-gen GraphQL type and its auxiliary types for the given model.
-pub fn type_and_aux_types_def<'src>(
-  model: &sdml_ast::ModelDecl<'src>,
+pub fn type_and_aux_types_def(
+  model: &sdml_ast::ModelDecl,
 ) -> GraphQLGenResult<Vec<TypeDefinition>> {
   let mut result = vec![];
   result.push(type_def(model)?);
@@ -12,7 +12,7 @@ pub fn type_and_aux_types_def<'src>(
   Ok(result)
 }
 
-fn type_def<'src>(model: &sdml_ast::ModelDecl<'src>) -> GraphQLGenResult<TypeDefinition> {
+fn type_def(model: &sdml_ast::ModelDecl) -> GraphQLGenResult<TypeDefinition> {
   let model_name = model
     .name
     .try_get_ident_name()
@@ -35,9 +35,7 @@ fn type_def<'src>(model: &sdml_ast::ModelDecl<'src>) -> GraphQLGenResult<TypeDef
 }
 
 #[inline(always)]
-fn field_def<'src>(
-  field: &sdml_ast::FieldDecl<'src>,
-) -> GraphQLGenResult<Vec<FieldDefinition>> {
+fn field_def(field: &sdml_ast::FieldDecl) -> GraphQLGenResult<Vec<FieldDefinition>> {
   match &*field.field_type.r#type() {
     sdml_ast::Type::Unknown(..) => panic!("Invalid field type!"),
     sdml_ast::Type::Relation(..) => relation_field_def(field),
@@ -46,8 +44,8 @@ fn field_def<'src>(
 }
 
 /// Code-gen for non-relation field.
-fn non_relation_field_def<'src>(
-  field: &sdml_ast::FieldDecl<'src>,
+fn non_relation_field_def(
+  field: &sdml_ast::FieldDecl,
 ) -> GraphQLGenResult<FieldDefinition> {
   debug_assert!(
     match &*field.field_type.r#type() {
@@ -122,8 +120,8 @@ fn non_relation_field_def<'src>(
 }
 
 /// Returns field arguments for the `relation` array field.
-pub fn array_field_args<'src>(
-  referenced_model_name: &'src str,
+pub fn array_field_args(
+  referenced_model_name: &str,
 ) -> GraphQLGenResult<Vec<InputValueDefinition>> {
   let mut args = vec![];
   args.push(InputValueDefinition {
@@ -181,8 +179,8 @@ pub fn array_field_args<'src>(
 }
 
 /// Code-gen for relation field.
-fn relation_field_def<'src>(
-  field: &sdml_ast::FieldDecl<'src>,
+fn relation_field_def(
+  field: &sdml_ast::FieldDecl,
 ) -> GraphQLGenResult<Vec<FieldDefinition>> {
   let field_type = field.field_type.r#type();
   let relation_edge = match &*field_type {
@@ -234,8 +232,7 @@ fn relation_field_def<'src>(
 
 #[cfg(test)]
 mod tests {
-  use chumsky::prelude::*;
-  use sdml_parser::parser;
+  use sdml_parser;
   use std::fs;
 
   use crate::graphql_gen::r#type::{type_and_aux_types_def, type_def};
@@ -253,11 +250,7 @@ mod tests {
       "/test_data/test_type_def.sdml"
     ))
     .unwrap();
-    let sdml_declarations = parser::delcarations()
-      .parse(&sdml_str)
-      .into_output()
-      .expect("It should be a valid SDML.");
-    let data_model = parser::semantic_analysis(sdml_declarations)
+    let data_model = sdml_parser::parse(&sdml_str)
       .expect("A valid SDML file shouldn't fail in parsing.");
     let user_model_sdml_ast = data_model
       .models()
@@ -284,11 +277,7 @@ mod tests {
       "/test_data/test_type_and_aux_types_def.sdml"
     ))
     .unwrap();
-    let sdml_declarations = parser::delcarations()
-      .parse(&sdml_str)
-      .into_output()
-      .expect("It should be a valid SDML.");
-    let data_model = parser::semantic_analysis(sdml_declarations)
+    let data_model = sdml_parser::parse(&sdml_str)
       .expect("A valid SDML file shouldn't fail in parsing.");
     let user_model_sdml_ast = data_model
       .models()

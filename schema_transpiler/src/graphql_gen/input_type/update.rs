@@ -11,8 +11,8 @@ use super::*;
 /// * {ModelName}UpdateWithNestedWhereUniqueInput,
 /// * {ModelName}UpsertWithNestedWhereUniqueInput,
 /// * {ModelName}ConnectInput.
-pub fn update_input_types_def<'src>(
-  model: &sdml_ast::ModelDecl<'src>,
+pub fn update_input_types_def(
+  model: &sdml_ast::ModelDecl,
 ) -> GraphQLGenResult<Vec<TypeDefinition>> {
   let mut result = Vec::new();
   result.push(update_input_def(model)?);
@@ -29,9 +29,7 @@ pub fn update_input_types_def<'src>(
 /// Code-gen for the input type use to update a object.
 /// Ex. UserUpdateInput is used to capture
 /// the *complete data* to update a single user object including contained relations.
-fn update_input_def<'src>(
-  model: &sdml_ast::ModelDecl<'src>,
-) -> GraphQLGenResult<TypeDefinition> {
+fn update_input_def(model: &sdml_ast::ModelDecl) -> GraphQLGenResult<TypeDefinition> {
   let model_fields = model.get_fields();
   // Note: Filter out relation_scalar fields & ids.
   // Because they are not updatable directly.
@@ -68,9 +66,7 @@ fn update_input_def<'src>(
   })
 }
 
-fn upsert_input_def<'src>(
-  model_name: &sdml_ast::Token<'src>,
-) -> GraphQLGenResult<TypeDefinition> {
+fn upsert_input_def(model_name: &sdml_ast::Token) -> GraphQLGenResult<TypeDefinition> {
   let model_name = model_name
     .try_get_ident_name()
     .map_err(ErrorGraphQLGen::new_sdml_error)?;
@@ -104,7 +100,7 @@ fn upsert_input_def<'src>(
 /// Returns `true` if updateMany API and type is relevant for the model.
 /// Ex. If Model has only @unique & @id fields, then updateMany API won't be
 /// relevant for it.
-pub fn has_update_many_input<'src>(model: &ModelDecl<'src>) -> bool {
+pub fn has_update_many_input(model: &ModelDecl) -> bool {
   let fields = model.get_fields();
   fields
     .get_rest(sdml_ast::ModelIndexedFieldsFilter::All)
@@ -119,8 +115,8 @@ pub fn has_update_many_input<'src>(model: &ModelDecl<'src>) -> bool {
 /// they are not updatable with update_many interface.
 /// * If there are no fields, this function will return None.
 ///
-fn update_many_input_def<'src>(
-  model: &sdml_ast::ModelDecl<'src>,
+fn update_many_input_def(
+  model: &sdml_ast::ModelDecl,
 ) -> GraphQLGenResult<Option<TypeDefinition>> {
   let model_fields = model.get_fields();
 
@@ -152,8 +148,8 @@ fn update_many_input_def<'src>(
   }
 }
 
-fn update_one_inline_input_def<'src>(
-  model_name: &sdml_ast::Token<'src>,
+fn update_one_inline_input_def(
+  model_name: &sdml_ast::Token,
 ) -> GraphQLGenResult<TypeDefinition> {
   let model_name = model_name
     .try_get_ident_name()
@@ -220,8 +216,8 @@ fn update_one_inline_input_def<'src>(
   })
 }
 
-fn update_many_inline_input_def<'src>(
-  model_name: &sdml_ast::Token<'src>,
+fn update_many_inline_input_def(
+  model_name: &sdml_ast::Token,
 ) -> GraphQLGenResult<TypeDefinition> {
   let model_name = model_name
     .try_get_ident_name()
@@ -315,8 +311,8 @@ fn update_many_inline_input_def<'src>(
   })
 }
 
-fn update_with_nested_where_unique_input_def<'src>(
-  model_name: &sdml_ast::Token<'src>,
+fn update_with_nested_where_unique_input_def(
+  model_name: &sdml_ast::Token,
 ) -> GraphQLGenResult<TypeDefinition> {
   let model_name = model_name
     .try_get_ident_name()
@@ -350,8 +346,8 @@ fn update_with_nested_where_unique_input_def<'src>(
   })
 }
 
-fn upsert_with_nested_where_unique_input_def<'src>(
-  model_name: &sdml_ast::Token<'src>,
+fn upsert_with_nested_where_unique_input_def(
+  model_name: &sdml_ast::Token,
 ) -> GraphQLGenResult<TypeDefinition> {
   let model_name = model_name
     .try_get_ident_name()
@@ -385,9 +381,7 @@ fn upsert_with_nested_where_unique_input_def<'src>(
   })
 }
 
-fn connect_input_def<'src>(
-  model_name: &sdml_ast::Token<'src>,
-) -> GraphQLGenResult<TypeDefinition> {
+fn connect_input_def(model_name: &sdml_ast::Token) -> GraphQLGenResult<TypeDefinition> {
   let model_name = model_name
     .try_get_ident_name()
     .map_err(ErrorGraphQLGen::new_sdml_error)?;
@@ -464,8 +458,8 @@ pub fn connect_position_input_def() -> GraphQLGenResult<TypeDefinition> {
 }
 
 /// Code-gen input arg for the non-relation field.
-fn non_relation_field_input_def<'src>(
-  field: &sdml_ast::FieldDecl<'src>,
+fn non_relation_field_input_def(
+  field: &sdml_ast::FieldDecl,
 ) -> GraphQLGenResult<InputValueDefinition> {
   let ty_str = match &*field.field_type.r#type() {
     sdml_ast::Type::Unknown(..) | sdml_ast::Type::Relation(..) => {
@@ -504,8 +498,8 @@ fn non_relation_field_input_def<'src>(
   })
 }
 
-fn relation_field_input_def<'src>(
-  field: &sdml_ast::FieldDecl<'src>,
+fn relation_field_input_def(
+  field: &sdml_ast::FieldDecl,
 ) -> GraphQLGenResult<InputValueDefinition> {
   if let sdml_ast::Type::Relation(edge) = &*field.field_type.r#type() {
     let field_name = field
@@ -544,9 +538,7 @@ mod tests {
 
   use super::connect_position_input_def;
   use super::update_input_types_def;
-
-  use chumsky::prelude::*;
-  use sdml_parser::parser;
+  use sdml_parser;
   use std::fs;
 
   #[test]
@@ -563,11 +555,7 @@ mod tests {
       "/test_data/input_type/test_user_update_input_types_def.sdml"
     ))
     .unwrap();
-    let sdml_declarations = parser::delcarations()
-      .parse(&sdml_str)
-      .into_output()
-      .expect("It should be a valid SDML.");
-    let data_model = parser::semantic_analysis(sdml_declarations)
+    let data_model = sdml_parser::parse(&sdml_str)
       .expect("A valid SDML file shouldn't fail in parsing.");
     let user_model_sdml_ast = data_model
       .models()
@@ -599,11 +587,7 @@ mod tests {
       "/test_data/input_type/test_update_input_types_def.sdml"
     ))
     .unwrap();
-    let sdml_declarations = parser::delcarations()
-      .parse(&sdml_str)
-      .into_output()
-      .expect("It should be a valid SDML.");
-    let data_model = parser::semantic_analysis(sdml_declarations)
+    let data_model = sdml_parser::parse(&sdml_str)
       .expect("A valid SDML file shouldn't fail in parsing.");
 
     let update_input_types_graphql_ast = data_model

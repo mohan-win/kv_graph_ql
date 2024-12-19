@@ -5,8 +5,8 @@ use super::*;
 /// * {ModelName}CreateInput,
 /// * {ModelName}CreateOneInlineInput,
 /// * {ModelName}CreateManyInlineInput.
-pub fn create_input_types_def<'src>(
-  model: &sdml_ast::ModelDecl<'src>,
+pub fn create_input_types_def(
+  model: &sdml_ast::ModelDecl,
 ) -> GraphQLGenResult<Vec<TypeDefinition>> {
   Ok(vec![
     create_input_def(model)?,
@@ -17,9 +17,7 @@ pub fn create_input_types_def<'src>(
 
 /// Input type used to create a new object.
 /// Ex. UserCreateInput creates a new user.
-fn create_input_def<'src>(
-  model: &sdml_ast::ModelDecl<'src>,
-) -> GraphQLGenResult<TypeDefinition> {
+fn create_input_def(model: &sdml_ast::ModelDecl) -> GraphQLGenResult<TypeDefinition> {
   // Note: Filter out relation_scalar fields & auto generated ids. But include unique & id (which is not auto-gen.) fields.
   // Why?
   // 1. Relation scalar fields will be populated with the content of *CreateInlineInput fields.
@@ -63,8 +61,8 @@ fn create_input_def<'src>(
 }
 
 /// Code-gen input arg for the non-relation field.
-fn non_relation_field_input_def<'src>(
-  field: &sdml_ast::FieldDecl<'src>,
+fn non_relation_field_input_def(
+  field: &sdml_ast::FieldDecl,
 ) -> GraphQLGenResult<InputValueDefinition> {
   let ty_str = match &*field.field_type.r#type() {
     sdml_ast::Type::Unknown(..) | sdml_ast::Type::Relation(..) => {
@@ -113,8 +111,8 @@ fn non_relation_field_input_def<'src>(
 }
 
 /// Code-gen input arg for the relation field.
-fn relation_field_input_def<'src>(
-  field: &sdml_ast::FieldDecl<'src>,
+fn relation_field_input_def(
+  field: &sdml_ast::FieldDecl,
 ) -> GraphQLGenResult<InputValueDefinition> {
   if let sdml_ast::Type::Relation(edge) = &*field.field_type.r#type() {
     let field_name = field
@@ -154,8 +152,8 @@ fn relation_field_input_def<'src>(
 /// in a nested create.
 /// Ex. ProfileCreateOneInlineInput will be used inside UserCreateInput
 /// to create user profile inline when creating a new user.
-fn create_one_inline_input_def<'src>(
-  model: &sdml_ast::ModelDecl<'src>,
+fn create_one_inline_input_def(
+  model: &sdml_ast::ModelDecl,
 ) -> GraphQLGenResult<TypeDefinition> {
   let model_name = model
     .name
@@ -191,8 +189,8 @@ fn create_one_inline_input_def<'src>(
 /// in a nested create.
 /// Ex. PostCreateManyInlineInput will be used inside UserCreateInput
 /// to create posts inline when creating a new user.
-fn create_many_inline_input_def<'src>(
-  model: &sdml_ast::ModelDecl<'src>,
+fn create_many_inline_input_def(
+  model: &sdml_ast::ModelDecl,
 ) -> GraphQLGenResult<TypeDefinition> {
   let model_name = model
     .name
@@ -230,9 +228,7 @@ mod tests {
   use crate::graphql_gen::TypeDefinition;
 
   use super::create_input_types_def;
-
-  use chumsky::prelude::*;
-  use sdml_parser::parser;
+  use sdml_parser;
   use std::fs;
 
   #[test]
@@ -249,11 +245,7 @@ mod tests {
       "/test_data/input_type/test_user_create_input_types_def.sdml"
     ))
     .unwrap();
-    let sdml_declarations = parser::delcarations()
-      .parse(&sdml_str)
-      .into_output()
-      .expect("It should be a valid SDML.");
-    let data_model = parser::semantic_analysis(sdml_declarations)
+    let data_model = sdml_parser::parse(&sdml_str)
       .expect("A valid SDML file shouldn't fail in parsing.");
     let user_model_sdml_ast = data_model
       .models()
@@ -285,11 +277,8 @@ mod tests {
       "/test_data/input_type/test_create_input_types_def.sdml"
     ))
     .unwrap();
-    let sdml_declarations = parser::delcarations()
-      .parse(&sdml_str)
-      .into_output()
-      .expect("It should be a valid SDML.");
-    let data_model = parser::semantic_analysis(sdml_declarations)
+
+    let data_model = sdml_parser::parse(&sdml_str)
       .expect("A valid SDML file shouldn't fail in parsing.");
     let create_input_types_def_graphql_ast = data_model
       .models_sorted()

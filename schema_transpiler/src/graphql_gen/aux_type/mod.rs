@@ -1,8 +1,8 @@
 use super::*;
 
 /// Get connection type and its edge, definition for given model.
-pub fn connection_types_def<'src>(
-  model_name: &sdml_ast::Token<'src>,
+pub fn connection_types_def(
+  model_name: &sdml_ast::Token,
 ) -> GraphQLGenResult<Vec<TypeDefinition>> {
   let mut result = vec![];
   let edge = edge_type_def(model_name)?;
@@ -48,9 +48,7 @@ pub fn connection_types_def<'src>(
   Ok(result)
 }
 
-fn edge_type_def<'src>(
-  model_name: &sdml_ast::Token<'src>,
-) -> GraphQLGenResult<TypeDefinition> {
+fn edge_type_def<'src>(model_name: &sdml_ast::Token) -> GraphQLGenResult<TypeDefinition> {
   let model_name = model_name
     .try_get_ident_name()
     .map_err(ErrorGraphQLGen::new_sdml_error)?;
@@ -156,6 +154,7 @@ pub fn aggregage_type_def<'src>() -> GraphQLGenResult<TypeDefinition> {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use sdml_ast::Str;
   use sdml_parser::types::Span;
 
   #[test]
@@ -202,8 +201,11 @@ node: User!
 cursor: String!
 }
 "#;
-    let user_edge_ty =
-      edge_type_def(&sdml_parser::types::Token::Ident("User", Span::new(0, 0))).unwrap();
+    let user_edge_ty = edge_type_def(&sdml_parser::types::Token::Ident(
+      Str::new("User"),
+      Span::new(0, 0),
+    ))
+    .unwrap();
     assert_eq!(expected_graphql_str, user_edge_ty.to_string())
   }
 
@@ -221,9 +223,11 @@ edges: [UserEdge!]!
 aggregate: Aggregate!
 }
 "#;
-    let user_connection_types =
-      connection_types_def(&sdml_parser::types::Token::Ident("User", Span::new(0, 0)))
-        .unwrap();
+    let user_connection_types = connection_types_def(&sdml_parser::types::Token::Ident(
+      Str::new("User"),
+      Span::new(0, 0),
+    ))
+    .unwrap();
     let actual_graphql_str = user_connection_types
       .into_iter()
       .fold("".to_string(), |acc, ty| {
