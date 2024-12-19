@@ -86,7 +86,7 @@ pub(crate) fn semantic_update(
       errs.push(err)
     }
 
-    // Fill out the actual types for unknown fields.
+    // Fill out the actual types for fields with unknown types.
     let mut model = model_temp.clone(); // Clone!
     for (idx, field) in model_temp.fields.iter().enumerate() {
       match get_actual_type(&model_temp, field, &models_temp, &enums) {
