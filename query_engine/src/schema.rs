@@ -2,6 +2,7 @@ use std::{collections::HashMap, ops::Deref, sync::Arc};
 
 use crate::{
   context::Data, registry::Registry, validation::ValidationMode, CustomDirectiveFactory,
+  DataModel,
 };
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
@@ -17,6 +18,7 @@ pub enum IntrospectionMode {
 
 #[doc(hidden)]
 pub struct SchemaEnvInner {
+  pub data_model: DataModel,
   pub registry: Registry,
   pub data: Data,
   pub custom_directives: HashMap<String, Box<dyn CustomDirectiveFactory>>,

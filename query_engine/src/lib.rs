@@ -25,7 +25,7 @@ pub use registry::CacheControl;
 pub use request::{BatchRequest, Request};
 pub use response::{BatchResponse, Response};
 pub use schema::{IntrospectionMode, SchemaEnv};
-use sdml_parser;
+pub use sdml_parser::ast::DataModel;
 
 #[cfg(test)]
 mod tests {}

@@ -1,22 +1,96 @@
 //! Abstract Synctax Tree (AST) types of Simple Data Modeling Language (SDML).
-
-use std::{cell::RefCell, collections::HashMap};
+use std::{borrow::Borrow, collections::HashMap, ops::Deref, sync::Arc};
 
 use crate::parser::semantic_analysis;
 use chumsky::span::SimpleSpan;
 
 pub type Span = SimpleSpan<usize>;
 
+/// A thread safe string slice.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Str(Arc<str>);
+
+impl Str {
+  pub fn new(str: impl AsRef<str>) -> Self {
+    Self(str.as_ref().into())
+  }
+
+  #[must_use]
+  pub fn as_str(&self) -> &str {
+    &self.0
+  }
+}
+
+impl AsRef<str> for Str {
+  fn as_ref(&self) -> &str {
+    &self.0
+  }
+}
+
+impl Borrow<str> for Str {
+  fn borrow(&self) -> &str {
+    &self.0
+  }
+}
+
+impl Deref for Str {
+  type Target = str;
+  fn deref(&self) -> &Self::Target {
+    &self.0
+  }
+}
+
+impl std::fmt::Display for Str {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    std::fmt::Display::fmt(&self.0, f)
+  }
+}
+
+impl PartialEq<String> for Str {
+  fn eq(&self, other: &String) -> bool {
+    self.as_str() == other
+  }
+}
+
+impl PartialEq<str> for Str {
+  fn eq(&self, other: &str) -> bool {
+    self.as_ref() == other
+  }
+}
+
+impl PartialEq<Str> for String {
+  fn eq(&self, other: &Str) -> bool {
+    self == other.as_ref()
+  }
+}
+
+impl PartialEq<Str> for str {
+  fn eq(&self, other: &Str) -> bool {
+    self == other.as_ref()
+  }
+}
+
+impl<'a> PartialEq<&'a str> for Str {
+  fn eq(&self, other: &&'a str) -> bool {
+    self.as_ref() == *other
+  }
+}
+
+impl PartialEq<Str> for &'_ str {
+  fn eq(&self, other: &Str) -> bool {
+    *self == other.as_ref()
+  }
+}
+
 #[derive(Debug, Clone)]
-pub enum Token<'src> {
-  // Litrals
-  Ident(&'src str, Span),
-  Str(&'src str, Span),
+pub enum Token {
+  Ident(Str, Span),
+  String(Str, Span),
   Int(i64, Span),
   Float(f64, Span),
   Bool(bool, Span),
 }
-impl<'src> PartialEq for Token<'src> {
+impl PartialEq for Token {
   // Important Note: Implementing Partial equal for Token, which only compares the
   // actual token and doesn't compare the location (span) in which it is found.
   fn eq(&self, other: &Self) -> bool {
@@ -24,7 +98,7 @@ impl<'src> PartialEq for Token<'src> {
       (Token::Ident(self_ident, _), Token::Ident(other_ident, _)) => {
         self_ident == other_ident
       }
-      (Token::Str(self_str, _), Token::Str(other_str, _)) => self_str == other_str,
+      (Token::String(self_str, _), Token::String(other_str, _)) => self_str == other_str,
       (Token::Int(self_int, _), Token::Int(other_int, _)) => self_int == other_int,
       (Token::Float(self_float, _), Token::Float(other_float, _)) => {
         self_float == other_float
@@ -35,19 +109,19 @@ impl<'src> PartialEq for Token<'src> {
   }
 }
 
-impl<'src> Token<'src> {
+impl Token {
   /// If the token is an identifier, returns its name
   /// if not, it returns None
-  pub fn ident_name(&self) -> Option<&'src str> {
+  pub fn ident_name(&self) -> Option<String> {
     if let Token::Ident(name, _) = self {
-      Some(name)
+      Some(name.to_string())
     } else {
       None
     }
   }
-  pub fn str(&self) -> Option<&'src str> {
-    if let Token::Str(str, _) = self {
-      Some(str.trim_matches('"'))
+  pub fn str(&self) -> Option<String> {
+    if let Token::String(str, _) = self {
+      Some(str.trim_matches('"').to_string())
     } else {
       None
     }
@@ -55,13 +129,13 @@ impl<'src> Token<'src> {
   pub fn span(&self) -> Span {
     match self {
       Token::Ident(_, sp) => *sp,
-      Token::Str(_, sp) => *sp,
+      Token::String(_, sp) => *sp,
       Token::Int(_, sp) => *sp,
       Token::Float(_, sp) => *sp,
       Token::Bool(_, sp) => *sp,
     }
   }
-  pub fn try_get_ident_name(&self) -> Result<&'src str, (&'static str, Span)> {
+  pub fn try_get_ident_name(&self) -> Result<&str, (&'static str, Span)> {
     if let Token::Ident(name, _) = self {
       Ok(name)
     } else {
@@ -81,34 +155,39 @@ impl<'src> Token<'src> {
   }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct DataModel<'src> {
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct DataModel {
   /// Map of config name to its declarations.
-  configs: HashMap<&'src str, ConfigDecl<'src>>,
+  configs: HashMap<String, ConfigDecl>,
   /// Map of enum name to its declarations.
-  enums: HashMap<&'src str, EnumDecl<'src>>,
+  enums: HashMap<String, EnumDecl>,
   /// Map of model name to its declarations.
-  models: HashMap<&'src str, ModelDecl<'src>>,
+  models: HashMap<String, ModelDecl>,
   /// Map of valid relations with fully formed edges.
   /// Available only after semantic_analysis phase.
-  relations: HashMap<&'src str, (RelationEdge<'src>, Option<RelationEdge<'src>>)>,
+  relations: HashMap<String, (RelationEdge, Option<RelationEdge>)>,
 }
 
-impl<'src> DataModel<'src> {
-  pub fn new() -> DataModel<'src> {
+impl DataModel {
+  pub fn new(
+    configs: HashMap<String, ConfigDecl>,
+    enums: HashMap<String, EnumDecl>,
+    models: HashMap<String, ModelDecl>,
+    relations: HashMap<String, (RelationEdge, Option<RelationEdge>)>,
+  ) -> DataModel {
     DataModel {
-      configs: HashMap::new(),
-      enums: HashMap::new(),
-      models: HashMap::new(),
-      relations: HashMap::new(),
+      configs,
+      enums,
+      models,
+      relations,
     }
   }
-  pub fn configs(&self) -> &HashMap<&'src str, ConfigDecl<'src>> {
+  pub fn configs(&self) -> &HashMap<String, ConfigDecl> {
     &self.configs
   }
   /// Configs sorted by its name in chronogical order.
-  pub fn configs_sorted(&self) -> Vec<&ConfigDecl<'src>> {
-    let mut config_names = self.enums.keys().collect::<Vec<&&'src str>>();
+  pub fn configs_sorted(&self) -> Vec<&ConfigDecl> {
+    let mut config_names = self.enums.keys().collect::<Vec<&String>>();
     config_names.sort();
     config_names
       .into_iter()
@@ -118,12 +197,12 @@ impl<'src> DataModel<'src> {
       })
   }
 
-  pub fn enums(&self) -> &HashMap<&'src str, EnumDecl<'src>> {
+  pub fn enums(&self) -> &HashMap<String, EnumDecl> {
     &self.enums
   }
   /// Enums sorted by its name in chronogical order.
-  pub fn enums_sorted(&self) -> Vec<&EnumDecl<'src>> {
-    let mut enum_names = self.enums.keys().collect::<Vec<&&'src str>>();
+  pub fn enums_sorted(&self) -> Vec<&EnumDecl> {
+    let mut enum_names = self.enums.keys().collect::<Vec<&String>>();
     enum_names.sort();
     enum_names
       .into_iter()
@@ -132,12 +211,12 @@ impl<'src> DataModel<'src> {
         acc
       })
   }
-  pub fn models(&self) -> &HashMap<&'src str, ModelDecl<'src>> {
+  pub fn models(&self) -> &HashMap<String, ModelDecl> {
     &self.models
   }
   /// Models sorted by its name in chronogical order.
-  pub fn models_sorted(&self) -> Vec<&ModelDecl<'src>> {
-    let mut model_names = self.models.keys().collect::<Vec<&&'src str>>();
+  pub fn models_sorted(&self) -> Vec<&ModelDecl> {
+    let mut model_names = self.models.keys().collect::<Vec<&String>>();
     model_names.sort();
     model_names
       .into_iter()
@@ -146,36 +225,20 @@ impl<'src> DataModel<'src> {
         acc
       })
   }
-  pub fn relations(
-    &self,
-  ) -> &HashMap<&'src str, (RelationEdge<'src>, Option<RelationEdge<'src>>)> {
+  pub fn relations(&self) -> &HashMap<String, (RelationEdge, Option<RelationEdge>)> {
     &self.relations
-  }
-  pub(crate) fn configs_mut(&mut self) -> &mut HashMap<&'src str, ConfigDecl<'src>> {
-    &mut self.configs
-  }
-  pub(crate) fn enums_mut(&mut self) -> &mut HashMap<&'src str, EnumDecl<'src>> {
-    &mut self.enums
-  }
-  pub(crate) fn models_mut(&mut self) -> &mut HashMap<&'src str, ModelDecl<'src>> {
-    &mut self.models
-  }
-  pub(crate) fn relations_mut(
-    &mut self,
-  ) -> &mut HashMap<&'src str, (RelationEdge<'src>, Option<RelationEdge<'src>>)> {
-    &mut self.relations
   }
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Declaration<'src> {
-  Config(ConfigDecl<'src>),
-  Enum(EnumDecl<'src>),
-  Model(ModelDecl<'src>),
+pub enum Declaration {
+  Config(ConfigDecl),
+  Enum(EnumDecl),
+  Model(ModelDecl),
 }
 
-impl<'src> Declaration<'src> {
-  pub fn name(&self) -> &'src Token {
+impl Declaration {
+  pub fn name(&self) -> &Token {
     match self {
       Declaration::Config(c) => &c.name,
       Declaration::Enum(e) => &e.name,
@@ -185,29 +248,29 @@ impl<'src> Declaration<'src> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct ConfigDecl<'src> {
-  pub name: Token<'src>,
-  pub config_pairs: Vec<ConfigPair<'src>>,
+pub struct ConfigDecl {
+  pub name: Token,
+  pub config_pairs: Vec<ConfigPair>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct ConfigPair<'src> {
-  pub name: Token<'src>,
-  pub value: ConfigValue<'src>,
+pub struct ConfigPair {
+  pub name: Token,
+  pub value: ConfigValue,
 }
 
 #[derive(Debug, Clone)]
-pub enum ConfigValue<'src> {
-  Str(&'src str, Span),
+pub enum ConfigValue {
+  String(Str, Span),
   Int(i64, Span),
   Float(f64, Span),
   Bool(bool, Span),
 }
 
-impl<'src> PartialEq for ConfigValue<'src> {
+impl PartialEq for ConfigValue {
   fn eq(&self, other: &Self) -> bool {
     match (self, other) {
-      (ConfigValue::Str(self_str, _), ConfigValue::Str(other_str, _)) => {
+      (ConfigValue::String(self_str, _), ConfigValue::String(other_str, _)) => {
         self_str == other_str
       }
       (ConfigValue::Int(self_int, _), ConfigValue::Int(other_int, _)) => {
@@ -224,44 +287,42 @@ impl<'src> PartialEq for ConfigValue<'src> {
   }
 }
 
-impl<'src> TryFrom<Token<'src>> for ConfigValue<'src> {
+impl TryFrom<Token> for ConfigValue {
   type Error = String;
-  fn try_from(value: Token<'src>) -> Result<Self, Self::Error> {
+  fn try_from(value: Token) -> Result<Self, Self::Error> {
     match value {
       Token::Bool(b, s) => Ok(ConfigValue::Bool(b, s)),
       Token::Float(f, s) => Ok(ConfigValue::Float(f, s)),
       Token::Int(i, s) => Ok(ConfigValue::Int(i, s)),
-      Token::Str(str, s) => Ok(ConfigValue::Str(str, s)),
+      Token::String(str, s) => Ok(ConfigValue::String(str, s)),
       t => Err(format!("Token {:?} can't be turned into ConfigValue", t)),
     }
   }
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct EnumDecl<'src> {
-  pub name: Token<'src>,
-  pub elements: Vec<Token<'src>>,
+pub struct EnumDecl {
+  pub name: Token,
+  pub elements: Vec<Token>,
 }
 
 /// Represents an entity inside the application domain.
 #[derive(Debug, Clone, PartialEq)]
-pub struct ModelDecl<'src> {
-  pub name: Token<'src>,
-  pub fields: Vec<FieldDecl<'src>>,
+pub struct ModelDecl {
+  pub name: Token,
+  pub fields: Vec<FieldDecl>,
 }
 
 #[derive(Debug, Clone)]
-pub struct ModelFields<'src, 'b> {
-  #[allow(dead_code)]
-  model: &'b ModelDecl<'src>,
-  pub relation: Vec<&'b FieldDecl<'src>>,
+pub struct ModelFields<'a> {
+  pub relation: Vec<&'a FieldDecl>,
   /// relation_scalar: Vec<(field, is_unique_or_indexed)>
-  relation_scalar: Vec<(&'b FieldDecl<'src>, bool)>,
+  relation_scalar: Vec<(&'a FieldDecl, bool)>,
   /// id: Vec<(field, is_auto_generated)>
-  pub id: Vec<(&'b FieldDecl<'src>, bool)>,
-  pub unique: Vec<&'b FieldDecl<'src>>,
+  pub id: Vec<(&'a FieldDecl, bool)>,
+  pub unique: Vec<&'a FieldDecl>,
   /// rest: Vec<(field, is_indexed)>
-  rest: Vec<(&'b FieldDecl<'src>, bool)>,
+  rest: Vec<(&'a FieldDecl, bool)>,
 }
 pub enum ModelIndexedFieldsFilter {
   All,
@@ -269,13 +330,13 @@ pub enum ModelIndexedFieldsFilter {
   OnlyNonIndexedFields,
 }
 
-impl<'src, 'b> ModelFields<'src, 'b> {
+impl<'a> ModelFields<'a> {
   /// Retrieves all of the indexed fields of the model
   /// Following fields are indexed in the data store.
   /// * Field with @id attribute
   /// * Field with @unique attribute
   /// * Field with explicit @indexed attribute.
-  pub fn all_indexed(&'b self) -> Vec<&'b FieldDecl<'src>> {
+  pub fn all_indexed(&self) -> Vec<&FieldDecl> {
     let mut indexed_fields = Vec::new();
     indexed_fields.extend(self.id.iter().map(|(field, _is_auto_gen)| field));
     indexed_fields.extend(self.unique.iter());
@@ -301,9 +362,9 @@ impl<'src, 'b> ModelFields<'src, 'b> {
 
   /// Get Relation scalar fields.
   pub fn get_relation_scalars(
-    &'b self,
+    &self,
     filter: ModelIndexedFieldsFilter,
-  ) -> Vec<&'b FieldDecl<'src>> {
+  ) -> Vec<&FieldDecl> {
     self
       .relation_scalar
       .iter()
@@ -320,10 +381,7 @@ impl<'src, 'b> ModelFields<'src, 'b> {
       .collect()
   }
 
-  pub fn get_rest(
-    &'b self,
-    filter: ModelIndexedFieldsFilter,
-  ) -> Vec<&'b FieldDecl<'src>> {
+  pub fn get_rest(&self, filter: ModelIndexedFieldsFilter) -> Vec<&FieldDecl> {
     self
       .rest
       .iter()
@@ -337,18 +395,17 @@ impl<'src, 'b> ModelFields<'src, 'b> {
   }
 }
 
-impl<'src, 'b> ModelDecl<'src> {
+impl ModelDecl {
   /// Get Model fields.
-  pub fn get_fields(&'b self) -> ModelFields<'src, 'b> {
+  pub fn get_fields(&self) -> ModelFields {
     self.get_fields_internal(false) // IMPORTNAT: Don't allow unknown_field_type when fields are accessed from outside the crate.
   }
 
   pub(crate) fn get_fields_internal(
-    &'b self,
+    &self,
     allow_unknown_field_type: bool,
-  ) -> ModelFields<'src, 'b> {
+  ) -> ModelFields {
     let mut result = ModelFields {
-      model: self,
       relation: Vec::new(),
       relation_scalar: Vec::new(),
       id: Vec::new(),
@@ -360,16 +417,16 @@ impl<'src, 'b> ModelDecl<'src> {
     self
       .fields
       .iter()
-      .for_each(|field| match &*field.field_type.r#type() {
+      .for_each(|field| match &field.field_type.r#type {
         Type::Unknown(..) => {
           if !allow_unknown_field_type {
             panic!("Can't allow unknown field type.")
           }
         }
         Type::Relation(edge) => {
-          result.relation.push(field);
+          result.relation.push(&field);
           edge.scalar_field_name().map(|fld_name| {
-            relation_scalar_field_names.push(fld_name.ident_name().unwrap())
+            relation_scalar_field_names.push(fld_name.ident_name().unwrap().to_string())
           });
         }
         Type::Primitive { .. } | Type::Enum { .. } => {
@@ -391,7 +448,9 @@ impl<'src, 'b> ModelDecl<'src> {
       .unique
       .into_iter()
       .filter(|field| {
-        if relation_scalar_field_names.contains(&field.name.ident_name().unwrap()) {
+        if relation_scalar_field_names
+          .contains(&field.name.ident_name().unwrap().to_string())
+        {
           // Note: relation scalar fields with @unique attribute are indexed.
           // Hence setting is_unique_or_indexed to true.
           relation_scalar_fields.push((*field, true));
@@ -405,7 +464,9 @@ impl<'src, 'b> ModelDecl<'src> {
       .rest
       .into_iter()
       .filter(|(field, is_indexed)| {
-        if relation_scalar_field_names.contains(&field.name.ident_name().unwrap()) {
+        if relation_scalar_field_names
+          .contains(&field.name.ident_name().unwrap().to_string())
+        {
           relation_scalar_fields.push((*field, *is_indexed));
           false
         } else {
@@ -419,13 +480,13 @@ impl<'src, 'b> ModelDecl<'src> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct FieldDecl<'src> {
-  pub name: Token<'src>,
-  pub field_type: FieldType<'src>,
-  pub attributes: Vec<Attribute<'src>>,
+pub struct FieldDecl {
+  pub name: Token,
+  pub field_type: FieldType,
+  pub attributes: Vec<Attribute>,
 }
 
-impl<'src> FieldDecl<'src> {
+impl FieldDecl {
   /// Is this an auto-generated id field ?
   pub fn is_auto_gen_id(&self) -> bool {
     if self.has_id_attrib() {
@@ -435,9 +496,8 @@ impl<'src> FieldDecl<'src> {
           .as_ref()
           .map_or(false, |attrib_arg| match attrib_arg {
             AttribArg::Function(fn_name) => {
-              if let Token::Ident(semantic_analysis::ATTRIB_ARG_FN_AUTO, _span) = fn_name
-              {
-                true
+              if let Token::Ident(ident_name, _) = fn_name {
+                ident_name == semantic_analysis::ATTRIB_ARG_FN_AUTO
               } else {
                 false
               }
@@ -469,17 +529,17 @@ impl<'src> FieldDecl<'src> {
   pub fn has_default_attrib(&self) -> bool {
     self.default_attribute().is_some()
   }
-  pub fn default_attribute(&self) -> Option<&Attribute<'src>> {
+  pub fn default_attribute(&self) -> Option<&Attribute> {
     self.get_attribute(semantic_analysis::ATTRIB_NAME_DEFAULT)
   }
 
   #[inline]
-  fn get_attribute(&self, attrib_ident_name: &str) -> Option<&Attribute<'src>> {
+  fn get_attribute(&self, attrib_ident_name: &str) -> Option<&Attribute> {
     self
       .attributes
       .iter()
       .filter(|attrib| {
-        if let Token::Ident(ident_name_str, _span) = attrib.name {
+        if let Token::Ident(ident_name_str, _span) = &attrib.name {
           attrib_ident_name == ident_name_str
         } else {
           false
@@ -501,12 +561,12 @@ pub enum FieldTypeMod {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct FieldType<'src> {
-  r#type: RefCell<Type<'src>>, // Note: interier mutability, this is because the field_type for custom types set to Type::Unknown in the first pass. And then in the later pass actual type is determined.
+pub struct FieldType {
+  r#type: Type,
   pub type_mod: FieldTypeMod,
 }
 
-impl<'src> FieldType<'src> {
+impl FieldType {
   pub fn is_optional(&self) -> bool {
     if let FieldTypeMod::Optional = self.type_mod {
       true
@@ -514,6 +574,7 @@ impl<'src> FieldType<'src> {
       false
     }
   }
+
   pub fn is_array(&self) -> bool {
     if let FieldTypeMod::Array = self.type_mod {
       true
@@ -522,26 +583,25 @@ impl<'src> FieldType<'src> {
     }
   }
 
-  pub fn new(r#type: Type<'src>, type_mod: FieldTypeMod) -> FieldType<'src> {
-    FieldType {
-      r#type: RefCell::new(r#type),
-      type_mod,
-    }
+  pub fn new(r#type: Type, type_mod: FieldTypeMod) -> FieldType {
+    FieldType { r#type, type_mod }
   }
+
   /// Is this a scalar (i.e. non-array) short string type ?
   pub fn is_scalar_short_str(&self) -> bool {
     if self.is_array() {
       false
     } else {
-      match &*self.r#type() {
+      matches!(
+        self.r#type,
         Type::Primitive {
           r#type: PrimitiveType::ShortStr,
           ..
-        } => true,
-        _ => false,
-      }
+        }
+      )
     }
   }
+
   /// Is this typed as a  scalar field (i.e) can it hold only one value ?
   /// **Note**: If this is an array type, this field is able to
   /// hold more than one value. Hence it is not scalar field.
@@ -550,38 +610,37 @@ impl<'src> FieldType<'src> {
     if self.is_array() {
       false
     } else {
-      match &*self.r#type() {
-        Type::Primitive { .. } | Type::Enum { .. } => true,
-        _ => false,
-      }
+      matches!(self.r#type, Type::Primitive { .. } | Type::Enum { .. })
     }
   }
-  pub fn r#type(&self) -> std::cell::Ref<Type<'src>> {
-    self.r#type.borrow()
+
+  pub fn r#type(&self) -> &Type {
+    &self.r#type
   }
-  pub(crate) fn set_type(&self, new_type: Type<'src>) {
-    *self.r#type.borrow_mut() = new_type;
+
+  pub(crate) fn set_type(&mut self, new_type: Type) {
+    self.r#type = new_type;
   }
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Type<'src> {
+pub enum Type {
   Primitive {
     r#type: PrimitiveType,
-    token: Token<'src>,
+    token: Token,
   },
   Enum {
-    enum_ty_name: Token<'src>,
+    enum_ty_name: Token,
   },
   /// If field type is other model type, then its a `Relation`.
-  Relation(RelationEdge<'src>),
+  Relation(RelationEdge),
   /// If the field type is Enum or Relation, in the first pass it will be set to Unknown with identifier token.
   /// Then only during scemantic analysis its actual user defined type is determined.
-  Unknown(Token<'src>),
+  Unknown(Token),
 }
 
-impl<'src> Type<'src> {
-  pub fn token(&self) -> &Token<'src> {
+impl Type {
+  pub fn token(&self) -> &Token {
     match self {
       Self::Primitive { token, .. } => token,
       Self::Enum { enum_ty_name } => enum_ty_name,
@@ -592,49 +651,49 @@ impl<'src> Type<'src> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum RelationEdge<'src> {
+pub enum RelationEdge {
   /// One-side of the relation, for both
   /// Left side of the 1-to-1 relation and
   /// One side of the 1-to-many relation.
   OneSideRelation {
-    relation_name: Token<'src>,
-    referenced_model_name: Token<'src>,
+    relation_name: Token,
+    referenced_model_name: Token,
   },
   /// One-side of the relation on the right in 1-to-1 relation.
   OneSideRelationRight {
-    relation_name: Token<'src>,
+    relation_name: Token,
     /// Name of the relational scalar field storing the foreign key values.
     /// It should be marked with @unique attribute, to make (1-to-1) explicit in the schema.
-    scalar_field_name: Token<'src>,
-    referenced_model_name: Token<'src>,
+    scalar_field_name: Token,
+    referenced_model_name: Token,
     /// Name of the field (should be either @id or @unique) in the referenced model.
-    referenced_field_name: Token<'src>,
+    referenced_field_name: Token,
   },
   /// Many-side of the relation, capturing the required information for
   /// a. Many side of 1-to-many relation,
   /// b. Both sides fo the many-to-many relation.
   /// c. Many side of the self-to-many relation,
   ManySideRelation {
-    relation_name: Token<'src>,
+    relation_name: Token,
     /// Name of the relational scalar field storing the foreign key values.
-    scalar_field_name: Token<'src>,
-    referenced_model_name: Token<'src>,
+    scalar_field_name: Token,
+    referenced_model_name: Token,
     /// Name of the field (should be either @id or @unique) in the referenced model.
-    referenced_field_name: Token<'src>,
+    referenced_field_name: Token,
   },
   /// Self relation of type 1-to-1
   SelfOneToOneRelation {
-    relation_name: Token<'src>,
+    relation_name: Token,
     /// Name of the scalar field name. It should be marked with @unique attribute, to make (1-to-1) explicit in the schema.
-    scalar_field_name: Token<'src>,
-    referenced_model_name: Token<'src>,
+    scalar_field_name: Token,
+    referenced_model_name: Token,
     /// Name of the referened field (should be either @id or @unique) in the model.
-    referenced_field_name: Token<'src>,
+    referenced_field_name: Token,
   },
 }
 
-impl<'src> RelationEdge<'src> {
-  pub fn relation_name(&self) -> &Token<'src> {
+impl RelationEdge {
+  pub fn relation_name(&self) -> &Token {
     match self {
       Self::OneSideRelation { relation_name, .. } => relation_name,
       Self::OneSideRelationRight { relation_name, .. } => relation_name,
@@ -643,7 +702,7 @@ impl<'src> RelationEdge<'src> {
     }
   }
 
-  pub fn scalar_field_name(&self) -> Option<&Token<'src>> {
+  pub fn scalar_field_name(&self) -> Option<&Token> {
     match self {
       Self::OneSideRelation { .. } => None,
       Self::OneSideRelationRight {
@@ -658,7 +717,7 @@ impl<'src> RelationEdge<'src> {
     }
   }
 
-  pub fn referenced_model_name(&self) -> &Token<'src> {
+  pub fn referenced_model_name(&self) -> &Token {
     match self {
       Self::OneSideRelation {
         referenced_model_name,
@@ -679,7 +738,7 @@ impl<'src> RelationEdge<'src> {
     }
   }
 
-  pub fn referenced_model_field_name(&self) -> Option<&Token<'src>> {
+  pub fn referenced_model_field_name(&self) -> Option<&Token> {
     match self {
       Self::OneSideRelation { .. } => None,
       Self::OneSideRelationRight {
@@ -710,19 +769,19 @@ pub enum PrimitiveType {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Attribute<'src> {
-  pub name: Token<'src>,
-  pub arg: Option<AttribArg<'src>>,
+pub struct Attribute {
+  pub name: Token,
+  pub arg: Option<AttribArg>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum AttribArg<'src> {
-  Args(Vec<NamedArg<'src>>),
-  Function(Token<'src>),
-  Ident(Token<'src>),
+pub enum AttribArg {
+  Args(Vec<NamedArg>),
+  Function(Token),
+  Ident(Token),
 }
 
-impl<'src> std::fmt::Display for AttribArg<'src> {
+impl std::fmt::Display for AttribArg {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match self {
       AttribArg::Args(args) => {
@@ -748,7 +807,7 @@ impl<'src> std::fmt::Display for AttribArg<'src> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct NamedArg<'src> {
-  pub arg_name: Token<'src>,
-  pub arg_value: Token<'src>,
+pub struct NamedArg {
+  pub arg_name: Token,
+  pub arg_value: Token,
 }

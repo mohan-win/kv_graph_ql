@@ -4,10 +4,10 @@ use std::fmt;
 use chumsky::container::Seq;
 
 use crate::ast::{
-  AttribArg, Attribute, EnumDecl, FieldDecl, ModelDecl, NamedArg, Span, Token, Type,
+  AttribArg, Attribute, EnumDecl, FieldDecl, ModelDecl, NamedArg, Token, Type,
 };
 
-use super::err::SemanticError;
+use super::err::Error;
 
 // Valid attribute names.
 pub const ATTRIB_NAME_DEFAULT: &str = "default";
@@ -30,23 +30,23 @@ pub const ATTRIB_NAMED_ARG_NAME: &str = "name";
 pub const ATTRIB_NAMED_ARG_FIELD: &str = "field";
 pub const ATTRIB_NAMED_ARG_REFERENCES: &str = "references";
 
-pub(crate) struct RelationAttributeDetails<'src, 'b> {
-  pub relation_name: &'b Token<'src>,
-  pub relation_scalar_field: Option<&'b FieldDecl<'src>>,
-  pub referenced_model_field: Option<&'b FieldDecl<'src>>,
-  pub referenced_model_relation_field: Option<&'b FieldDecl<'src>>,
+pub(crate) struct RelationAttributeDetails<'b> {
+  pub relation_name: &'b Token,
+  pub relation_scalar_field: Option<&'b FieldDecl>,
+  pub referenced_model_field: Option<&'b FieldDecl>,
+  pub referenced_model_relation_field: Option<&'b FieldDecl>,
 }
 /// Validates arguments passed to @relation attribute
-pub(crate) fn validate_relation_attribute_args<'src, 'b>(
-  relation_args: &'b Vec<NamedArg<'src>>,
-  field: &'b FieldDecl<'src>,
-  model: &'b ModelDecl<'src>,
-  referenced_model: &'b ModelDecl<'src>,
-) -> Result<RelationAttributeDetails<'src, 'b>, SemanticError<'src>> {
-  let mut relation_name: Option<&'b Token<'src>> = None;
-  let mut relation_scalar_field: Option<&'b FieldDecl<'src>> = None;
-  let mut referenced_model_field: Option<&'b FieldDecl<'src>> = None;
-  let referenced_model_relation_field: Option<&'b FieldDecl<'src>>;
+pub(crate) fn validate_relation_attribute_args<'b>(
+  relation_args: &'b Vec<NamedArg>,
+  field: &'b FieldDecl,
+  model: &'b ModelDecl,
+  referenced_model: &'b ModelDecl,
+) -> Result<RelationAttributeDetails<'b>, Error> {
+  let mut relation_name: Option<&'b Token> = None;
+  let mut relation_scalar_field: Option<&'b FieldDecl> = None;
+  let mut referenced_model_field: Option<&'b FieldDecl> = None;
+  let referenced_model_relation_field: Option<&'b FieldDecl>;
 
   // Step 1: Validate relation attribute has correct set of args.
   let mut valid_arg_sets: HashMap<usize, Vec<_>> = HashMap::new();
@@ -62,7 +62,7 @@ pub(crate) fn validate_relation_attribute_args<'src, 'b>(
   // Check for invalid arg sets
   let allowed_arg_set = valid_arg_sets.get(&relation_args.len());
   if allowed_arg_set.is_none() {
-    return Err(SemanticError::RelationInvalidAttributeArg {
+    return Err(Error::RelationInvalidAttributeArg {
       span: field.name.span(),
       relation_name: None,
       arg_name: None,
@@ -73,11 +73,11 @@ pub(crate) fn validate_relation_attribute_args<'src, 'b>(
     relation_args.iter().try_for_each(|arg| {
       if allowed_arg_set
         .unwrap()
-        .contains(&arg.arg_name.ident_name().unwrap())
+        .contains(&arg.arg_name.ident_name().unwrap().as_str())
       {
         Ok(())
       } else {
-        Err(SemanticError::RelationInvalidAttributeArg {
+        Err(Error::RelationInvalidAttributeArg {
           span: field.name.span(),
           relation_name: None,
           arg_name: arg.arg_name.ident_name(),
@@ -90,12 +90,12 @@ pub(crate) fn validate_relation_attribute_args<'src, 'b>(
 
   // Step 2: Get those arg values, and make sure they are of expected type.
   for arg in relation_args.iter() {
-    match arg.arg_name {
-      Token::Ident(ATTRIB_NAMED_ARG_NAME, _) => {
-        if let Token::Str(..) = arg.arg_value {
+    match &arg.arg_name {
+      Token::Ident(ident_name, _) if ident_name == ATTRIB_NAMED_ARG_NAME => {
+        if let Token::String(..) = arg.arg_value {
           relation_name = Some(&arg.arg_value);
         } else {
-          return Err(SemanticError::RelationInvalidAttributeArg {
+          return Err(Error::RelationInvalidAttributeArg {
             span: arg.arg_value.span(),
             relation_name: None,
             arg_name: arg.arg_name.ident_name(),
@@ -104,10 +104,10 @@ pub(crate) fn validate_relation_attribute_args<'src, 'b>(
           });
         }
       }
-      Token::Ident(ATTRIB_NAMED_ARG_FIELD, _) => {
+      Token::Ident(ident_name, _) if ident_name == ATTRIB_NAMED_ARG_FIELD => {
         relation_scalar_field = Some(get_relation_scalar_field(arg, field, model)?);
       }
-      Token::Ident(ATTRIB_NAMED_ARG_REFERENCES, _) => {
+      Token::Ident(ident_name, _) if ident_name == ATTRIB_NAMED_ARG_REFERENCES => {
         referenced_model_field = Some(get_referenced_model_field(
           arg,
           field,
@@ -116,7 +116,7 @@ pub(crate) fn validate_relation_attribute_args<'src, 'b>(
         )?);
       }
       _ => {
-        return Err(SemanticError::RelationInvalidAttributeArg {
+        return Err(Error::RelationInvalidAttributeArg {
           span: arg.arg_value.span(),
           relation_name: None,
           arg_name: arg.arg_name.ident_name(),
@@ -140,15 +140,13 @@ pub(crate) fn validate_relation_attribute_args<'src, 'b>(
     && *relation_scalar_field.unwrap().field_type.r#type()
       != *referenced_model_field.unwrap().field_type.r#type()
   {
-    Err(
-      SemanticError::RelationScalarAndReferencedFieldsTypeMismatch {
-        span: relation_scalar_field.unwrap().name.span(),
-        field_name: relation_scalar_field.unwrap().name.ident_name().unwrap(),
-        model_name: model.name.ident_name().unwrap(),
-        referenced_field_name: referenced_model_field.unwrap().name.ident_name().unwrap(),
-        referenced_model_name: referenced_model.name.ident_name().unwrap(),
-      },
-    )
+    Err(Error::RelationScalarAndReferencedFieldsTypeMismatch {
+      span: relation_scalar_field.unwrap().name.span(),
+      field_name: relation_scalar_field.unwrap().name.ident_name().unwrap(),
+      model_name: model.name.ident_name().unwrap(),
+      referenced_field_name: referenced_model_field.unwrap().name.ident_name().unwrap(),
+      referenced_model_name: referenced_model.name.ident_name().unwrap(),
+    })
   } else {
     Ok(RelationAttributeDetails {
       relation_name: relation_name.expect("relation_name can't be None at this point."),
@@ -160,16 +158,16 @@ pub(crate) fn validate_relation_attribute_args<'src, 'b>(
 }
 
 fn get_relation_scalar_field<'src, 'b>(
-  relation_arg_field: &'b NamedArg<'src>,
-  field: &'b FieldDecl<'src>,
-  model: &'b ModelDecl<'src>,
-) -> Result<&'b FieldDecl<'src>, SemanticError<'src>> {
+  relation_arg_field: &'b NamedArg,
+  field: &'b FieldDecl,
+  model: &'b ModelDecl,
+) -> Result<&'b FieldDecl, Error> {
   debug_assert!(
-    Token::Ident(ATTRIB_NAMED_ARG_FIELD, Span::new(0, 0)) == relation_arg_field.arg_name,
+    matches!(&relation_arg_field.arg_name, Token::Ident(ident_name, _) if ident_name == ATTRIB_NAMED_ARG_FIELD),
     "Invalid argument passed for relation_arg_field"
   );
 
-  let relation_scalar_field: Option<&'b FieldDecl<'src>>;
+  let relation_scalar_field: Option<&'b FieldDecl>;
   // Validate relation scalar field.
   // Make sure relation scalar field exists in the parent model.
   if let Token::Ident(..) = relation_arg_field.arg_value {
@@ -178,7 +176,7 @@ fn get_relation_scalar_field<'src, 'b>(
       .iter()
       .find(|field| field.name == relation_arg_field.arg_value);
     if relation_scalar_field.is_none() {
-      Err(SemanticError::RelationScalarFieldNotFound {
+      Err(Error::RelationScalarFieldNotFound {
         span: relation_arg_field.arg_value.span(),
         scalar_field_name: relation_arg_field.arg_value.ident_name(),
         field_name: field.name.ident_name().unwrap(),
@@ -191,7 +189,7 @@ fn get_relation_scalar_field<'src, 'b>(
         _ => true,
       }
     }) {
-      Err(SemanticError::RelationScalarFieldIsNotPrimitive {
+      Err(Error::RelationScalarFieldIsNotPrimitive {
         span: relation_scalar_field.unwrap().name.span(),
         field_name: relation_scalar_field.unwrap().name.ident_name().unwrap(),
         model_name: model.name.ident_name().unwrap(),
@@ -200,7 +198,7 @@ fn get_relation_scalar_field<'src, 'b>(
       Ok(relation_scalar_field.unwrap())
     }
   } else {
-    Err(SemanticError::RelationInvalidAttributeArg {
+    Err(Error::RelationInvalidAttributeArg {
       span: relation_arg_field.arg_value.span(),
       relation_name: None,
       arg_name: relation_arg_field.arg_name.ident_name(),
@@ -211,17 +209,16 @@ fn get_relation_scalar_field<'src, 'b>(
 }
 
 fn get_referenced_model_field<'src, 'b>(
-  relation_arg_references: &'b NamedArg<'src>,
-  field: &'b FieldDecl<'src>,
-  model: &'b ModelDecl<'src>,
-  referenced_model: &'b ModelDecl<'src>,
-) -> Result<&'b FieldDecl<'src>, SemanticError<'src>> {
+  relation_arg_references: &'b NamedArg,
+  field: &'b FieldDecl,
+  model: &'b ModelDecl,
+  referenced_model: &'b ModelDecl,
+) -> Result<&'b FieldDecl, Error> {
   debug_assert!(
-    Token::Ident(ATTRIB_NAMED_ARG_REFERENCES, Span::new(0, 0))
-      == relation_arg_references.arg_name,
+    matches!(&relation_arg_references.arg_name, Token::Ident(ident_name, _) if ident_name == ATTRIB_NAMED_ARG_REFERENCES),
     "Invalid arg is passed for relation_arg_references"
   );
-  let referenced_model_field: Option<&'b FieldDecl<'src>>;
+  let referenced_model_field: Option<&'b FieldDecl>;
   // Validate referenced field.
   // Make sure referenced field, exists in the referenced model.
   if let Token::Ident(_, _) = relation_arg_references.arg_value {
@@ -230,7 +227,7 @@ fn get_referenced_model_field<'src, 'b>(
       .iter()
       .find(|field| relation_arg_references.arg_value == field.name);
     if referenced_model_field.is_none() {
-      Err(SemanticError::RelationReferencedFieldNotFound {
+      Err(Error::RelationReferencedFieldNotFound {
         span: relation_arg_references.arg_value.span(),
         field_name: field.name.ident_name().unwrap(),
         model_name: model.name.ident_name().unwrap(),
@@ -244,7 +241,7 @@ fn get_referenced_model_field<'src, 'b>(
       }
     }) {
       // If referenced field is not scalar throw an error
-      Err(SemanticError::RelationReferencedFieldNotScalar {
+      Err(Error::RelationReferencedFieldNotScalar {
         span: relation_arg_references.arg_value.span(),
         field_name: field.name.ident_name().unwrap(),
         model_name: model.name.ident_name().unwrap(),
@@ -255,14 +252,15 @@ fn get_referenced_model_field<'src, 'b>(
       referenced_model_field
         .attributes
         .iter()
-        .find(|attrib| match attrib.name {
-          Token::Ident(ATTRIB_NAME_UNIQUE, ..) | Token::Ident(ATTRIB_NAME_ID, ..) => true,
+        .find(|attrib| match &attrib.name {
+          Token::Ident(ident_name, _) if ident_name == ATTRIB_NAME_UNIQUE => true,
+          Token::Ident(ident_name, _) if ident_name == ATTRIB_NAME_ID => true,
           _ => false,
         })
         .is_none()
     }) {
       // if the referenced field is not attributed with @id or @unique then throw error.
-      Err(SemanticError::RelationReferencedFieldNotUnique {
+      Err(Error::RelationReferencedFieldNotUnique {
         span: relation_arg_references.arg_value.span(),
         field_name: field.name.ident_name().unwrap(),
         model_name: model.name.ident_name().unwrap(),
@@ -273,7 +271,7 @@ fn get_referenced_model_field<'src, 'b>(
       Ok(referenced_model_field.unwrap())
     }
   } else {
-    Err(SemanticError::RelationInvalidAttributeArg {
+    Err(Error::RelationInvalidAttributeArg {
       span: relation_arg_references.arg_value.span(),
       relation_name: None,
       arg_name: relation_arg_references.arg_name.ident_name(),
@@ -284,21 +282,22 @@ fn get_referenced_model_field<'src, 'b>(
 }
 
 fn get_referenced_model_relation_field<'src, 'b>(
-  relation_name: &'b Token<'src>,
-  field: &'b FieldDecl<'src>,
-  model: &'b ModelDecl<'src>,
-  referenced_model: &'b ModelDecl<'src>,
-) -> Result<Option<&'b FieldDecl<'src>>, SemanticError<'src>> {
+  relation_name: &'b Token,
+  field: &'b FieldDecl,
+  model: &'b ModelDecl,
+  referenced_model: &'b ModelDecl,
+) -> Result<Option<&'b FieldDecl>, Error> {
   let is_self_relation = model.name == referenced_model.name;
   let mut referenced_model_relation_field =
     referenced_model.fields.iter().filter(|fld| {
       // Does this field has relation attribute to it ?
       let mut has_relation_attribute = fld.attributes.iter().filter(|attrib| {
-        if let Token::Ident(ATTRIB_NAME_RELATION, _) = attrib.name {
-          // In case of self relation, make sure to pick the right relation field.
-          true && (!is_self_relation || fld.name != field.name)
-        } else {
-          false
+        match &attrib.name {
+          Token::Ident(name, _) if name == ATTRIB_NAME_RELATION => {
+            // In case of self relation, make sure to pick the right relation field.
+            true && (!is_self_relation || fld.name != field.name)
+          }
+          _ => false,
         }
       });
 
@@ -327,11 +326,11 @@ fn get_referenced_model_relation_field<'src, 'b>(
 }
 
 /// Validates the attributes of the given field in the model.
-pub(crate) fn validate_attributes<'src>(
-  field: &FieldDecl<'src>,
-  model: &ModelDecl<'src>,
-  enums: &HashMap<&'src str, EnumDecl<'src>>,
-) -> Result<(), SemanticError<'src>> {
+pub(crate) fn validate_attributes(
+  field: &FieldDecl,
+  model: &ModelDecl,
+  enums: &HashMap<String, EnumDecl>,
+) -> Result<(), Error> {
   #[allow(non_snake_case)]
   let ATTRIBUTES_DETAIL_MAP = AttributeDetails::attributes_detail_map();
   is_attributes_compatible(field, model, &ATTRIBUTES_DETAIL_MAP)?;
@@ -344,24 +343,24 @@ pub(crate) fn validate_attributes<'src>(
 
 /// Returns if the attributes present in the array are compatible with each other,
 /// so that they (all of them present in array) can be applied on a single field.
-fn is_attributes_compatible<'src>(
-  field: &FieldDecl<'src>,
-  model: &ModelDecl<'src>,
+fn is_attributes_compatible(
+  field: &FieldDecl,
+  model: &ModelDecl,
   attribute_details_map: &HashMap<&'static str, AttributeDetails>,
-) -> Result<(), SemanticError<'src>> {
+) -> Result<(), Error> {
   if field.attributes.len() == 0 {
     Ok(())
   } else {
     let first_attribute = &field.attributes[0];
-    match attribute_details_map.get(first_attribute.name.ident_name().unwrap()) {
+    match attribute_details_map.get(first_attribute.name.ident_name().unwrap().as_str()) {
       Some(attribute_detail) => {
         if field.attributes.len() > 1 {
           field.attributes[1..].iter().try_for_each(|attribute| {
             if !attribute_detail
               .compatible_attribute_names
-              .contains(&attribute.name.ident_name().unwrap())
+              .contains(&attribute.name.ident_name().unwrap().as_str())
             {
-              Err(SemanticError::AttributeIncompatible {
+              Err(Error::AttributeIncompatible {
                 span: attribute.name.span(),
                 attrib_name: attribute.name.ident_name().unwrap(),
                 first_attrib_name: first_attribute.name.ident_name().unwrap(),
@@ -376,7 +375,7 @@ fn is_attributes_compatible<'src>(
           Ok(())
         }
       }
-      None => Err(SemanticError::AttributeUnknown {
+      None => Err(Error::AttributeUnknown {
         span: first_attribute.name.span(),
         attrib_name: first_attribute.name.ident_name().unwrap(),
         field_name: field.name.ident_name().unwrap(),
@@ -387,14 +386,14 @@ fn is_attributes_compatible<'src>(
 }
 
 /// Is the field_type valid for the given attribute ?
-fn is_valid_field_type<'src>(
-  attrib: &Attribute<'src>,
-  field: &FieldDecl<'src>,
-  model: &ModelDecl<'src>,
+fn is_valid_field_type(
+  attrib: &Attribute,
+  field: &FieldDecl,
+  model: &ModelDecl,
   attribute_details_map: &HashMap<&'static str, AttributeDetails>,
-) -> Result<(), SemanticError<'src>> {
-  match attribute_details_map.get(attrib.name.ident_name().unwrap()) {
-    None => Err(SemanticError::AttributeUnknown {
+) -> Result<(), Error> {
+  match attribute_details_map.get(attrib.name.ident_name().unwrap().as_str()) {
+    None => Err(Error::AttributeUnknown {
       span: attrib.name.span(),
       attrib_name: attrib.name.ident_name().unwrap(),
       field_name: field.name.ident_name().unwrap(),
@@ -405,7 +404,7 @@ fn is_valid_field_type<'src>(
       let is_scalar_field = field.field_type.is_scalar();
       let is_optional_field = field.field_type.is_optional();
 
-      let invalid_attribute_err = Err(SemanticError::AttributeInvalid {
+      let invalid_attribute_err = Err(Error::AttributeInvalid {
         span: attrib.name.span(),
         reason: attrib_detail.allowed_field_type.to_string(),
         attrib_name: attrib.name.ident_name().unwrap(),
@@ -450,15 +449,15 @@ fn is_valid_field_type<'src>(
 }
 
 /// Validate the attribute arguments if any.
-fn validate_attribute_args<'src>(
-  attrib: &Attribute<'src>,
-  field: &FieldDecl<'src>,
-  model: &ModelDecl<'src>,
-  enums: &HashMap<&'src str, EnumDecl<'src>>,
+fn validate_attribute_args(
+  attrib: &Attribute,
+  field: &FieldDecl,
+  model: &ModelDecl,
+  enums: &HashMap<String, EnumDecl>,
   attribute_details_map: &HashMap<&'static str, AttributeDetails>,
-) -> Result<(), SemanticError<'src>> {
-  match attribute_details_map.get(attrib.name.ident_name().unwrap()) {
-    None => Err(SemanticError::AttributeUnknown {
+) -> Result<(), Error> {
+  match attribute_details_map.get(attrib.name.ident_name().unwrap().as_str()) {
+    None => Err(Error::AttributeUnknown {
       span: attrib.name.span(),
       attrib_name: attrib.name.ident_name().unwrap(),
       field_name: field.name.ident_name().unwrap(),
@@ -471,7 +470,7 @@ fn validate_attribute_args<'src>(
         .is_some_and(|_| attrib_detail.is_empty_arg_attribute())
       {
         // Is this an empty arg attribute incorrectly having some arguments ?
-        Err(SemanticError::AttributeArgInvalid {
+        Err(Error::AttributeArgInvalid {
           span: attrib.name.span(),
           attrib_arg_name: None,
           attrib_name: attrib.name.ident_name().unwrap(),
@@ -483,9 +482,9 @@ fn validate_attribute_args<'src>(
           AttribArg::Function(fn_name) => {
             if !attrib_detail
               .allowed_arg_fns
-              .contains(&fn_name.ident_name().unwrap())
+              .contains(&fn_name.ident_name().unwrap().as_str())
             {
-              Err(SemanticError::AttributeArgInvalid {
+              Err(Error::AttributeArgInvalid {
                 span: fn_name.span(),
                 attrib_arg_name: Some(fn_name.ident_name().unwrap()),
                 attrib_name: attrib.name.ident_name().unwrap(),
@@ -503,7 +502,7 @@ fn validate_attribute_args<'src>(
                 .allowed_arg_values
                 .contains(&ATTRIB_ARG_VALUE_ENUM)
               {
-                Err(SemanticError::AttributeArgInvalid {
+                Err(Error::AttributeArgInvalid {
                   span: arg_value.span(),
                   attrib_arg_name: Some(arg_value.ident_name().unwrap()),
                   attrib_name: attrib.name.ident_name().unwrap(),
@@ -512,8 +511,8 @@ fn validate_attribute_args<'src>(
                 })
               } else {
                 let enum_decl = enums
-                  .get(enum_ty_name.ident_name().unwrap())
-                  .ok_or_else(|| SemanticError::TypeUndefined {
+                  .get(enum_ty_name.ident_name().unwrap().as_str())
+                  .ok_or_else(|| Error::TypeUndefined {
                     span: enum_ty_name.span(),
                     type_name: enum_ty_name.ident_name().unwrap(),
                     field_name: field.name.ident_name().unwrap(),
@@ -522,7 +521,7 @@ fn validate_attribute_args<'src>(
                 if enum_decl.elements.contains(arg_value) {
                   Ok(())
                 } else {
-                  Err(SemanticError::EnumValueUndefined {
+                  Err(Error::EnumValueUndefined {
                     span: arg_value.span(),
                     enum_value: arg_value.ident_name().unwrap(),
                     attrib_name: attrib.name.ident_name().unwrap(),
@@ -533,9 +532,9 @@ fn validate_attribute_args<'src>(
               }
             } else if !attrib_detail
               .allowed_arg_values
-              .contains(&arg_value.ident_name().unwrap())
+              .contains(&arg_value.ident_name().unwrap().as_str())
             {
-              Err(SemanticError::AttributeArgInvalid {
+              Err(Error::AttributeArgInvalid {
                 span: arg_value.span(),
                 attrib_arg_name: Some(arg_value.ident_name().unwrap()),
                 attrib_name: attrib.name.ident_name().unwrap(),
@@ -550,7 +549,7 @@ fn validate_attribute_args<'src>(
             let mut invalid_args = named_args.iter().filter_map(|named_arg| {
               if !attrib_detail
                 .allowed_named_args
-                .contains(&named_arg.arg_name.ident_name().unwrap())
+                .contains(&named_arg.arg_name.ident_name().unwrap().as_str())
               {
                 Some(&named_arg.arg_name)
               } else {
@@ -558,7 +557,7 @@ fn validate_attribute_args<'src>(
               }
             });
             if let Some(invalid_arg) = invalid_args.next() {
-              Err(SemanticError::AttributeArgInvalid {
+              Err(Error::AttributeArgInvalid {
                 span: invalid_arg.span(),
                 attrib_arg_name: Some(invalid_arg.ident_name().unwrap()),
                 attrib_name: attrib.name.ident_name().unwrap(),

@@ -7,15 +7,15 @@ use super::{
     validate_relation_attribute_args, RelationAttributeDetails, ATTRIB_NAME_RELATION,
     ATTRIB_NAME_UNIQUE,
   },
-  err::SemanticError,
+  err::Error,
 };
 
 #[derive(Debug)]
-pub(crate) struct RelationMap<'src> {
-  relations: HashMap<&'src str, (Option<RelationEdge<'src>>, Option<RelationEdge<'src>>)>,
+pub(crate) struct RelationMap {
+  relations: HashMap<String, (Option<RelationEdge>, Option<RelationEdge>)>,
 }
 
-impl<'src> RelationMap<'src> {
+impl RelationMap {
   pub fn new() -> Self {
     RelationMap {
       relations: HashMap::new(),
@@ -27,10 +27,7 @@ impl<'src> RelationMap<'src> {
   /// then error is returned.
   pub fn get_valid_relations(
     self,
-  ) -> Result<
-    HashMap<&'src str, (RelationEdge<'src>, Option<RelationEdge<'src>>)>,
-    Vec<SemanticError<'src>>,
-  > {
+  ) -> Result<HashMap<String, (RelationEdge, Option<RelationEdge>)>, Vec<Error>> {
     let mut valid_relations = HashMap::new();
     let mut errs = Vec::new();
     self.relations.into_iter().for_each(|(key, (left, right))| {
@@ -50,15 +47,15 @@ impl<'src> RelationMap<'src> {
 
   pub fn add_relation_edge(
     &mut self,
-    edge: RelationEdge<'src>,
-    parent_field_ident: &Token<'src>,
-    parent_model_ident: &Token<'src>,
-  ) -> Result<(), SemanticError<'src>> {
+    edge: RelationEdge,
+    parent_field_ident: &Token,
+    parent_model_ident: &Token,
+  ) -> Result<(), Error> {
     let relation_name_str = edge.relation_name().str().unwrap();
-    if let Some(existing_relation) = self.relations.get_mut(relation_name_str) {
+    if let Some(existing_relation) = self.relations.get_mut(&relation_name_str) {
       match existing_relation {
         (Some(_), Some(_)) | (Some(RelationEdge::SelfOneToOneRelation { .. }), None) => {
-          Err(SemanticError::RelationDuplicate {
+          Err(Error::RelationDuplicate {
             span: edge.relation_name().span(),
             relation_name: relation_name_str,
             field_name: parent_field_ident.ident_name().unwrap(),
@@ -91,9 +88,9 @@ impl<'src> RelationMap<'src> {
   /// Checks if the relation edges are valid and the relation is fully formed
   /// with the given 2 edges.
   fn is_relation_valid(
-    left: Option<&RelationEdge<'src>>,
-    right: Option<&RelationEdge<'src>>,
-  ) -> Result<(), SemanticError<'src>> {
+    left: Option<&RelationEdge>,
+    right: Option<&RelationEdge>,
+  ) -> Result<(), Error> {
     match (left, right) {
       (None, None) => {
         panic!("Empty relations are not allowed!")
@@ -102,13 +99,13 @@ impl<'src> RelationMap<'src> {
         // For self one-to-one relation, we only need one edge.
         Ok(())
       }
-      (Some(..), None) => Err(SemanticError::RelationPartial {
+      (Some(..), None) => Err(Error::RelationPartial {
         span: left.unwrap().relation_name().span(),
         relation_name: left.unwrap().relation_name().str().unwrap(),
         field_name: None,
         model_name: None,
       }),
-      (None, Some(..)) => Err(SemanticError::RelationPartial {
+      (None, Some(..)) => Err(Error::RelationPartial {
         span: right.unwrap().relation_name().span(),
         relation_name: right.unwrap().relation_name().str().unwrap(),
         field_name: None,
@@ -117,7 +114,7 @@ impl<'src> RelationMap<'src> {
       (
         Some(RelationEdge::OneSideRelation { .. }),
         Some(RelationEdge::OneSideRelation { .. }),
-      ) => Err(SemanticError::RelationInvalid {
+      ) => Err(Error::RelationInvalid {
         span: right.unwrap().relation_name().span(),
         relation_name: right.unwrap().relation_name().str().unwrap(),
         field_name: None,
@@ -131,7 +128,7 @@ impl<'src> RelationMap<'src> {
       | (
         Some(RelationEdge::ManySideRelation { .. }),
         Some(RelationEdge::OneSideRelation { .. }),
-      ) => Err(SemanticError::RelationInvalid {
+      ) => Err(Error::RelationInvalid {
         span: left.unwrap().relation_name().span(),
         relation_name: left.unwrap().relation_name().str().unwrap(),
         field_name: None,
@@ -148,23 +145,25 @@ impl<'src> RelationMap<'src> {
   }
 }
 
-pub fn get_relation_edge<'src>(
-  model: &ModelDecl<'src>,
-  field: &FieldDecl<'src>,
-  referenced_model: &ModelDecl<'src>,
-) -> Result<RelationEdge<'src>, SemanticError<'src>> {
+pub fn get_relation_edge(
+  model: &ModelDecl,
+  field: &FieldDecl,
+  referenced_model: &ModelDecl,
+) -> Result<RelationEdge, Error> {
   let mut relation_attributes = Vec::new();
   let mut non_relation_attributes = Vec::new();
-  field.attributes.iter().for_each(|attrib| {
-    if let Token::Ident(ATTRIB_NAME_RELATION, _) = attrib.name {
-      relation_attributes.push(attrib)
-    } else {
-      non_relation_attributes.push(attrib)
-    }
-  });
+  field
+    .attributes
+    .iter()
+    .for_each(|attrib| match &attrib.name {
+      Token::Ident(name, _) if name == ATTRIB_NAME_RELATION => {
+        relation_attributes.push(attrib)
+      }
+      _ => non_relation_attributes.push(attrib),
+    });
   if relation_attributes.len() == 0 {
     // Throw error if there is no relation attribute.
-    Err(SemanticError::RelationAttributeMissing {
+    Err(Error::RelationAttributeMissing {
       span: field.name.span(),
       field_name: field.name.ident_name().unwrap(),
       model_name: model.name.ident_name().unwrap(),
@@ -175,7 +174,7 @@ pub fn get_relation_edge<'src>(
       .get(1)
       .or(non_relation_attributes.get(0))
       .unwrap();
-    Err(SemanticError::RelationInvalidAttribute {
+    Err(Error::RelationInvalidAttribute {
       span: invalid_attrib.name.span(),
       attrib_name: invalid_attrib.name.ident_name().unwrap(),
       field_name: field.name.ident_name().unwrap(),
@@ -186,7 +185,7 @@ pub fn get_relation_edge<'src>(
     if let Some(AttribArg::Args(named_args)) = &relation_attribute.arg {
       new_relation_edge(model, named_args, field, referenced_model)
     } else {
-      Err(SemanticError::RelationInvalidAttributeArg {
+      Err(Error::RelationInvalidAttributeArg {
         span: relation_attribute.name.span(),
         relation_name: None,
         arg_name: None,
@@ -197,12 +196,12 @@ pub fn get_relation_edge<'src>(
   }
 }
 
-fn new_relation_edge<'src>(
-  model: &ModelDecl<'src>,
-  relation_args: &Vec<NamedArg<'src>>,
-  field: &FieldDecl<'src>,
-  referenced_model: &ModelDecl<'src>,
-) -> Result<RelationEdge<'src>, SemanticError<'src>> {
+fn new_relation_edge(
+  model: &ModelDecl,
+  relation_args: &Vec<NamedArg>,
+  field: &FieldDecl,
+  referenced_model: &ModelDecl,
+) -> Result<RelationEdge, Error> {
   let RelationAttributeDetails {
     relation_name,
     relation_scalar_field,
@@ -217,7 +216,7 @@ fn new_relation_edge<'src>(
       referenced_model_name: referenced_model.name.clone(),
     });
   } else if relation_scalar_field.is_none() {
-    return Err(SemanticError::RelationScalarFieldNotFound {
+    return Err(Error::RelationScalarFieldNotFound {
       span: relation_name.span(),
       scalar_field_name: None,
       field_name: field.name.ident_name().unwrap(),
@@ -229,10 +228,7 @@ fn new_relation_edge<'src>(
   let scalar_fld_unique = relation_scalar_field
     .attributes
     .iter()
-    .find(|attrib| match attrib.name {
-      Token::Ident(ATTRIB_NAME_UNIQUE, ..) => true,
-      _ => false,
-    })
+    .find(|attrib| matches!(&attrib.name, Token::Ident(ident_name, _) if ident_name == ATTRIB_NAME_UNIQUE))
     .is_some();
   let rel_fld_exists = referenced_model_relation_field.is_some();
   let rel_fld_array =
@@ -240,7 +236,7 @@ fn new_relation_edge<'src>(
 
   match (scalar_fld_unique, rel_fld_exists, rel_fld_array) {
     (_scalar_fld_unique @ true, _rel_fld_exists @ true, _rel_fld_array @ true) => {
-      Err(SemanticError::RelationScalarFieldIsUnique {
+      Err(Error::RelationScalarFieldIsUnique {
         span: relation_scalar_field.name.span(),
         field_name: relation_scalar_field.name.ident_name().unwrap(),
         model_name: model.name.ident_name().unwrap(),
@@ -253,7 +249,7 @@ fn new_relation_edge<'src>(
       })
     }
     (_scalar_fld_unique @ false, _rel_fld_exists @ true, _rel_fld_array @ false) => {
-      Err(SemanticError::RelationScalarFieldNotUnique {
+      Err(Error::RelationScalarFieldNotUnique {
         span: relation_scalar_field.name.span(),
         field_name: relation_scalar_field.name.ident_name().unwrap(),
         model_name: model.name.ident_name().unwrap(),
@@ -266,7 +262,7 @@ fn new_relation_edge<'src>(
       if model.name == referenced_model.name =>
     {
       // Self relation should always be a 1-to-1 relation.
-      Err(SemanticError::RelationScalarFieldNotUnique {
+      Err(Error::RelationScalarFieldNotUnique {
         span: relation_scalar_field.name.span(),
         field_name: relation_scalar_field.name.ident_name().unwrap(),
         model_name: model.name.ident_name().unwrap(),
@@ -302,7 +298,7 @@ fn new_relation_edge<'src>(
         referenced_field_name: referenced_model_field.unwrap().name.clone(),
       })
     }
-    _ => Err(SemanticError::RelationInvalid {
+    _ => Err(Error::RelationInvalid {
       span: relation_name.span(),
       relation_name: relation_name.str().unwrap(),
       field_name: field.name.ident_name(),

@@ -4,7 +4,7 @@ use crate::ast::{
 };
 use std::{
   collections::{HashMap, HashSet},
-  ops::{ControlFlow, Deref},
+  ops::ControlFlow,
 };
 
 /// Error Module
@@ -14,7 +14,7 @@ pub(crate) use attribute::ATTRIB_NAME_DEFAULT;
 pub(crate) use attribute::ATTRIB_NAME_ID;
 pub(crate) use attribute::ATTRIB_NAME_INDEXED;
 pub(crate) use attribute::ATTRIB_NAME_UNIQUE;
-use err::SemanticError;
+use err::Error;
 use relation::RelationMap;
 
 /// Module for attribute related semantic analysis and validation.
@@ -23,143 +23,143 @@ mod attribute;
 /// Module for relation related semantic analysis and validation.
 mod relation;
 
-/// This function segregates the declartions into configs, enums & models
-/// # params
-/// `check_duplicate_types` - flag to check for duplicate types.
-/// # returns
-/// - segregated data_model
-/// - (or) SemanticError::DuplicateTypeDefinition if duplicate types types found.
-pub fn to_data_model<'src>(
-  delcarations: Vec<Declaration<'src>>,
-  check_duplicate_types: bool,
-) -> Result<DataModel<'src>, Vec<SemanticError<'src>>> {
-  let mut errs: Vec<SemanticError<'src>> = Vec::new();
-  let mut type_set: HashSet<(&'src str, Span)> = HashSet::new();
+/// This function performs semantic analysis, converts parsed declarations into `DataModel`
+/// if no errors found. In case errors are found during semantic analyis, it returns the errors.
+pub(crate) fn semantic_update(
+  delcarations: Vec<Declaration>,
+) -> Result<DataModel, Vec<Error>> {
+  let mut errs: Vec<Error> = Vec::new();
+  let mut type_set: HashSet<(String, Span)> = HashSet::new();
 
-  let mut data_model = DataModel::new();
+  let mut configs = HashMap::new();
+  let mut enums = HashMap::new();
+  let mut models_temp = HashMap::new();
+  let mut relations = RelationMap::new();
 
   for decl in delcarations.into_iter() {
     let (type_name, span) = match decl {
       Declaration::Config(c) => {
         let type_name = c.name.ident_name().unwrap();
         let span = c.name.span();
-        data_model.configs_mut().insert(type_name, c);
+        configs.insert(type_name.clone(), c);
         (type_name, span)
       }
       Declaration::Enum(e) => {
         let type_name = e.name.ident_name().unwrap();
         let span = e.name.span();
-        data_model
-          .enums_mut()
-          .insert(e.name.ident_name().unwrap(), e);
+        enums.insert(type_name.clone(), e);
         (type_name, span)
       }
       Declaration::Model(m) => {
         let type_name = m.name.ident_name().unwrap();
         let span = m.name.span();
-        data_model
-          .models_mut()
-          .insert(m.name.ident_name().unwrap(), m);
+        models_temp.insert(type_name.clone(), m);
         (type_name, span)
       }
     };
 
-    // error for duplicate types.
-    if check_duplicate_types {
-      let type_exists = type_set.iter().try_for_each(|(name, _span)| {
-        if name.eq(&type_name) {
-          ControlFlow::Break(true)
-        } else {
-          ControlFlow::Continue(())
-        }
-      });
-
-      if let ControlFlow::Break(true) = type_exists {
-        errs.push(SemanticError::TypeDuplicateDefinition { span, type_name });
+    let type_exists = type_set.iter().try_for_each(|(name, _span)| {
+      if name.eq(&type_name) {
+        ControlFlow::Break(true)
       } else {
-        type_set.insert((type_name, span));
+        ControlFlow::Continue(())
       }
+    });
+
+    if let ControlFlow::Break(true) = type_exists {
+      errs.push(Error::TypeDuplicateDefinition { span, type_name });
+    } else {
+      type_set.insert((type_name, span));
     }
   }
-  if errs.len() > 0 {
-    Err(errs)
-  } else {
-    Ok(data_model)
-  }
-}
 
-/// This function semantically updates the AST to,
-/// a. To identify the actual type of user defined types (Enum / Model) of a field. In the inital pass the user defined field_types are not determined.
-/// b. Surface known semantic errors.
-///
-/// # Returns
-/// - () if there are no errors during update.
-/// - or array of errors if known semantic errors found.
-pub fn semantic_update<'src>(
-  input_ast: &mut DataModel<'src>,
-) -> Result<(), Vec<SemanticError<'src>>> {
-  let mut relations = RelationMap::new();
-  let mut errs: Vec<SemanticError<'src>> = Vec::new();
-  input_ast.models().values().for_each(|model| {
+  // ToDo:: Remove!
+  if errs.len() > 0 {
+    return Err(errs);
+  }
+
+  let mut models = HashMap::new();
+
+  for model_temp in models_temp.values() {
     // Make sure each model has a valid Id field.
-    if let Err(err) = validate_model_id_field(model) {
+    if let Err(err) = validate_model_id_field(model_temp) {
       errs.push(err)
     }
-    model.fields.iter().for_each(|field| {
-      match get_actual_type(model, field, input_ast.models(), input_ast.enums()) {
+
+    // Fill out the actual types for unknown fields.
+    let mut model = model_temp.clone(); // Clone!
+    for (idx, field) in model_temp.fields.iter().enumerate() {
+      match get_actual_type(&model_temp, field, &models_temp, &enums) {
         Ok(actual_type) => {
           actual_type.map(|actual_type| {
-            field.field_type.set_type(actual_type);
-            if let Type::Relation(edge) = field.field_type.r#type().deref() {
+            if let Type::Relation(edge) = &actual_type {
               let _ = relations
                 .add_relation_edge(edge.clone(), &field.name, &model.name) // Clone!
                 .map_err(|err| errs.push(err));
             }
+
+            model
+              .fields
+              .get_mut(idx)
+              .unwrap()
+              .field_type
+              .set_type(actual_type);
           });
         }
-        Err(err) => errs.push(err),
-      };
-      let _ = attribute::validate_attributes(field, model, input_ast.enums())
-        .map_err(|err| errs.push(err));
-    });
-  });
-  relations.get_valid_relations().map_or_else(
-    |rel_errs| errs.extend(rel_errs.into_iter()),
-    |valid_relations| {
-      input_ast
-        .relations_mut()
-        .extend(valid_relations.into_iter())
-    },
-  );
+        Err(err) => {
+          errs.push(err);
+        }
+      }
+
+      // Validate attributes of each field.
+      let _ =
+        attribute::validate_attributes(&model.fields.get(idx).unwrap(), &model, &enums)
+          .map_err(|err| errs.push(err));
+    }
+
+    models.insert(model.name.ident_name().unwrap().clone(), model);
+  }
+
+  let mut valid_relations = HashMap::new();
+  match relations.get_valid_relations() {
+    Ok(relations) => {
+      valid_relations.extend(relations);
+    }
+    Err(rel_errs) => {
+      errs.extend(rel_errs);
+    }
+  }
+
+  // If error return
   if errs.len() > 0 {
-    Err(errs)
+    return Err(errs);
   } else {
-    Ok(())
+    Ok(DataModel::new(configs, enums, models, valid_relations))
   }
 }
 
 /// This function finds and returns the actual type for the field if it's type is Unknown
 /// If the field type is already known, it returns `None`.
 /// But if its unable to locate the Uknown type, then it returns SemanticError::UndefinedType.
-fn get_actual_type<'src>(
-  model: &ModelDecl<'src>,
-  field: &FieldDecl<'src>,
-  models: &HashMap<&'src str, ModelDecl<'src>>,
-  enums: &HashMap<&'src str, EnumDecl<'src>>,
-) -> Result<Option<Type<'src>>, SemanticError<'src>> {
-  if let Type::Unknown(type_name_tok) = &*field.field_type.r#type() {
+fn get_actual_type(
+  model: &ModelDecl,
+  field: &FieldDecl,
+  models: &HashMap<String, ModelDecl>,
+  enums: &HashMap<String, EnumDecl>,
+) -> Result<Option<Type>, Error> {
+  if let Type::Unknown(type_name_tok) = field.field_type.r#type() {
     let type_name = type_name_tok.ident_name().unwrap();
-    match models.get(type_name) {
+    match models.get(&type_name) {
       Some(referenced_model) => Ok(Some(Type::Relation(relation::get_relation_edge(
         model,
         field,
         referenced_model,
       )?))),
-      None => match enums.get(type_name) {
+      None => match enums.get(&type_name) {
         Some(_) => Ok(Some(Type::Enum {
           enum_ty_name: type_name_tok.clone(), // Clone
         })),
-        None => Err(SemanticError::TypeUndefined {
+        None => Err(Error::TypeUndefined {
           span: type_name_tok.span(),
           type_name: type_name_tok.ident_name().unwrap(),
           field_name: field.name.ident_name().unwrap(),
@@ -173,9 +173,7 @@ fn get_actual_type<'src>(
 }
 
 /// Make sure model has ONLY one field marked with @id
-fn validate_model_id_field<'src>(
-  model: &ModelDecl<'src>,
-) -> Result<(), SemanticError<'src>> {
+fn validate_model_id_field(model: &ModelDecl) -> Result<(), Error> {
   let model_fields = model.get_fields_internal(true); // Note: allow_unknown_field_type is set to `true`. Because this function is called during the semantic_update phase.
   let has_only_auto_gen_id = model_fields
     .id
@@ -188,19 +186,19 @@ fn validate_model_id_field<'src>(
     && has_only_auto_gen_id;
 
   if is_empty_model {
-    Err(SemanticError::ModelEmpty {
+    Err(Error::ModelEmpty {
       span: model.name.span(),
       model_name: model.name.ident_name().unwrap(),
     })
   } else if model_fields.id.is_empty() {
-    Err(SemanticError::ModelIdFieldMissing {
+    Err(Error::ModelIdFieldMissing {
       span: model.name.span(),
       model_name: model.name.ident_name().unwrap(),
     })
   } else if model_fields.id.len() > 1 {
     let (second_id_field, _) = model_fields.id[1];
     // Is there more than one Id field in a Model ?
-    Err(SemanticError::ModelIdFieldDuplicate {
+    Err(Error::ModelIdFieldDuplicate {
       span: second_id_field.name.span(),
       field_name: second_id_field.name.ident_name().unwrap(),
       model_name: model.name.ident_name().unwrap(),
@@ -224,27 +222,27 @@ mod tests {
       "/test_data/semantic_analysis/duplicate_types.sdml"
     ))
     .unwrap();
-
     let decls = crate::parser::delcarations()
       .parse(&duplicate_types_sdml)
       .into_result()
       .unwrap();
-    match to_data_model(decls, true) {
+
+    match semantic_update(decls) {
       Ok(_) => assert!(false, "Model file with duplicate types should throw err!"),
       Err(errs) => {
         assert_eq!(
           vec![
-            SemanticError::TypeDuplicateDefinition {
+            Error::TypeDuplicateDefinition {
               span: Span::new(52, 54),
-              type_name: "db"
+              type_name: "db".to_string()
             },
-            SemanticError::TypeDuplicateDefinition {
+            Error::TypeDuplicateDefinition {
               span: Span::new(294, 311),
-              type_name: "User"
+              type_name: "User".to_string()
             },
-            SemanticError::TypeDuplicateDefinition {
+            Error::TypeDuplicateDefinition {
               span: Span::new(666, 670),
-              type_name: "Role"
+              type_name: "Role".to_string()
             }
           ],
           errs
@@ -260,37 +258,37 @@ mod tests {
       "/test_data/semantic_analysis/model_errs.sdml"
     ))
     .unwrap();
-    let expected_semantic_errs: Vec<SemanticError> = vec![
-      SemanticError::ModelIdFieldDuplicate {
+    let expected_semantic_errs: Vec<Error> = vec![
+      Error::ModelIdFieldDuplicate {
         span: Span::new(750, 762),
-        field_name: "name",
-        model_name: "Category",
+        field_name: "name".to_string(),
+        model_name: "Category".to_string(),
       },
-      SemanticError::ModelIdFieldMissing {
+      Error::ModelIdFieldMissing {
         span: Span::new(45, 291),
-        model_name: "User",
+        model_name: "User".to_string(),
       },
-      SemanticError::AttributeInvalid {
+      Error::AttributeInvalid {
         span: Span::new(464, 467),
         reason: "Only Non-Optional Scalar Short String field is allowed".to_string(),
-        attrib_name: "id",
-        field_name: "postId",
-        model_name: "Post",
+        attrib_name: "id".to_string(),
+        field_name: "postId".to_string(),
+        model_name: "Post".to_string(),
       },
-      SemanticError::ModelEmpty {
+      Error::ModelEmpty {
         span: Span::new(849, 872),
-        model_name: "EmptyModel",
+        model_name: "EmptyModel".to_string(),
       },
-      SemanticError::ModelEmpty {
+      Error::ModelEmpty {
         span: Span::new(872, 948),
-        model_name: "EmptyModelOnlyAutoGenId",
+        model_name: "EmptyModelOnlyAutoGenId".to_string(),
       },
-      SemanticError::AttributeInvalid {
+      Error::AttributeInvalid {
         span: Span::new(337, 340),
         reason: "Only Non-Optional Scalar Short String field is allowed".to_string(),
-        attrib_name: "id",
-        field_name: "profileId",
-        model_name: "Profile",
+        attrib_name: "id".to_string(),
+        field_name: "profileId".to_string(),
+        model_name: "Profile".to_string(),
       },
     ];
 
@@ -298,8 +296,7 @@ mod tests {
       .parse(&model_errs_sdml)
       .into_result()
       .unwrap();
-    let mut ast = to_data_model(decls, true).unwrap();
-    match semantic_update(&mut ast) {
+    match semantic_update(decls) {
       Ok(_) => assert!(false, "Expecting model errors to surface"),
       Err(errs) => {
         assert_eq!(expected_semantic_errs.len(), errs.len());
@@ -317,32 +314,32 @@ mod tests {
       "/test_data/semantic_analysis/field_errs.sdml"
     ))
     .unwrap();
-    let expected_semantic_errs: Vec<SemanticError> = vec![
-      SemanticError::TypeUndefined {
+    let expected_semantic_errs: Vec<Error> = vec![
+      Error::TypeUndefined {
         span: Span::new(625, 629),
-        type_name: "bool",
-        field_name: "published",
-        model_name: "Post",
+        type_name: "bool".to_string(),
+        field_name: "published".to_string(),
+        model_name: "Post".to_string(),
       },
-      SemanticError::AttributeInvalid {
+      Error::AttributeInvalid {
         span: Span::new(637, 652),
         reason: String::from("Only Non-Optional Scalar field is allowed"),
-        attrib_name: "default",
-        field_name: "published",
-        model_name: "Post",
+        attrib_name: "default".to_string(),
+        field_name: "published".to_string(),
+        model_name: "Post".to_string(),
       },
-      SemanticError::EnumValueUndefined {
+      Error::EnumValueUndefined {
         span: Span::new(223, 228),
-        enum_value: "GUEST",
-        attrib_name: "default",
-        field_name: "role",
-        model_name: "User",
+        enum_value: "GUEST".to_string(),
+        attrib_name: "default".to_string(),
+        field_name: "role".to_string(),
+        model_name: "User".to_string(),
       },
-      SemanticError::TypeUndefined {
+      Error::TypeUndefined {
         span: Span::new(246, 251),
-        type_name: "Role1",
-        field_name: "role1",
-        model_name: "User",
+        type_name: "Role1".to_string(),
+        field_name: "role1".to_string(),
+        model_name: "User".to_string(),
       },
     ];
 
@@ -350,8 +347,7 @@ mod tests {
       .parse(&field_errs_sdml)
       .into_result()
       .unwrap();
-    let mut ast = to_data_model(decls, true).unwrap();
-    match semantic_update(&mut ast) {
+    match semantic_update(decls) {
       Ok(_) => assert!(false, "Expecting field errors to surface"),
       Err(errs) => {
         assert_eq!(expected_semantic_errs.len(), errs.len());
@@ -369,43 +365,43 @@ mod tests {
       "/test_data/semantic_analysis/relation_errs/invalid.sdml"
     ))
     .unwrap();
-    let expected_semantic_errs: Vec<SemanticError> = vec![
-      SemanticError::RelationScalarFieldNotUnique {
+    let expected_semantic_errs: Vec<Error> = vec![
+      Error::RelationScalarFieldNotUnique {
         span: Span::new(169, 182),
-        field_name: "spouseUserId",
-        model_name: "User",
-        referenced_model_name: "User",
+        field_name: "spouseUserId".to_string(),
+        model_name: "User".to_string(),
+        referenced_model_name: "User".to_string(),
         referenced_model_relation_field_name: None,
       },
-      SemanticError::RelationScalarFieldIsUnique {
+      Error::RelationScalarFieldIsUnique {
         span: Span::new(335, 344),
-        field_name: "authorId",
-        model_name: "Post",
-        referenced_model_name: "User",
-        referenced_model_relation_field_name: "posts",
+        field_name: "authorId".to_string(),
+        model_name: "Post".to_string(),
+        referenced_model_name: "User".to_string(),
+        referenced_model_relation_field_name: "posts".to_string(),
       },
-      SemanticError::RelationScalarFieldNotUnique {
+      Error::RelationScalarFieldNotUnique {
         span: Span::new(660, 669),
-        field_name: "authorId",
-        model_name: "Post1",
-        referenced_model_name: "User1",
-        referenced_model_relation_field_name: Some("singlePost"),
+        field_name: "authorId".to_string(),
+        model_name: "Post1".to_string(),
+        referenced_model_name: "User1".to_string(),
+        referenced_model_relation_field_name: Some("singlePost".to_string()),
       },
-      SemanticError::RelationPartial {
+      Error::RelationPartial {
         span: Span::new(562, 570),
-        relation_name: "posts1",
+        relation_name: "posts1".to_string(),
         field_name: None,
         model_name: None,
       },
-      SemanticError::RelationPartial {
+      Error::RelationPartial {
         span: Span::new(239, 246),
-        relation_name: "posts",
+        relation_name: "posts".to_string(),
         field_name: None,
         model_name: None,
       },
-      SemanticError::ModelEmpty {
+      Error::ModelEmpty {
         span: Span::new(454, 575),
-        model_name: "User1",
+        model_name: "User1".to_string(),
       },
     ];
 
@@ -413,8 +409,7 @@ mod tests {
       .parse(&relation_errs_sdml)
       .into_result()
       .unwrap();
-    let mut ast = to_data_model(decls, true).unwrap();
-    match semantic_update(&mut ast) {
+    match semantic_update(decls) {
       Ok(_) => assert!(false, "Expecting relation errors to surface"),
       Err(errs) => {
         assert_eq!(expected_semantic_errs.len(), errs.len());
@@ -437,15 +432,14 @@ mod tests {
       .parse(&relation_errs_sdml)
       .into_result()
       .unwrap();
-    let mut ast = to_data_model(decls, true).unwrap();
-    match semantic_update(&mut ast) {
+    match semantic_update(decls) {
       Ok(_) => assert!(false, "Expecting relation errors to surface"),
       Err(errs) => {
         eprintln!("{errs:#?}");
         let errs: Vec<_> = errs
           .into_iter()
           .filter(|e| match e {
-            SemanticError::RelationDuplicate { .. } => true,
+            Error::RelationDuplicate { .. } => true,
             _ => false,
           })
           .collect();
@@ -461,28 +455,28 @@ mod tests {
       "/test_data/semantic_analysis/relation_errs/partial.sdml"
     ))
     .unwrap();
-    let expected_semantic_errs: Vec<SemanticError> = vec![
-      SemanticError::RelationInvalid {
+    let expected_semantic_errs: Vec<Error> = vec![
+      Error::RelationInvalid {
         span: Span::new(738, 752),
-        relation_name: "user_profile",
-        field_name: Some("user"),
-        model_name: Some("Profile"),
+        relation_name: "user_profile".to_string(),
+        field_name: Some("user".to_string()),
+        model_name: Some("Profile".to_string()),
       },
-      SemanticError::RelationInvalid {
+      Error::RelationInvalid {
         span: Span::new(385, 397),
-        relation_name: "user_posts",
-        field_name: Some("author"),
-        model_name: Some("Post"),
+        relation_name: "user_posts".to_string(),
+        field_name: Some("author".to_string()),
+        model_name: Some("Post".to_string()),
       },
-      SemanticError::RelationInvalid {
+      Error::RelationInvalid {
         span: Span::new(515, 531),
-        relation_name: "negative_posts",
-        field_name: Some("negativeAuthor"),
-        model_name: Some("Post"),
+        relation_name: "negative_posts".to_string(),
+        field_name: Some("negativeAuthor".to_string()),
+        model_name: Some("Post".to_string()),
       },
-      SemanticError::RelationPartial {
+      Error::RelationPartial {
         span: Span::new(153, 168),
-        relation_name: "mentor_mentee",
+        relation_name: "mentor_mentee".to_string(),
         field_name: None,
         model_name: None,
       },
@@ -492,8 +486,7 @@ mod tests {
       .parse(&relation_errs_sdml)
       .into_result()
       .unwrap();
-    let mut ast = to_data_model(decls, true).unwrap();
-    match semantic_update(&mut ast) {
+    match semantic_update(decls) {
       Ok(_) => assert!(false, "Expecting relation errors to surface"),
       Err(errs) => {
         assert_eq!(expected_semantic_errs.len(), errs.len());
@@ -511,21 +504,21 @@ mod tests {
       "/test_data/semantic_analysis/relation_errs/attribute_missing.sdml"
     ))
     .unwrap();
-    let expected_semantic_errs: Vec<SemanticError> = vec![
-      SemanticError::RelationAttributeMissing {
+    let expected_semantic_errs: Vec<Error> = vec![
+      Error::RelationAttributeMissing {
         span: Span::new(171, 187),
-        field_name: "negativePosts",
-        model_name: "User",
+        field_name: "negativePosts".to_string(),
+        model_name: "User".to_string(),
       },
-      SemanticError::RelationAttributeMissing {
+      Error::RelationAttributeMissing {
         span: Span::new(465, 481),
-        field_name: "spouse",
-        model_name: "User",
+        field_name: "spouse".to_string(),
+        model_name: "User".to_string(),
       },
-      SemanticError::RelationAttributeMissing {
+      Error::RelationAttributeMissing {
         span: Span::new(1030, 1042),
-        field_name: "user",
-        model_name: "Profile",
+        field_name: "user".to_string(),
+        model_name: "Profile".to_string(),
       },
     ];
 
@@ -533,15 +526,14 @@ mod tests {
       .parse(&relation_errs_sdml)
       .into_result()
       .unwrap();
-    let mut ast = to_data_model(decls, true).unwrap();
-    match semantic_update(&mut ast) {
+    match semantic_update(decls) {
       Ok(_) => assert!(false, "Expecting relation errors to surface"),
       Err(errs) => {
         eprintln!("{errs:#?}");
         let errs: Vec<_> = errs
           .into_iter()
           .filter(|e| match e {
-            SemanticError::RelationAttributeMissing { .. } => true,
+            Error::RelationAttributeMissing { .. } => true,
             _ => false,
           })
           .collect();
@@ -560,44 +552,44 @@ mod tests {
       "/test_data/semantic_analysis/relation_errs/attribute_arg_invalid.sdml"
     ))
     .unwrap();
-    let expected_semantic_errs: Vec<SemanticError> = vec![
-      SemanticError::RelationInvalidAttributeArg {
+    let expected_semantic_errs: Vec<Error> = vec![
+      Error::RelationInvalidAttributeArg {
         span: Span::new(110, 126),
         relation_name: None,
-        arg_name: Some("name1"),
-        field_name: Some("posts"),
-        model_name: Some("User"),
+        arg_name: Some("name1".to_string()),
+        field_name: Some("posts".to_string()),
+        model_name: Some("User".to_string()),
       },
-      SemanticError::AttributeArgInvalid {
+      Error::AttributeArgInvalid {
         span: Span::new(148, 153),
-        attrib_arg_name: Some("name1"),
-        attrib_name: "relation",
-        field_name: "posts",
-        model_name: "User",
+        attrib_arg_name: Some("name1".to_string()),
+        attrib_name: "relation".to_string(),
+        field_name: "posts".to_string(),
+        model_name: "User".to_string(),
       },
-      SemanticError::RelationInvalidAttributeArg {
+      Error::RelationInvalidAttributeArg {
         span: Span::new(495, 511),
         relation_name: None,
         arg_name: None,
-        field_name: Some("spouse"),
-        model_name: Some("User"),
+        field_name: Some("spouse".to_string()),
+        model_name: Some("User".to_string()),
       },
-      SemanticError::RelationScalarFieldNotFound {
+      Error::RelationScalarFieldNotFound {
         span: Span::new(813, 822),
-        scalar_field_name: Some("authorId1"),
-        field_name: "author",
-        model_name: "Post",
+        scalar_field_name: Some("authorId1".to_string()),
+        field_name: "author".to_string(),
+        model_name: "Post".to_string(),
       },
-      SemanticError::RelationReferencedFieldNotFound {
+      Error::RelationReferencedFieldNotFound {
         span: Span::new(978, 985),
-        field_name: "negativeAuthor",
-        model_name: "Post",
-        referenced_field_name: "userId1",
-        referenced_model_name: "User",
+        field_name: "negativeAuthor".to_string(),
+        model_name: "Post".to_string(),
+        referenced_field_name: "userId1".to_string(),
+        referenced_model_name: "User".to_string(),
       },
-      SemanticError::RelationPartial {
+      Error::RelationPartial {
         span: Span::new(215, 231),
-        relation_name: "negative_posts",
+        relation_name: "negative_posts".to_string(),
         field_name: None,
         model_name: None,
       },
@@ -607,8 +599,8 @@ mod tests {
       .parse(&relation_errs_sdml)
       .into_result()
       .unwrap();
-    let mut ast = to_data_model(decls, true).unwrap();
-    match semantic_update(&mut ast) {
+
+    match semantic_update(decls) {
       Ok(_) => assert!(false, "Expecting relation errors to surface"),
       Err(errs) => {
         eprintln!("{errs:#?}");
@@ -627,48 +619,48 @@ mod tests {
       "/test_data/semantic_analysis/relation_errs/field_n_references.sdml"
     ))
     .unwrap();
-    let expected_semantic_errs: Vec<SemanticError> = vec![
-      SemanticError::RelationReferencedFieldNotUnique {
+    let expected_semantic_errs: Vec<Error> = vec![
+      Error::RelationReferencedFieldNotUnique {
         span: Span::new(1198, 1203),
-        field_name: "user",
-        model_name: "Profile",
-        referenced_field_name: "email",
-        referenced_model_name: "User",
+        field_name: "user".to_string(),
+        model_name: "Profile".to_string(),
+        referenced_field_name: "email".to_string(),
+        referenced_model_name: "User".to_string(),
       },
-      SemanticError::RelationScalarAndReferencedFieldsTypeMismatch {
+      Error::RelationScalarAndReferencedFieldsTypeMismatch {
         span: Span::new(586, 602),
-        field_name: "spouseUserId",
-        model_name: "User",
-        referenced_field_name: "userId",
-        referenced_model_name: "User",
+        field_name: "spouseUserId".to_string(),
+        model_name: "User".to_string(),
+        referenced_field_name: "userId".to_string(),
+        referenced_model_name: "User".to_string(),
       },
-      SemanticError::RelationScalarAndReferencedFieldsTypeMismatch {
+      Error::RelationScalarAndReferencedFieldsTypeMismatch {
         span: Span::new(724, 741),
-        field_name: "authorId",
-        model_name: "Post",
-        referenced_field_name: "userId",
-        referenced_model_name: "User",
+        field_name: "authorId".to_string(),
+        model_name: "Post".to_string(),
+        referenced_field_name: "userId".to_string(),
+        referenced_model_name: "User".to_string(),
       },
-      SemanticError::RelationScalarFieldIsNotPrimitive {
+      Error::RelationScalarFieldIsNotPrimitive {
         span: Span::new(854, 871),
-        field_name: "negativeAuthorId",
-        model_name: "Post",
+        field_name: "negativeAuthorId".to_string(),
+        model_name: "Post".to_string(),
       },
-      SemanticError::RelationPartial {
+      Error::RelationPartial {
         span: Span::new(142, 154),
-        relation_name: "user_posts",
+        relation_name: "user_posts".to_string(),
         field_name: None,
         model_name: None,
       },
-      SemanticError::RelationPartial {
+      Error::RelationPartial {
         span: Span::new(203, 219),
-        relation_name: "negative_posts",
+        relation_name: "negative_posts".to_string(),
         field_name: None,
         model_name: None,
       },
-      SemanticError::RelationPartial {
+      Error::RelationPartial {
         span: Span::new(463, 477),
-        relation_name: "user_profile",
+        relation_name: "user_profile".to_string(),
         field_name: None,
         model_name: None,
       },
@@ -678,8 +670,7 @@ mod tests {
       .parse(&relation_errs_sdml)
       .into_result()
       .unwrap();
-    let mut ast = to_data_model(decls, true).unwrap();
-    match semantic_update(&mut ast) {
+    match semantic_update(decls) {
       Ok(_) => assert!(false, "Expecting relation errors to surface"),
       Err(errs) => {
         assert_eq!(expected_semantic_errs.len(), errs.len());
@@ -702,8 +693,7 @@ mod tests {
       .parse(&indexed_attribute_valid_usage_sdml)
       .into_result()
       .unwrap();
-    let mut ast = to_data_model(decls, true).unwrap();
-    match semantic_update(&mut ast) {
+    match semantic_update(decls) {
       Ok(_) => assert!(true, "test passed!"),
       Err(errs) => {
         assert!(
@@ -722,37 +712,37 @@ mod tests {
             "/test_data/semantic_analysis/indexed_attribute/indexed_attribute_invalid_usage.sdml"
         ))
         .unwrap();
-    let expected_scemantic_errs: Vec<SemanticError> = vec![
-      SemanticError::AttributeIncompatible {
+    let expected_scemantic_errs: Vec<Error> = vec![
+      Error::AttributeIncompatible {
         span: Span::new(148, 156),
-        attrib_name: "indexed",
-        first_attrib_name: "unique",
-        field_name: "email",
-        model_name: "User",
+        attrib_name: "indexed".to_string(),
+        first_attrib_name: "unique".to_string(),
+        field_name: "email".to_string(),
+        model_name: "User".to_string(),
       },
-      SemanticError::AttributeIncompatible {
+      Error::AttributeIncompatible {
         span: Span::new(766, 774),
-        attrib_name: "indexed",
-        first_attrib_name: "id",
-        field_name: "postId",
-        model_name: "Post",
+        attrib_name: "indexed".to_string(),
+        first_attrib_name: "id".to_string(),
+        field_name: "postId".to_string(),
+        model_name: "Post".to_string(),
       },
-      SemanticError::RelationInvalidAttribute {
+      Error::RelationInvalidAttribute {
         span: Span::new(946, 954),
-        attrib_name: "indexed",
-        field_name: "author",
-        model_name: "Post",
+        attrib_name: "indexed".to_string(),
+        field_name: "author".to_string(),
+        model_name: "Post".to_string(),
       },
-      SemanticError::AttributeIncompatible {
+      Error::AttributeIncompatible {
         span: Span::new(946, 954),
-        attrib_name: "indexed",
-        first_attrib_name: "relation",
-        field_name: "author",
-        model_name: "Post",
+        attrib_name: "indexed".to_string(),
+        first_attrib_name: "relation".to_string(),
+        field_name: "author".to_string(),
+        model_name: "Post".to_string(),
       },
-      SemanticError::RelationPartial {
+      Error::RelationPartial {
         span: Span::new(204, 216),
-        relation_name: "user_posts",
+        relation_name: "user_posts".to_string(),
         field_name: None,
         model_name: None,
       },
@@ -762,8 +752,7 @@ mod tests {
       .parse(&indexed_attribute_invalid_usage_sdml)
       .into_result()
       .unwrap();
-    let mut ast = to_data_model(decls, true).unwrap();
-    match semantic_update(&mut ast) {
+    match semantic_update(decls) {
       Ok(_) => assert!(false, "Expecting semantic errors to get surfaced."),
       Err(errs) => {
         eprintln!("{:#?}", errs);

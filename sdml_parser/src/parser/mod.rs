@@ -2,29 +2,26 @@ use std::ops::Div;
 
 use crate::ast::{
   AttribArg, Attribute, ConfigDecl, ConfigPair, DataModel, Declaration, EnumDecl,
-  FieldDecl, FieldType, FieldTypeMod, ModelDecl, NamedArg, PrimitiveType, Token, Type,
+  FieldDecl, FieldType, FieldTypeMod, ModelDecl, NamedArg, PrimitiveType, Str, Token,
+  Type,
 };
 use chumsky::text::{self, ascii};
 use chumsky::{extra::Err, prelude::*};
 
 pub(crate) mod semantic_analysis;
-use semantic_analysis::err::SemanticError;
+use semantic_analysis::err::Error;
 
-pub fn semantic_analysis<'src>(
-  decls: Vec<Declaration<'src>>,
-) -> Result<DataModel<'src>, Vec<SemanticError<'src>>> {
-  semantic_analysis::to_data_model(decls, true).map_or_else(
-    |errs| Err(errs),
-    |mut ast| match semantic_analysis::semantic_update(&mut ast) {
-      Err(errs) => Err(errs),
-      Ok(()) => Ok(ast),
-    },
-  )
+pub fn parse(src: &str) -> Result<DataModel, Vec<Error>> {
+  let decls = delcarations()
+    .parse(src)
+    .into_result()
+    .map_err(|e| e.into_iter().map(Error::from).collect::<Vec<_>>())?;
+  semantic_analysis::semantic_update(decls)
 }
 
 #[inline(always)]
-pub fn delcarations<'src>(
-) -> impl Parser<'src, &'src str, Vec<Declaration<'src>>, Err<Rich<'src, char>>> {
+pub(crate) fn delcarations<'src>(
+) -> impl Parser<'src, &'src str, Vec<Declaration>, Err<Rich<'src, char>>> {
   config_decl()
     .or(enum_decl())
     .or(model_decl())
@@ -33,13 +30,13 @@ pub fn delcarations<'src>(
 }
 
 #[inline(always)]
-fn config_decl<'src>(
-) -> impl Parser<'src, &'src str, Declaration<'src>, Err<Rich<'src, char>>> {
+fn config_decl<'src>() -> impl Parser<'src, &'src str, Declaration, Err<Rich<'src, char>>>
+{
   text::keyword("config")
     .padded()
     .then(
       ascii::ident()
-        .map_with(|tok, e| Token::Ident(tok, e.span()))
+        .map_with(|tok, e| Token::Ident(Str::new(tok), e.span()))
         .padded(),
     )
     .then(just('{'))
@@ -54,32 +51,30 @@ fn config_decl<'src>(
 }
 
 #[inline(always)]
-fn config_pair<'src>(
-) -> impl Parser<'src, &'src str, ConfigPair<'src>, Err<Rich<'src, char>>> {
+fn config_pair<'src>() -> impl Parser<'src, &'src str, ConfigPair, Err<Rich<'src, char>>>
+{
   ascii::ident()
-    .map_with(|ident, e| Token::Ident(ident, e.span()))
+    .map_with(|ident, e| Token::Ident(Str::new(ident), e.span()))
     .padded()
     .then(just('=').padded())
     .then(bool().or(number()).or(string()).padded())
-    .map(
-      |((key, _), value): ((Token<'src>, char), Token<'src>)| ConfigPair {
-        name: key,
-        value: value.try_into().unwrap(),
-      },
-    )
+    .map(|((key, _), value): ((Token, char), Token)| ConfigPair {
+      name: key,
+      value: value.try_into().unwrap(),
+    })
 }
 
 #[inline(always)]
-fn string<'src>() -> impl Parser<'src, &'src str, Token<'src>, Err<Rich<'src, char>>> {
+fn string<'src>() -> impl Parser<'src, &'src str, Token, Err<Rich<'src, char>>> {
   just('"')
     .then(any().filter(|c: &char| *c != '"').repeated())
     .then(just('"'))
     .to_slice()
-    .map_with(|str, e| Token::Str(str, e.span()))
+    .map_with(|str, e| Token::String(Str::new(str), e.span()))
 }
 
 #[inline(always)]
-fn number<'src>() -> impl Parser<'src, &'src str, Token<'src>, Err<Rich<'src, char>>> {
+fn number<'src>() -> impl Parser<'src, &'src str, Token, Err<Rich<'src, char>>> {
   text::int(10)
     .then(just('.').then(text::int(10)).or_not())
     .map_with(|(int_part, fract_part): (&str, Option<(char, &str)>), e| {
@@ -96,7 +91,7 @@ fn number<'src>() -> impl Parser<'src, &'src str, Token<'src>, Err<Rich<'src, ch
 }
 
 #[inline(always)]
-fn bool<'src>() -> impl Parser<'src, &'src str, Token<'src>, Err<Rich<'src, char>>> {
+fn bool<'src>() -> impl Parser<'src, &'src str, Token, Err<Rich<'src, char>>> {
   text::keyword("true")
     .or(text::keyword("false"))
     .to_slice()
@@ -104,9 +99,9 @@ fn bool<'src>() -> impl Parser<'src, &'src str, Token<'src>, Err<Rich<'src, char
 }
 
 #[inline(always)]
-fn enum_decl<'src>(
-) -> impl Parser<'src, &'src str, Declaration<'src>, Err<Rich<'src, char>>> {
-  let identifier = ascii::ident().map_with(|tok, e| Token::Ident(tok, e.span()));
+fn enum_decl<'src>() -> impl Parser<'src, &'src str, Declaration, Err<Rich<'src, char>>> {
+  let identifier =
+    ascii::ident().map_with(|tok, e| Token::Ident(Str::new(tok), e.span()));
   text::keyword("enum")
     .padded()
     .then(identifier.padded())
@@ -130,8 +125,8 @@ fn enum_decl<'src>(
 }
 
 #[inline(always)]
-fn model_decl<'src>(
-) -> impl Parser<'src, &'src str, Declaration<'src>, Err<Rich<'src, char>>> {
+fn model_decl<'src>() -> impl Parser<'src, &'src str, Declaration, Err<Rich<'src, char>>>
+{
   text::keyword("model")
     .padded()
     .then(ascii::ident().padded())
@@ -141,7 +136,7 @@ fn model_decl<'src>(
     .map_with(
       |((((_model, name), _open_brace), fields), _close_brace), e| {
         Declaration::Model(ModelDecl {
-          name: Token::Ident(name, e.span()),
+          name: Token::Ident(Str::new(name), e.span()),
           fields,
         })
       },
@@ -149,11 +144,10 @@ fn model_decl<'src>(
 }
 
 #[inline(always)]
-fn field_decl<'src>(
-) -> impl Parser<'src, &'src str, FieldDecl<'src>, Err<Rich<'src, char>>> {
+fn field_decl<'src>() -> impl Parser<'src, &'src str, FieldDecl, Err<Rich<'src, char>>> {
   ascii::ident()
     .padded()
-    .map_with(|tok, e| Token::Ident(tok, e.span()))
+    .map_with(|tok, e| Token::Ident(Str::new(tok), e.span()))
     .then(field_type().padded())
     .then(attribute().padded().repeated().collect::<Vec<Attribute>>())
     .map(|((name, field_type), attributes)| FieldDecl {
@@ -164,8 +158,7 @@ fn field_decl<'src>(
 }
 
 #[inline(always)]
-fn field_type<'src>(
-) -> impl Parser<'src, &'src str, FieldType<'src>, Err<Rich<'src, char>>> {
+fn field_type<'src>() -> impl Parser<'src, &'src str, FieldType, Err<Rich<'src, char>>> {
   let primitive_type = text::keyword("ShortStr")
     .or(text::keyword("LongStr"))
     .or(text::keyword("DateTime"))
@@ -189,10 +182,10 @@ fn field_type<'src>(
         _ => None,
       }
       .map_or(
-        Type::Unknown(Token::Ident(r#type, e.span())),
+        Type::Unknown(Token::Ident(Str::new(r#type), e.span())),
         |primitive_type| Type::Primitive {
           r#type: primitive_type,
-          token: Token::Ident(r#type, e.span()),
+          token: Token::Ident(Str::new(r#type), e.span()),
         },
       );
       let field_type_mod =
@@ -206,9 +199,9 @@ fn field_type<'src>(
 }
 
 #[inline(always)]
-fn named_arg<'src>() -> impl Parser<'src, &'src str, NamedArg<'src>, Err<Rich<'src, char>>>
-{
-  let identifier = ascii::ident().map_with(|tok, e| Token::Ident(tok, e.span()));
+fn named_arg<'src>() -> impl Parser<'src, &'src str, NamedArg, Err<Rich<'src, char>>> {
+  let identifier =
+    ascii::ident().map_with(|tok, e| Token::Ident(Str::new(tok), e.span()));
   identifier
     .padded()
     .then(just(":"))
@@ -220,29 +213,26 @@ fn named_arg<'src>() -> impl Parser<'src, &'src str, NamedArg<'src>, Err<Rich<'s
 }
 
 #[inline(always)]
-fn attribute<'src>(
-) -> impl Parser<'src, &'src str, Attribute<'src>, Err<Rich<'src, char>>> {
+fn attribute<'src>() -> impl Parser<'src, &'src str, Attribute, Err<Rich<'src, char>>> {
   let arg_list = named_arg()
     .then(
       just(",")
         .ignore_then(named_arg())
         .repeated()
-        .collect::<Vec<NamedArg<'src>>>(),
+        .collect::<Vec<NamedArg>>(),
     )
-    .map(
-      |(first_arg, mut more_args): (NamedArg<'src>, Vec<NamedArg<'src>>)| {
-        more_args.insert(0, first_arg);
-        AttribArg::Args(more_args)
-      },
-    );
+    .map(|(first_arg, mut more_args): (NamedArg, Vec<NamedArg>)| {
+      more_args.insert(0, first_arg);
+      AttribArg::Args(more_args)
+    });
   let function = ascii::ident()
     .then(just("()"))
     .map_with(|(func_name, _parans), e| {
-      AttribArg::Function(Token::Ident(func_name, e.span()))
+      AttribArg::Function(Token::Ident(Str::new(func_name), e.span()))
     });
 
-  let identifier =
-    ascii::ident().map_with(|tok, e| AttribArg::Ident(Token::Ident(tok, e.span())));
+  let identifier = ascii::ident()
+    .map_with(|tok, e| AttribArg::Ident(Token::Ident(Str::new(tok), e.span())));
 
   let attribute_arg = arg_list.or(function).or(identifier);
   just('@')
@@ -251,7 +241,7 @@ fn attribute<'src>(
     .map_with(|((_at, name), arg), e| {
       let arg = arg.map(|((_open_paran, attrib_arg), _close_paran)| attrib_arg);
       Attribute {
-        name: Token::Ident(name, e.span()),
+        name: Token::Ident(Str::new(name), e.span()),
         arg,
       }
     })
@@ -259,7 +249,7 @@ fn attribute<'src>(
 
 #[cfg(test)]
 mod tests {
-  use std::vec;
+  use std::{collections::HashMap, vec};
 
   use super::*;
   use crate::ast::{ConfigValue, RelationEdge, Span};
@@ -268,7 +258,7 @@ mod tests {
   fn test_string() {
     assert_eq!(
       string().parse("\"Valid String\"").into_result(),
-      Ok(Token::Str("\"Valid String\"", Span::new(0, 0)))
+      Ok(Token::String(Str::new("\"Valid String\""), Span::new(0, 0)))
     );
     assert!(string()
       .parse(" \"Invalid string because whitespaces\" ")
@@ -327,8 +317,8 @@ mod tests {
         .parse("provider=\"foundationDB\"")
         .into_result(),
       Ok(ConfigPair {
-        name: Token::Ident("provider", Span::new(0, 0)),
-        value: ConfigValue::Str("\"foundationDB\"", Span::new(0, 0))
+        name: Token::Ident(Str::new("provider"), Span::new(0, 0)),
+        value: ConfigValue::String(Str::new("\"foundationDB\""), Span::new(0, 0))
       })
     );
 
@@ -337,8 +327,8 @@ mod tests {
         .parse("\n   provider   =   \"foundationDB\"  \n")
         .into_result(),
       Ok(ConfigPair {
-        name: Token::Ident("provider", Span::new(0, 0)),
-        value: ConfigValue::Str("\"foundationDB\"", Span::new(0, 0))
+        name: Token::Ident(Str::new("provider"), Span::new(0, 0)),
+        value: ConfigValue::String(Str::new("\"foundationDB\""), Span::new(0, 0))
       })
     );
 
@@ -347,7 +337,7 @@ mod tests {
         .parse("\n   is_local   =   true  \n")
         .into_result(),
       Ok(ConfigPair {
-        name: Token::Ident("is_local", Span::new(0, 0)),
+        name: Token::Ident(Str::new("is_local"), Span::new(0, 0)),
         value: ConfigValue::Bool(true, Span::new(0, 0))
       })
     );
@@ -357,7 +347,7 @@ mod tests {
         .parse("\n   port   =   1233  \n")
         .into_result(),
       Ok(ConfigPair {
-        name: Token::Ident("port", Span::new(0, 0)),
+        name: Token::Ident(Str::new("port"), Span::new(0, 0)),
         value: ConfigValue::Int(1233, Span::new(0, 0))
       })
     );
@@ -367,7 +357,7 @@ mod tests {
         .parse("\n   time_out_in_secs   =   10.25  \n")
         .into_result(),
       Ok(ConfigPair {
-        name: Token::Ident("time_out_in_secs", Span::new(0, 0)),
+        name: Token::Ident(Str::new("time_out_in_secs"), Span::new(0, 0)),
         value: ConfigValue::Float(10.25, Span::new(0, 0))
       })
     );
@@ -399,18 +389,18 @@ mod tests {
     assert_eq!(
       config_decl().parse(config_str).into_result(),
       Ok(Declaration::Config(ConfigDecl {
-        name: Token::Ident("db", Span::new(0, 0)),
+        name: Token::Ident(Str::new("db"), Span::new(0, 0)),
         config_pairs: vec![
           ConfigPair {
-            name: Token::Ident("provider", Span::new(0, 0)),
-            value: ConfigValue::Str("\"foundationDB\"", Span::new(0, 0))
+            name: Token::Ident(Str::new("provider"), Span::new(0, 0)),
+            value: ConfigValue::String(Str::new("\"foundationDB\""), Span::new(0, 0))
           },
           ConfigPair {
-            name: Token::Ident("port", Span::new(0, 0)),
+            name: Token::Ident(Str::new("port"), Span::new(0, 0)),
             value: ConfigValue::Int(1233, Span::new(0, 0))
           },
           ConfigPair {
-            name: Token::Ident("time_out_in_secs", Span::new(0, 0)),
+            name: Token::Ident(Str::new("time_out_in_secs"), Span::new(0, 0)),
             value: ConfigValue::Float(12.10, Span::new(0, 0))
           }
         ]
@@ -431,11 +421,11 @@ mod tests {
     assert_eq!(
       enum_decl().parse(enum_str).into_result(),
       Ok(Declaration::Enum(EnumDecl {
-        name: Token::Ident("Role", Span::new(0, 0)),
+        name: Token::Ident(Str::new("Role"), Span::new(0, 0)),
         elements: vec![
-          Token::Ident("USER", Span::new(0, 0)),
-          Token::Ident("ADMIN", Span::new(0, 0)),
-          Token::Ident("GUEST", Span::new(0, 0)),
+          Token::Ident(Str::new("USER"), Span::new(0, 0)),
+          Token::Ident(Str::new("ADMIN"), Span::new(0, 0)),
+          Token::Ident(Str::new("GUEST"), Span::new(0, 0)),
         ]
       }))
     );
@@ -466,7 +456,7 @@ mod tests {
       Ok(FieldType::new(
         Type::Primitive {
           r#type: PrimitiveType::Boolean,
-          token: Token::Ident("Boolean", Span::new(0, 0))
+          token: Token::Ident(Str::new("Boolean"), Span::new(0, 0))
         },
         FieldTypeMod::NonOptional
       ))
@@ -477,7 +467,7 @@ mod tests {
       Ok(FieldType::new(
         Type::Primitive {
           r#type: PrimitiveType::ShortStr,
-          token: Token::Ident("ShortStr", Span::new(0, 0))
+          token: Token::Ident(Str::new("ShortStr"), Span::new(0, 0))
         },
         FieldTypeMod::NonOptional
       ))
@@ -488,7 +478,7 @@ mod tests {
       Ok(FieldType::new(
         Type::Primitive {
           r#type: PrimitiveType::ShortStr,
-          token: Token::Ident("ShortStr", Span::new(0, 0))
+          token: Token::Ident(Str::new("ShortStr"), Span::new(0, 0))
         },
         FieldTypeMod::Optional
       ))
@@ -499,7 +489,7 @@ mod tests {
       Ok(FieldType::new(
         Type::Primitive {
           r#type: PrimitiveType::ShortStr,
-          token: Token::Ident("ShortStr", Span::new(0, 0)),
+          token: Token::Ident(Str::new("ShortStr"), Span::new(0, 0)),
         },
         FieldTypeMod::Array
       ))
@@ -508,7 +498,7 @@ mod tests {
     assert_eq!(
       field_type().parse("MyEnum?").into_result(),
       Ok(FieldType::new(
-        Type::Unknown(Token::Ident("MyEnum", Span::new(0, 0))),
+        Type::Unknown(Token::Ident(Str::new("MyEnum"), Span::new(0, 0))),
         FieldTypeMod::Optional
       ))
     );
@@ -521,7 +511,7 @@ mod tests {
     assert_eq!(
       attribute().parse("@unique").into_result(),
       Ok(Attribute {
-        name: Token::Ident("unique", Span::new(0, 0)),
+        name: Token::Ident(Str::new("unique"), Span::new(0, 0)),
         arg: None
       })
     );
@@ -529,16 +519,22 @@ mod tests {
     assert_eq!(
       attribute().parse("@default(now())").into_result(),
       Ok(Attribute {
-        name: Token::Ident("default", Span::new(0, 0)),
-        arg: Some(AttribArg::Function(Token::Ident("now", Span::new(0, 0))))
+        name: Token::Ident(Str::new("default"), Span::new(0, 0)),
+        arg: Some(AttribArg::Function(Token::Ident(
+          Str::new("now"),
+          Span::new(0, 0)
+        )))
       })
     );
 
     assert_eq!(
       attribute().parse("@default(USER)").into_result(),
       Ok(Attribute {
-        name: Token::Ident("default", Span::new(0, 0)),
-        arg: Some(AttribArg::Ident(Token::Ident("USER", Span::new(0, 0))))
+        name: Token::Ident(Str::new("default"), Span::new(0, 0)),
+        arg: Some(AttribArg::Ident(Token::Ident(
+          Str::new("USER"),
+          Span::new(0, 0)
+        )))
       })
     );
 
@@ -558,10 +554,10 @@ mod tests {
         .parse(r#"@relation(name: "MyRelation")"#)
         .into_result(),
       Ok(Attribute {
-        name: Token::Ident("relation", Span::new(0, 0)),
+        name: Token::Ident(Str::new("relation"), Span::new(0, 0)),
         arg: Some(AttribArg::Args(vec![NamedArg {
-          arg_name: Token::Ident("name", Span::new(0, 0)),
-          arg_value: Token::Str("\"MyRelation\"", Span::new(0, 0))
+          arg_name: Token::Ident(Str::new("name"), Span::new(0, 0)),
+          arg_value: Token::String(Str::new("\"MyRelation\""), Span::new(0, 0))
         }]))
       })
     );
@@ -571,19 +567,19 @@ mod tests {
         .parse(r#"@relation(name: "MyRelation", field: field1, references: id1)"#)
         .into_result(),
       Ok(Attribute {
-        name: Token::Ident("relation", Span::new(0, 0)),
+        name: Token::Ident(Str::new("relation"), Span::new(0, 0)),
         arg: Some(AttribArg::Args(vec![
           NamedArg {
-            arg_name: Token::Ident("name", Span::new(0, 0)),
-            arg_value: Token::Str("\"MyRelation\"", Span::new(0, 0))
+            arg_name: Token::Ident(Str::new("name"), Span::new(0, 0)),
+            arg_value: Token::String(Str::new("\"MyRelation\""), Span::new(0, 0))
           },
           NamedArg {
-            arg_name: Token::Ident("field", Span::new(0, 0)),
-            arg_value: Token::Ident("field1", Span::new(0, 0))
+            arg_name: Token::Ident(Str::new("field"), Span::new(0, 0)),
+            arg_value: Token::Ident(Str::new("field1"), Span::new(0, 0))
           },
           NamedArg {
-            arg_name: Token::Ident("references", Span::new(0, 0)),
-            arg_value: Token::Ident("id1", Span::new(0, 0))
+            arg_name: Token::Ident(Str::new("references"), Span::new(0, 0)),
+            arg_value: Token::Ident(Str::new("id1"), Span::new(0, 0))
           }
         ]))
       })
@@ -612,23 +608,23 @@ mod tests {
         .parse("   id          ShortStr?       @unique_id @default(auto_generate())\n")
         .into_result(),
       Ok(FieldDecl {
-        name: Token::Ident("id", Span::new(0, 0)),
+        name: Token::Ident(Str::new("id"), Span::new(0, 0)),
         field_type: FieldType::new(
           Type::Primitive {
             r#type: PrimitiveType::ShortStr,
-            token: Token::Ident("ShortStr", Span::new(0, 0))
+            token: Token::Ident(Str::new("ShortStr"), Span::new(0, 0))
           },
           FieldTypeMod::Optional
         ),
         attributes: vec![
           Attribute {
-            name: Token::Ident("unique_id", Span::new(0, 0)),
+            name: Token::Ident(Str::new("unique_id"), Span::new(0, 0)),
             arg: None
           },
           Attribute {
-            name: Token::Ident("default", Span::new(0, 0)),
+            name: Token::Ident(Str::new("default"), Span::new(0, 0)),
             arg: Some(AttribArg::Function(Token::Ident(
-              "auto_generate",
+              Str::new("auto_generate"),
               Span::new(0, 0)
             )))
           }
@@ -641,11 +637,11 @@ mod tests {
         .parse("   id          ShortStr?       \n")
         .into_result(),
       Ok(FieldDecl {
-        name: Token::Ident("id", Span::new(0, 0)),
+        name: Token::Ident(Str::new("id"), Span::new(0, 0)),
         field_type: FieldType::new(
           Type::Primitive {
             r#type: PrimitiveType::ShortStr,
-            token: Token::Ident("ShortStr", Span::new(0, 0))
+            token: Token::Ident(Str::new("ShortStr"), Span::new(0, 0))
           },
           FieldTypeMod::Optional
         ),
@@ -669,53 +665,56 @@ mod tests {
     assert_eq!(
       model_decl().parse(model_str).into_result(),
       Ok(Declaration::Model(ModelDecl {
-        name: Token::Ident("User", Span::new(0, 0)),
+        name: Token::Ident(Str::new("User"), Span::new(0, 0)),
         fields: vec![
           FieldDecl {
-            name: Token::Ident("email", Span::new(0, 0)),
+            name: Token::Ident(Str::new("email"), Span::new(0, 0)),
             field_type: FieldType::new(
               Type::Primitive {
                 r#type: (PrimitiveType::ShortStr),
-                token: Token::Ident("ShortStr", Span::new(0, 0))
+                token: Token::Ident(Str::new("ShortStr"), Span::new(0, 0))
               },
               FieldTypeMod::NonOptional
             ),
             attributes: vec![Attribute {
-              name: Token::Ident("unique", Span::new(0, 0)),
+              name: Token::Ident(Str::new("unique"), Span::new(0, 0)),
               arg: None
             }]
           },
           FieldDecl {
-            name: Token::Ident("name", Span::new(0, 0)),
+            name: Token::Ident(Str::new("name"), Span::new(0, 0)),
             field_type: FieldType::new(
               Type::Primitive {
                 r#type: (PrimitiveType::ShortStr),
-                token: Token::Ident("ShortStr", Span::new(0, 0))
+                token: Token::Ident(Str::new("ShortStr"), Span::new(0, 0))
               },
               FieldTypeMod::Optional
             ),
             attributes: vec![]
           },
           FieldDecl {
-            name: Token::Ident("nickNames", Span::new(0, 0)),
+            name: Token::Ident(Str::new("nickNames"), Span::new(0, 0)),
             field_type: FieldType::new(
               Type::Primitive {
                 r#type: (PrimitiveType::ShortStr),
-                token: Token::Ident("ShortStr", Span::new(0, 0))
+                token: Token::Ident(Str::new("ShortStr"), Span::new(0, 0))
               },
               FieldTypeMod::Array
             ),
             attributes: vec![]
           },
           FieldDecl {
-            name: Token::Ident("role", Span::new(0, 0)),
+            name: Token::Ident(Str::new("role"), Span::new(0, 0)),
             field_type: FieldType::new(
-              Type::Unknown(Token::Ident("Role", Span::new(0, 0))),
+              Type::Unknown(Token::Ident(Str::new("Role"), Span::new(0, 0))),
               FieldTypeMod::NonOptional
             ),
             attributes: vec![Attribute {
-              name: Token::Ident("default", Span::new(0, 0)),
-              arg: Some(AttribArg::Ident(Token::Ident("USER", Span::new(0, 0))))
+              name: Token::Ident(Str::new("default"), Span::new(0, 0)),
+              arg: Some(AttribArg::Ident(Token::Ident(
+                Str::new("USER"),
+                Span::new(0, 0)
+              )))
             }]
           }
         ]
@@ -730,7 +729,7 @@ mod tests {
     assert_eq!(
       model_decl().parse(empty_model_str).into_result(),
       Ok(Declaration::Model(ModelDecl {
-        name: Token::Ident("EmptyModel", Span::new(0, 0)),
+        name: Token::Ident(Str::new("EmptyModel"), Span::new(0, 0)),
         fields: vec![]
       }))
     );
@@ -783,242 +782,253 @@ mod tests {
             port = 1233
             time_out_in_secs = 12.10
         }
-        "#;
-    let mut ast: DataModel = DataModel::new();
-    ast.models_mut().insert(
-      "User",
+        "#.to_string();
+    let mut configs = HashMap::new();
+    let mut enums = HashMap::new();
+    let mut models = HashMap::new();
+    let mut relations = HashMap::new();
+    models.insert(
+      "User".to_string(),
       ModelDecl {
-        name: Token::Ident("User", Span::new(0, 0)),
+        name: Token::Ident(Str::new("User"), Span::new(0, 0)),
         fields: vec![
           FieldDecl {
-            name: Token::Ident("id", Span::new(0, 0)),
+            name: Token::Ident(Str::new("id"), Span::new(0, 0)),
             field_type: FieldType::new(
               Type::Primitive {
                 r#type: PrimitiveType::ShortStr,
-                token: Token::Ident("ShortStr", Span::new(0, 0)),
+                token: Token::Ident(Str::new("ShortStr"), Span::new(0, 0)),
               },
               FieldTypeMod::NonOptional,
             ),
             attributes: vec![
               Attribute {
-                name: Token::Ident("id", Span::new(0, 0)),
+                name: Token::Ident(Str::new("id"), Span::new(0, 0)),
                 arg: None,
               },
               Attribute {
-                name: Token::Ident("default", Span::new(0, 0)),
-                arg: Some(AttribArg::Function(Token::Ident("auto", Span::new(0, 0)))),
+                name: Token::Ident(Str::new("default"), Span::new(0, 0)),
+                arg: Some(AttribArg::Function(Token::Ident(
+                  Str::new("auto"),
+                  Span::new(0, 0),
+                ))),
               },
             ],
           },
           FieldDecl {
-            name: Token::Ident("email", Span::new(0, 0)),
+            name: Token::Ident(Str::new("email"), Span::new(0, 0)),
             field_type: FieldType::new(
               Type::Primitive {
                 r#type: (PrimitiveType::ShortStr),
-                token: Token::Ident("ShortStr", Span::new(0, 0)),
+                token: Token::Ident(Str::new("ShortStr"), Span::new(0, 0)),
               },
               FieldTypeMod::NonOptional,
             ),
             attributes: vec![Attribute {
-              name: Token::Ident("unique", Span::new(0, 0)),
+              name: Token::Ident(Str::new("unique"), Span::new(0, 0)),
               arg: None,
             }],
           },
           FieldDecl {
-            name: Token::Ident("name", Span::new(0, 0)),
+            name: Token::Ident(Str::new("name"), Span::new(0, 0)),
             field_type: FieldType::new(
               Type::Primitive {
                 r#type: (PrimitiveType::ShortStr),
-                token: Token::Ident("ShortStr", Span::new(0, 0)),
+                token: Token::Ident(Str::new("ShortStr"), Span::new(0, 0)),
               },
               FieldTypeMod::Optional,
             ),
             attributes: vec![],
           },
           FieldDecl {
-            name: Token::Ident("nickNames", Span::new(0, 0)),
+            name: Token::Ident(Str::new("nickNames"), Span::new(0, 0)),
             field_type: FieldType::new(
               Type::Primitive {
                 r#type: (PrimitiveType::ShortStr),
-                token: Token::Ident("ShortStr", Span::new(0, 0)),
+                token: Token::Ident(Str::new("ShortStr"), Span::new(0, 0)),
               },
               FieldTypeMod::Array,
             ),
             attributes: vec![],
           },
           FieldDecl {
-            name: Token::Ident("role", Span::new(0, 0)),
+            name: Token::Ident(Str::new("role"), Span::new(0, 0)),
             field_type: FieldType::new(
               Type::Enum {
-                enum_ty_name: Token::Ident("Role", Span::new(0, 0)),
+                enum_ty_name: Token::Ident(Str::new("Role"), Span::new(0, 0)),
               },
               FieldTypeMod::NonOptional,
             ),
             attributes: vec![Attribute {
-              name: Token::Ident("default", Span::new(0, 0)),
-              arg: Some(AttribArg::Ident(Token::Ident("USER", Span::new(0, 0)))),
+              name: Token::Ident(Str::new("default"), Span::new(0, 0)),
+              arg: Some(AttribArg::Ident(Token::Ident(
+                Str::new("USER"),
+                Span::new(0, 0),
+              ))),
             }],
           },
           FieldDecl {
-            name: Token::Ident("mentor", Span::new(0, 0)),
+            name: Token::Ident(Str::new("mentor"), Span::new(0, 0)),
             field_type: FieldType::new(
               Type::Relation(RelationEdge::ManySideRelation {
-                relation_name: Token::Str(r#""UserMentor""#, Span::new(0, 0)),
-                scalar_field_name: Token::Ident("mentorEmail", Span::new(0, 0)),
-                referenced_model_name: Token::Ident("User", Span::new(0, 0)),
-                referenced_field_name: Token::Ident("email", Span::new(0, 0)),
+                relation_name: Token::String(
+                  Str::new(r#""UserMentor""#),
+                  Span::new(0, 0),
+                ),
+                scalar_field_name: Token::Ident(Str::new("mentorEmail"), Span::new(0, 0)),
+                referenced_model_name: Token::Ident(Str::new("User"), Span::new(0, 0)),
+                referenced_field_name: Token::Ident(Str::new("email"), Span::new(0, 0)),
               }),
               FieldTypeMod::Optional,
             ),
             attributes: vec![Attribute {
-              name: Token::Ident("relation", Span::new(0, 0)),
+              name: Token::Ident(Str::new("relation"), Span::new(0, 0)),
               arg: Some(AttribArg::Args(vec![
                 NamedArg {
-                  arg_name: Token::Ident("name", Span::new(0, 0)),
-                  arg_value: Token::Str("\"UserMentor\"", Span::new(0, 0)),
+                  arg_name: Token::Ident(Str::new("name"), Span::new(0, 0)),
+                  arg_value: Token::String(Str::new("\"UserMentor\""), Span::new(0, 0)),
                 },
                 NamedArg {
-                  arg_name: Token::Ident("field", Span::new(0, 0)),
-                  arg_value: Token::Ident("mentorEmail", Span::new(0, 0)),
+                  arg_name: Token::Ident(Str::new("field"), Span::new(0, 0)),
+                  arg_value: Token::Ident(Str::new("mentorEmail"), Span::new(0, 0)),
                 },
                 NamedArg {
-                  arg_name: Token::Ident("references", Span::new(0, 0)),
-                  arg_value: Token::Ident("email", Span::new(0, 0)),
+                  arg_name: Token::Ident(Str::new("references"), Span::new(0, 0)),
+                  arg_value: Token::Ident(Str::new("email"), Span::new(0, 0)),
                 },
               ])),
             }],
           },
           FieldDecl {
-            name: Token::Ident("mentorEmail", Span::new(0, 0)),
+            name: Token::Ident(Str::new("mentorEmail"), Span::new(0, 0)),
             field_type: FieldType::new(
               Type::Primitive {
                 r#type: PrimitiveType::ShortStr,
-                token: Token::Ident("ShortStr", Span::new(0, 0)),
+                token: Token::Ident(Str::new("ShortStr"), Span::new(0, 0)),
               },
               FieldTypeMod::Optional,
             ),
             attributes: vec![],
           },
           FieldDecl {
-            name: Token::Ident("mentees", Span::new(0, 0)),
+            name: Token::Ident(Str::new("mentees"), Span::new(0, 0)),
             field_type: FieldType::new(
               Type::Relation(RelationEdge::OneSideRelation {
-                relation_name: Token::Str("\"UserMentor\"", Span::new(0, 0)),
-                referenced_model_name: Token::Ident("User", Span::new(0, 0)),
+                relation_name: Token::String(Str::new("\"UserMentor\""), Span::new(0, 0)),
+                referenced_model_name: Token::Ident(Str::new("User"), Span::new(0, 0)),
               }),
               FieldTypeMod::Array,
             ),
             attributes: vec![Attribute {
-              name: Token::Ident("relation", Span::new(0, 0)),
+              name: Token::Ident(Str::new("relation"), Span::new(0, 0)),
               arg: Some(AttribArg::Args(vec![NamedArg {
-                arg_name: Token::Ident("name", Span::new(0, 0)),
-                arg_value: Token::Str("\"UserMentor\"", Span::new(0, 0)),
+                arg_name: Token::Ident(Str::new("name"), Span::new(0, 0)),
+                arg_value: Token::String(Str::new("\"UserMentor\""), Span::new(0, 0)),
               }])),
             }],
           },
         ],
       },
     );
-    ast.models_mut().insert(
-      "EmptyModel",
+    models.insert(
+      "EmptyModel".to_string(),
       ModelDecl {
-        name: Token::Ident("EmptyModel", Span::new(0, 0)),
+        name: Token::Ident(Str::new("EmptyModel"), Span::new(0, 0)),
         fields: vec![FieldDecl {
-          name: Token::Ident("id", Span::new(0, 0)),
+          name: Token::Ident(Str::new("id"), Span::new(0, 0)),
           field_type: FieldType::new(
             Type::Primitive {
               r#type: PrimitiveType::ShortStr,
-              token: Token::Ident("ShortStr", Span::new(0, 0)),
+              token: Token::Ident(Str::new("ShortStr"), Span::new(0, 0)),
             },
             FieldTypeMod::NonOptional,
           ),
           attributes: vec![Attribute {
-            name: Token::Ident("id", Span::new(0, 0)),
+            name: Token::Ident(Str::new("id"), Span::new(0, 0)),
             arg: None,
           }],
         }],
       },
     );
-    ast.relations_mut().insert(
-      "UserMentor",
+    relations.insert(
+      "UserMentor".to_string(),
       (
         RelationEdge::OneSideRelation {
-          relation_name: Token::Str(r#""UserMentor""#, Span::new(0, 0)),
-          referenced_model_name: Token::Ident("User", Span::new(0, 0)),
+          relation_name: Token::String(Str::new(r#""UserMentor""#), Span::new(0, 0)),
+          referenced_model_name: Token::Ident(Str::new("User"), Span::new(0, 0)),
         },
         Some(RelationEdge::ManySideRelation {
-          relation_name: Token::Str(r#""UserMentor""#, Span::new(0, 0)),
-          scalar_field_name: Token::Ident("mentorEmail", Span::new(0, 0)),
-          referenced_model_name: Token::Ident("User", Span::new(0, 0)),
-          referenced_field_name: Token::Ident("email", Span::new(0, 0)),
+          relation_name: Token::String(Str::new(r#""UserMentor""#), Span::new(0, 0)),
+          scalar_field_name: Token::Ident(Str::new("mentorEmail"), Span::new(0, 0)),
+          referenced_model_name: Token::Ident(Str::new("User"), Span::new(0, 0)),
+          referenced_field_name: Token::Ident(Str::new("email"), Span::new(0, 0)),
         }),
       ),
     );
-    ast.enums_mut().insert(
-      "Role",
+    enums.insert(
+      "Role".to_string(),
       EnumDecl {
-        name: Token::Ident("Role", Span::new(0, 0)),
+        name: Token::Ident(Str::new("Role"), Span::new(0, 0)),
         elements: vec![
-          Token::Ident("USER", Span::new(0, 0)),
-          Token::Ident("ADMIN", Span::new(0, 0)),
-          Token::Ident("GUEST", Span::new(0, 0)),
+          Token::Ident(Str::new("USER"), Span::new(0, 0)),
+          Token::Ident(Str::new("ADMIN"), Span::new(0, 0)),
+          Token::Ident(Str::new("GUEST"), Span::new(0, 0)),
         ],
       },
     );
-    ast.enums_mut().insert(
-      "Role1",
+    enums.insert(
+      "Role1".to_string(),
       EnumDecl {
-        name: Token::Ident("Role1", Span::new(0, 0)),
+        name: Token::Ident(Str::new("Role1"), Span::new(0, 0)),
         elements: vec![
-          Token::Ident("USER1", Span::new(0, 0)),
-          Token::Ident("ADMIN1", Span::new(0, 0)),
-          Token::Ident("GUEST1", Span::new(0, 0)),
+          Token::Ident(Str::new("USER1"), Span::new(0, 0)),
+          Token::Ident(Str::new("ADMIN1"), Span::new(0, 0)),
+          Token::Ident(Str::new("GUEST1"), Span::new(0, 0)),
         ],
       },
     );
-    ast.configs_mut().insert(
-      "db",
+    configs.insert(
+      "db".to_string(),
       ConfigDecl {
-        name: Token::Ident("db", Span::new(0, 0)),
+        name: Token::Ident(Str::new("db"), Span::new(0, 0)),
         config_pairs: vec![
           ConfigPair {
-            name: Token::Ident("provider", Span::new(0, 0)),
-            value: ConfigValue::Str("\"foundationDB\"", Span::new(0, 0)),
+            name: Token::Ident(Str::new("provider"), Span::new(0, 0)),
+            value: ConfigValue::String(Str::new("\"foundationDB\""), Span::new(0, 0)),
           },
           ConfigPair {
-            name: Token::Ident("port", Span::new(0, 0)),
+            name: Token::Ident(Str::new("port"), Span::new(0, 0)),
             value: ConfigValue::Int(1233, Span::new(0, 0)),
           },
           ConfigPair {
-            name: Token::Ident("time_out_in_secs", Span::new(0, 0)),
+            name: Token::Ident(Str::new("time_out_in_secs"), Span::new(0, 0)),
             value: ConfigValue::Float(12.10, Span::new(0, 0)),
           },
         ],
       },
     );
-    ast.configs_mut().insert(
-      "db1",
+    configs.insert(
+      "db1".to_string(),
       ConfigDecl {
-        name: Token::Ident("db1", Span::new(0, 0)),
+        name: Token::Ident(Str::new("db1"), Span::new(0, 0)),
         config_pairs: vec![
           ConfigPair {
-            name: Token::Ident("provider", Span::new(0, 0)),
-            value: ConfigValue::Str("\"foundationDB\"", Span::new(0, 0)),
+            name: Token::Ident(Str::new("provider"), Span::new(0, 0)),
+            value: ConfigValue::String(Str::new("\"foundationDB\""), Span::new(0, 0)),
           },
           ConfigPair {
-            name: Token::Ident("port", Span::new(0, 0)),
+            name: Token::Ident(Str::new("port"), Span::new(0, 0)),
             value: ConfigValue::Int(1233, Span::new(0, 0)),
           },
           ConfigPair {
-            name: Token::Ident("time_out_in_secs", Span::new(0, 0)),
+            name: Token::Ident(Str::new("time_out_in_secs"), Span::new(0, 0)),
             value: ConfigValue::Float(12.10, Span::new(0, 0)),
           },
         ],
       },
     );
-
-    let decls = delcarations().parse(sdml_str).into_result().unwrap();
-    let actual_ast = semantic_analysis(decls).unwrap();
+    let ast = DataModel::new(configs, enums, models, relations);
+    let actual_ast = parse(&sdml_str).unwrap();
     assert_eq!(ast.enums(), actual_ast.enums());
     assert_eq!(ast.relations(), actual_ast.relations());
     assert_eq!(ast.configs(), actual_ast.configs());
@@ -1034,11 +1044,7 @@ mod tests {
     ))
     .unwrap();
 
-    let decls = delcarations()
-      .parse(&happy_path_model_sdml)
-      .into_result()
-      .unwrap();
-    let ast_result = semantic_analysis(decls);
+    let ast_result = parse(&happy_path_model_sdml);
     eprintln!("{:#?}", ast_result);
     assert!(ast_result.is_ok());
   }
