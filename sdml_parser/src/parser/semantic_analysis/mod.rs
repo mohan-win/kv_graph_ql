@@ -9,6 +9,7 @@ use std::{
 
 /// Error Module
 pub mod err;
+mod v2;
 pub(crate) use attribute::ATTRIB_ARG_FN_AUTO;
 pub(crate) use attribute::ATTRIB_NAME_DEFAULT;
 pub(crate) use attribute::ATTRIB_NAME_ID;

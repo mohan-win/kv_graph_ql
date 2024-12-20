@@ -156,6 +156,16 @@ impl Token {
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
+pub(crate) struct DeclarationsGrouped {
+  /// Map of config name to its declarations.
+  pub configs: HashMap<String, ConfigDecl>,
+  /// Map of enum name to its declarations.
+  pub enums: HashMap<String, EnumDecl>,
+  /// Map of model name to its declarations.
+  pub models: HashMap<String, ModelDecl>,
+}
+
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct DataModel {
   /// Map of config name to its declarations.
   configs: HashMap<String, ConfigDecl>,
