@@ -168,14 +168,14 @@ pub(crate) struct DeclarationsGrouped {
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct DataModel {
   /// Map of config name to its declarations.
-  configs: HashMap<String, ConfigDecl>,
+  pub configs: HashMap<String, ConfigDecl>,
   /// Map of enum name to its declarations.
-  enums: HashMap<String, EnumDecl>,
+  pub enums: HashMap<String, EnumDecl>,
   /// Map of model name to its declarations.
-  models: HashMap<String, ModelDecl>,
+  pub models: HashMap<String, ModelDecl>,
   /// Map of valid relations with fully formed edges.
   /// Available only after semantic_analysis phase.
-  relations: HashMap<String, (RelationEdge, Option<RelationEdge>)>,
+  pub relations: HashMap<String, (RelationEdge, Option<RelationEdge>)>,
 }
 
 impl DataModel {
