@@ -11,6 +11,8 @@ pub fn build_data_model<'a, V: Visitor<'a>>(
   declarations: &'a DeclarationsGrouped,
 ) -> Result<DataModel, Vec<Error>> {
   let mut ctx = VisitorContext::new(VisitMode::Update(declarations));
+  ctx.updated_data_model = declarations.clone().into(); // Note: starting the data model with existing declarations.
+
   v.enter_declarations(&mut ctx, declarations);
 
   // configs

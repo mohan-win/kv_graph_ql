@@ -178,6 +178,17 @@ pub struct DataModel {
   pub relations: HashMap<String, (RelationEdge, Option<RelationEdge>)>,
 }
 
+impl From<DeclarationsGrouped> for DataModel {
+  fn from(value: DeclarationsGrouped) -> Self {
+    DataModel {
+      configs: value.configs,
+      enums: value.enums,
+      models: value.models,
+      relations: Default::default(),
+    }
+  }
+}
+
 impl DataModel {
   pub fn new(
     configs: HashMap<String, ConfigDecl>,

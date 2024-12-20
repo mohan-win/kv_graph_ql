@@ -1,3 +1,10 @@
+use super::visitor::Visitor;
+use super::visitor::VisitorContext;
+use crate::types::{
+  AttribArg, Attribute, ConfigDecl, DataModel, DeclarationsGrouped, EnumDecl, FieldDecl,
+  ModelDecl,
+};
+
 mod update_unknown_fields;
 mod validate_attribute_args;
 mod validate_field_attribute;
