@@ -1,35 +1,35 @@
 use crate::{
   parser::semantic_analysis::err::Error,
-  types::{DataModel, FieldDecl, ModelDecl},
+  types::{DataModel, DeclarationsGrouped, FieldDecl, ModelDecl},
 };
 
 use super::visitor::{VisitMode, Visitor, VisitorContext};
 
 pub fn validate_data_model<'a, V: Visitor<'a>>(
   v: &mut V,
-  data_model: &'a DataModel,
+  declarations: &'a DeclarationsGrouped,
 ) -> Result<(), Vec<Error>> {
-  let mut ctx = VisitorContext::new(VisitMode::Validation(&data_model));
+  let mut ctx = VisitorContext::new(VisitMode::Validation(&declarations));
 
-  v.enter_data_model(&mut ctx, data_model);
+  v.enter_declarations(&mut ctx, declarations);
 
   // configs
-  data_model.configs.values().for_each(|config| {
+  declarations.configs.values().for_each(|config| {
     v.enter_config(&mut ctx, config);
     v.exit_config(&mut ctx, config);
   });
   // enums
-  data_model.enums.values().for_each(|r#enum| {
+  declarations.enums.values().for_each(|r#enum| {
     v.enter_enum(&mut ctx, r#enum);
     v.exit_enum(&mut ctx, r#enum);
   });
 
   // Models
-  data_model.models.values().for_each(|model| {
+  declarations.models.values().for_each(|model| {
     visit_model_for_validation(v, &mut ctx, model);
   });
 
-  v.exit_data_model(&mut ctx, data_model);
+  v.exit_declarations(&mut ctx, declarations);
 
   if ctx.errors.is_empty() {
     Ok(())
@@ -68,7 +68,7 @@ fn visit_field_for_validation<'a, V: Visitor<'a>>(
     .ident_name()
     .expect("Field type should be an identifier");
   let field_relation = ctx
-    .input_data_model()
+    .input_declarations()
     .expect("Data Model should be present for validation")
     .models
     .get(&type_name);

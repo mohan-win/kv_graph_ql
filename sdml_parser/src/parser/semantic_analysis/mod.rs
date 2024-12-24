@@ -1,7 +1,4 @@
-use crate::types::{
-  DataModel, Declaration, EnumDecl, FieldDecl, ModelDecl, ModelIndexedFieldsFilter, Span,
-  Type,
-};
+use crate::types::{DataModel, Declaration, DeclarationsGrouped};
 use std::{
   collections::{HashMap, HashSet},
   ops::ControlFlow,
@@ -10,13 +7,17 @@ use std::{
 /// Error Module
 pub mod err;
 mod v2;
+
 pub(crate) use attribute::ATTRIB_ARG_FN_AUTO;
 pub(crate) use attribute::ATTRIB_NAME_DEFAULT;
 pub(crate) use attribute::ATTRIB_NAME_ID;
 pub(crate) use attribute::ATTRIB_NAME_INDEXED;
 pub(crate) use attribute::ATTRIB_NAME_UNIQUE;
+
 use err::Error;
 use relation::RelationMap;
+use v2::visitor;
+use v2::visitors;
 
 /// Module for attribute related semantic analysis and validation.
 mod attribute;
@@ -27,17 +28,28 @@ mod relation;
 /// This function performs semantic analysis, converts parsed declarations into `DataModel`
 /// if no errors found. In case errors are found during semantic analyis, it returns the errors.
 pub(crate) fn semantic_update(
-  delcarations: Vec<Declaration>,
+  declarations: Vec<Declaration>,
 ) -> Result<DataModel, Vec<Error>> {
+  let declarations = categorise_declarations(declarations)?;
+
+  // Visistors for performing semantic analysis & update.!
+  let mut visitors = visitor::VisitorNil.with(visitors::UpdateUnknownFields::default());
+
+  // Perform visit to do semantic analysis & update.
+  visitor::visit(&mut visitors, &declarations)
+}
+
+fn categorise_declarations(
+  declarations: Vec<Declaration>,
+) -> Result<DeclarationsGrouped, Vec<Error>> {
   let mut errs: Vec<Error> = Vec::new();
-  let mut type_set: HashSet<(String, Span)> = HashSet::new();
+  let mut type_set: HashSet<String> = HashSet::new();
 
   let mut configs = HashMap::new();
   let mut enums = HashMap::new();
-  let mut models_temp = HashMap::new();
-  let mut relations = RelationMap::new();
+  let mut models = HashMap::new();
 
-  for decl in delcarations.into_iter() {
+  for decl in declarations.into_iter() {
     let (type_name, span) = match decl {
       Declaration::Config(c) => {
         let type_name = c.name.ident_name().unwrap();
@@ -54,91 +66,30 @@ pub(crate) fn semantic_update(
       Declaration::Model(m) => {
         let type_name = m.name.ident_name().unwrap();
         let span = m.name.span();
-        models_temp.insert(type_name.clone(), m);
+        models.insert(type_name.clone(), m);
         (type_name, span)
       }
     };
 
-    let type_exists = type_set.iter().try_for_each(|(name, _span)| {
-      if name.eq(&type_name) {
-        ControlFlow::Break(true)
-      } else {
-        ControlFlow::Continue(())
-      }
-    });
-
-    if let ControlFlow::Break(true) = type_exists {
+    if type_set.contains(&type_name) {
       errs.push(Error::TypeDuplicateDefinition { span, type_name });
     } else {
-      type_set.insert((type_name, span));
+      type_set.insert(type_name);
     }
   }
 
-  // ToDo:: Remove!
-  if errs.len() > 0 {
-    return Err(errs);
-  }
-
-  let mut models = HashMap::new();
-
-  for model_temp in models_temp.values() {
-    // Make sure each model has a valid Id field.
-    if let Err(err) = validate_model_id_field(model_temp) {
-      errs.push(err)
-    }
-
-    // Fill out the actual types for fields with unknown types.
-    let mut model = model_temp.clone(); // Clone!
-    for (idx, field) in model_temp.fields.iter().enumerate() {
-      match get_actual_type(&model_temp, field, &models_temp, &enums) {
-        Ok(actual_type) => {
-          actual_type.map(|actual_type| {
-            if let Type::Relation(edge) = &actual_type {
-              let _ = relations
-                .add_relation_edge(edge.clone(), &field.name, &model.name) // Clone!
-                .map_err(|err| errs.push(err));
-            }
-
-            model
-              .fields
-              .get_mut(idx)
-              .unwrap()
-              .field_type
-              .set_type(actual_type);
-          });
-        }
-        Err(err) => {
-          errs.push(err);
-        }
-      }
-
-      // Validate attributes of each field.
-      let _ =
-        attribute::validate_attributes(&model.fields.get(idx).unwrap(), &model, &enums)
-          .map_err(|err| errs.push(err));
-    }
-
-    models.insert(model.name.ident_name().unwrap().clone(), model);
-  }
-
-  let mut valid_relations = HashMap::new();
-  match relations.get_valid_relations() {
-    Ok(relations) => {
-      valid_relations.extend(relations);
-    }
-    Err(rel_errs) => {
-      errs.extend(rel_errs);
-    }
-  }
-
-  // If error return
-  if errs.len() > 0 {
-    return Err(errs);
+  if errs.is_empty() {
+    Ok(DeclarationsGrouped {
+      configs,
+      enums,
+      models,
+    })
   } else {
-    Ok(DataModel::new(configs, enums, models, valid_relations))
+    Err(errs)
   }
 }
 
+/*
 /// This function finds and returns the actual type for the field if it's type is Unknown
 /// If the field type is already known, it returns `None`.
 /// But if its unable to locate the Uknown type, then it returns SemanticError::UndefinedType.
@@ -207,7 +158,7 @@ fn validate_model_id_field(model: &ModelDecl) -> Result<(), Error> {
   } else {
     Ok(())
   }
-}
+} */
 
 #[cfg(test)]
 mod tests {

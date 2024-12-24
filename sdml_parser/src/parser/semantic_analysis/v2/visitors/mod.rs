@@ -11,3 +11,5 @@ mod validate_field_attribute;
 mod validate_field_attribute_relation;
 mod validate_field_attributes;
 mod validate_model_has_id_field;
+
+pub use update_unknown_fields::UpdateUnknownFields;

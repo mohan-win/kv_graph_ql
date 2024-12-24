@@ -1,21 +1,21 @@
-use std::collections::{HashMap, HashSet};
+//! For both semantic analysis and semantic update this visitor is used.
+//! First `Semantic Analyis` is done to validate, after that the `Semantic Update` is
+//! performed.
+
+use std::collections::HashMap;
 
 use crate::{
-  parser::semantic_analysis::err::Error,
+  parser::semantic_analysis::{err::Error, RelationMap},
   types::{
-    Attribute, ConfigDecl, DataModel, Declaration, DeclarationsGrouped, EnumDecl,
-    FieldDecl, ModelDecl,
+    Attribute, ConfigDecl, DataModel, DeclarationsGrouped, EnumDecl, FieldDecl,
+    ModelDecl, Type,
   },
 };
 
-pub enum VisitMode<'a> {
-  Update(&'a DeclarationsGrouped),
-  Validation(&'a DataModel),
-}
-
-pub struct VisitorContext<'a> {
-  mode: VisitMode<'a>,
+pub(crate) struct VisitorContext<'a> {
+  input_declarations: &'a DeclarationsGrouped,
   pub errors: Vec<Error>,
+  /// Updated data model at the end of `update` phase.
   pub updated_data_model: DataModel,
   /// Result of VisitMode::Update.
   pub(crate) current_model: Option<&'a ModelDecl>,
@@ -25,9 +25,9 @@ pub struct VisitorContext<'a> {
 }
 
 impl<'a> VisitorContext<'a> {
-  pub fn new(mode: VisitMode<'a>) -> VisitorContext<'a> {
+  pub fn new(declarations: &'a DeclarationsGrouped) -> VisitorContext<'a> {
     Self {
-      mode,
+      input_declarations: declarations,
       errors: Default::default(),
       updated_data_model: Default::default(),
       current_model: None,
@@ -37,24 +37,49 @@ impl<'a> VisitorContext<'a> {
     }
   }
 
-  pub fn mode(&self) -> &'a VisitMode {
-    &self.mode
+  pub fn input_models(&self) -> &'a HashMap<String, ModelDecl> {
+    &self.input_declarations.models
   }
 
-  pub fn input_declarations(&self) -> Option<&'a DeclarationsGrouped> {
-    match self.mode {
-      VisitMode::Update(declarations) => Some(declarations),
-      VisitMode::Validation(_) => {
-        panic!("input declarations exists only in updation mode.")
-      }
-    }
+  pub fn input_enums(&self) -> &'a HashMap<String, EnumDecl> {
+    &self.input_declarations.enums
+  }
+  pub fn input_configs(&self) -> &'a HashMap<String, ConfigDecl> {
+    &self.input_declarations.configs
   }
 
-  pub fn input_data_model(&self) -> Option<&'a DataModel> {
-    match self.mode {
-      VisitMode::Validation(data_model) => Some(data_model),
-      VisitMode::Update(_) => panic!("input data model exists only in validation mode."),
-    }
+  /// Update the field type of the current_field, and return the updated field.
+  /// ### Note:
+  /// The update happens in the `updated_data_model`.
+  /// (i.e) The `input_declarations` never touched.
+  pub fn update_current_field_type(&mut self, actual_type: Type) {
+    // get the current field.
+    let model_to_update = self
+      .updated_data_model
+      .models
+      .get_mut(&self.current_model.unwrap().name.ident_name().unwrap());
+    let field_to_update = model_to_update
+      .unwrap()
+      .field_by_name_mut(&self.current_field.unwrap().name.ident_name().unwrap())
+      .expect("Current Field should present inside the current model");
+
+    debug_assert!(
+      matches!(field_to_update.field_type.r#type(), Type::Unknown(..)),
+      "Only fields with unknown types should be updated!"
+    );
+    field_to_update.field_type.set_type(actual_type);
+  }
+
+  /// Updates the relations in `updated_data_model`.
+  pub fn update_relation_map(&mut self, relations: RelationMap) {
+    let _ = relations
+      .get_valid_relations()
+      .map(|valid_relations| self.updated_data_model.relations = valid_relations)
+      .is_err_and(|errs| {
+        // Report errs if any!
+        self.append_errors(errs);
+        true
+      });
   }
 
   pub fn report_error(&mut self, err: Error) {
@@ -132,19 +157,6 @@ pub trait Visitor<'a> {
   ) {
   }
 
-  fn enter_data_model(
-    &mut self,
-    _ctx: &mut VisitorContext<'a>,
-    _data_model: &'a DataModel,
-  ) {
-  }
-  fn exit_data_model(
-    &mut self,
-    _ctx: &mut VisitorContext<'a>,
-    _data_model: &'a DataModel,
-  ) {
-  }
-
   fn enter_config(&mut self, _ctx: &mut VisitorContext<'a>, _config: &'a ConfigDecl) {}
   fn exit_config(&mut self, _ctx: &mut VisitorContext<'a>, _config: &'a ConfigDecl) {}
 
@@ -207,19 +219,6 @@ where
     self.1.exit_declarations(ctx, declarations);
   }
 
-  fn enter_data_model(
-    &mut self,
-    ctx: &mut VisitorContext<'a>,
-    data_model: &'a DataModel,
-  ) {
-    self.0.enter_data_model(ctx, data_model);
-    self.1.enter_data_model(ctx, data_model);
-  }
-  fn exit_data_model(&mut self, ctx: &mut VisitorContext<'a>, data_model: &'a DataModel) {
-    self.0.exit_data_model(ctx, data_model);
-    self.1.exit_data_model(ctx, data_model);
-  }
-
   fn enter_config(&mut self, ctx: &mut VisitorContext<'a>, config: &'a ConfigDecl) {
     self.0.enter_config(ctx, config);
     self.1.enter_config(ctx, config);
@@ -266,52 +265,79 @@ where
   }
 }
 
-pub fn categorise_declarations(
-  declarations: Vec<Declaration>,
-) -> Result<DeclarationsGrouped, Vec<Error>> {
-  let mut errs: Vec<Error> = Vec::new();
-  let mut type_set: HashSet<String> = HashSet::new();
+/// Builds data_model.
+pub fn visit<'a, V: Visitor<'a>>(
+  v: &mut V,
+  declarations: &'a DeclarationsGrouped,
+) -> Result<DataModel, Vec<Error>> {
+  let mut ctx = VisitorContext::new(declarations);
+  ctx.updated_data_model = declarations.clone().into(); // Note: starting the data model with existing declarations.
 
-  let mut configs = HashMap::new();
-  let mut enums = HashMap::new();
-  let mut models = HashMap::new();
+  v.enter_declarations(&mut ctx, declarations);
 
-  for decl in declarations.into_iter() {
-    let (type_name, span) = match decl {
-      Declaration::Config(c) => {
-        let type_name = c.name.ident_name().unwrap();
-        let span = c.name.span();
-        configs.insert(type_name.clone(), c);
-        (type_name, span)
-      }
-      Declaration::Enum(e) => {
-        let type_name = e.name.ident_name().unwrap();
-        let span = e.name.span();
-        enums.insert(type_name.clone(), e);
-        (type_name, span)
-      }
-      Declaration::Model(m) => {
-        let type_name = m.name.ident_name().unwrap();
-        let span = m.name.span();
-        models.insert(type_name.clone(), m);
-        (type_name, span)
-      }
-    };
+  // configs
+  declarations.configs.values().for_each(|config| {
+    v.enter_config(&mut ctx, config);
+    v.exit_config(&mut ctx, config);
+  });
+  // enums
+  declarations.enums.values().for_each(|r#enum| {
+    v.enter_enum(&mut ctx, r#enum);
+    v.exit_enum(&mut ctx, r#enum);
+  });
 
-    if type_set.contains(&type_name) {
-      errs.push(Error::TypeDuplicateDefinition { span, type_name });
-    } else {
-      type_set.insert(type_name);
-    }
-  }
+  // Models
+  declarations.models.values().for_each(|model| {
+    visit_model(v, &mut ctx, model);
+  });
 
-  if errs.is_empty() {
-    Ok(DeclarationsGrouped {
-      configs,
-      enums,
-      models,
-    })
+  v.exit_declarations(&mut ctx, declarations);
+
+  if ctx.errors.is_empty() {
+    Ok(ctx.updated_data_model)
   } else {
-    Err(errs)
+    Err(ctx.errors)
   }
+}
+
+fn visit_model<'a, V: Visitor<'a>>(
+  v: &mut V,
+  ctx: &mut VisitorContext<'a>,
+  model: &'a ModelDecl,
+) {
+  v.enter_model(ctx, model);
+
+  model.fields.iter().for_each(|field| {
+    ctx.with_model(model, |ctx| {
+      visit_field(v, ctx, field);
+    });
+  });
+
+  v.exit_model(ctx, model);
+}
+
+fn visit_field<'a, V: Visitor<'a>>(
+  v: &mut V,
+  ctx: &mut VisitorContext<'a>,
+  field: &'a FieldDecl,
+) {
+  v.enter_field(ctx, field);
+
+  let type_name = field
+    .field_type
+    .r#type()
+    .token()
+    .ident_name()
+    .expect("Field type should be an identifier");
+  let field_relation = ctx.input_declarations.models.get(&type_name);
+  ctx.with_field_relation(field_relation, |ctx| {
+    field.attributes.iter().for_each(|attribute| {
+      ctx.with_current_attribute(attribute, |ctx| {
+        v.enter_attribute(ctx, attribute);
+        v.exit_attribute(ctx, attribute);
+      });
+    });
+  });
+
+  v.exit_field(ctx, field);
 }

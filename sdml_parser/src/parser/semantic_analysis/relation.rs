@@ -10,18 +10,12 @@ use super::{
   err::Error,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub(crate) struct RelationMap {
   relations: HashMap<String, (Option<RelationEdge>, Option<RelationEdge>)>,
 }
 
 impl RelationMap {
-  pub fn new() -> Self {
-    RelationMap {
-      relations: HashMap::new(),
-    }
-  }
-
   /// Returns valid relations with fully formed edges.
   /// If partially formed relations or invalid relations are present,
   /// then error is returned.
@@ -45,6 +39,7 @@ impl RelationMap {
     }
   }
 
+  #[must_use]
   pub fn add_relation_edge(
     &mut self,
     edge: RelationEdge,
@@ -150,6 +145,7 @@ pub fn get_relation_edge(
   field: &FieldDecl,
   referenced_model: &ModelDecl,
 ) -> Result<RelationEdge, Error> {
+  unimplemented!("Should be removed!");
   let mut relation_attributes = Vec::new();
   let mut non_relation_attributes = Vec::new();
   field
@@ -202,6 +198,7 @@ fn new_relation_edge(
   field: &FieldDecl,
   referenced_model: &ModelDecl,
 ) -> Result<RelationEdge, Error> {
+  unimplemented!("Should be removed!");
   let RelationAttributeDetails {
     relation_name,
     relation_scalar_field,

@@ -334,6 +334,21 @@ pub struct ModelDecl {
   pub fields: Vec<FieldDecl>,
 }
 
+impl ModelDecl {
+  pub fn field_by_name(&self, name: &str) -> Option<&FieldDecl> {
+    self
+      .fields
+      .iter()
+      .find(|field| field.name.ident_name().unwrap() == name)
+  }
+  pub fn field_by_name_mut(&mut self, name: &str) -> Option<&mut FieldDecl> {
+    self
+      .fields
+      .iter_mut()
+      .find(|field| field.name.ident_name().unwrap() == name)
+  }
+}
+
 #[derive(Debug, Clone)]
 pub struct ModelFields<'a> {
   pub relation: Vec<&'a FieldDecl>,
