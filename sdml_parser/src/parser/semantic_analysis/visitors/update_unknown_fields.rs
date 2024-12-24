@@ -6,6 +6,7 @@ use crate::{
       ATTRIB_NAMED_ARG_FIELD, ATTRIB_NAMED_ARG_NAME, ATTRIB_NAMED_ARG_REFERENCES,
       ATTRIB_NAME_RELATION,
     },
+    err::Error,
     RelationMap, ATTRIB_NAME_ID, ATTRIB_NAME_UNIQUE,
   },
   types::{
@@ -25,10 +26,18 @@ pub struct UpdateUnknownFields {
 
 impl<'a> Visitor<'a> for UpdateUnknownFields {
   fn exit_field(&mut self, ctx: &mut VisitorContext<'a>, _field: &'a FieldDecl) {
-    self.get_actual_type(ctx).map(|field_type| {
-      // Make sure to update the actual field_type on the updated_data_model.
-      ctx.update_current_field_type(field_type);
-    });
+    self
+      .get_actual_type(ctx)
+      .and_then(|field_type| {
+        field_type.map(|field_type| {
+          // Make sure to update the actual field_type on the updated_data_model.
+          ctx.update_current_field_type(field_type);
+        });
+        Ok(())
+      })
+      .map_err(|err| {
+        ctx.report_error(err);
+      });
   }
 
   fn enter_declarations(
@@ -53,7 +62,10 @@ impl UpdateUnknownFields {
   /// This function finds and returns the actual type for the field if it's type is Unknown
   /// If the field type is already known, it returns `None`.
   /// But if its unable to locate the Uknown type, then it returns SemanticError::UndefinedType.
-  fn get_actual_type<'a>(&mut self, ctx: &mut VisitorContext<'a>) -> Option<Type> {
+  fn get_actual_type<'a>(
+    &mut self,
+    ctx: &mut VisitorContext<'a>,
+  ) -> Result<Option<Type>, Error> {
     if let Type::Unknown(type_name_tok) = ctx.current_field.unwrap().field_type.r#type() {
       let type_name = type_name_tok.ident_name().unwrap();
       if ctx.current_field_relation.is_some() {
@@ -77,23 +89,23 @@ impl UpdateUnknownFields {
             .map_err(|err| {
               ctx.report_error(err);
             });
-          Type::Relation(relation_edge)
+          Some(Type::Relation(relation_edge))
         });
       } else if let Some(_) = ctx.input_enums().get(&type_name) {
-        return Some(Type::Enum {
+        return Ok(Some(Type::Enum {
           enum_ty_name: type_name_tok.clone(),
-        });
+        }));
       }
     }
 
-    None
+    Ok(None)
   }
 
-  fn get_relation_edge<'a>(
-    field: &'a FieldDecl,
-    model: &'a ModelDecl,
-    referenced_model: &'a ModelDecl,
-  ) -> Option<RelationEdge> {
+  pub fn get_relation_edge(
+    field: &FieldDecl,
+    model: &ModelDecl,
+    referenced_model: &ModelDecl,
+  ) -> Result<RelationEdge, Error> {
     let mut relation_attributes = Vec::new();
     let mut non_relation_attributes = Vec::new();
     field
@@ -105,23 +117,47 @@ impl UpdateUnknownFields {
         }
         _ => non_relation_attributes.push(attrib),
       });
-    // Note: No need to do validation here.
-    // It can be done in validate_field_attribute, validate_field_attribute_relation modules.
-    if relation_attributes.len() == 1 {
-      if let Some(AttribArg::Args(named_args)) = &relation_attributes[0].arg {
-        return Self::new_relation_edge(named_args, field, model, referenced_model);
+    if relation_attributes.len() == 0 {
+      // Throw error if there is no relation attribute.
+      Err(Error::RelationAttributeMissing {
+        span: field.name.span(),
+        field_name: field.name.ident_name().unwrap(),
+        model_name: model.name.ident_name().unwrap(),
+      })
+    } else if non_relation_attributes.len() > 0 || relation_attributes.len() > 1 {
+      // Return error if there is a non-relation attribute or duplicate relation attributes
+      let invalid_attrib = relation_attributes
+        .get(1)
+        .or(non_relation_attributes.get(0))
+        .unwrap();
+      Err(Error::RelationInvalidAttribute {
+        span: invalid_attrib.name.span(),
+        attrib_name: invalid_attrib.name.ident_name().unwrap(),
+        field_name: field.name.ident_name().unwrap(),
+        model_name: model.name.ident_name().unwrap(),
+      })
+    } else {
+      let relation_attribute = relation_attributes[0];
+      if let Some(AttribArg::Args(named_args)) = &relation_attribute.arg {
+        Self::new_relation_edge(named_args, field, model, referenced_model)
+      } else {
+        Err(Error::RelationInvalidAttributeArg {
+          span: relation_attribute.name.span(),
+          relation_name: None,
+          arg_name: None,
+          field_name: field.name.ident_name(),
+          model_name: model.name.ident_name(),
+        })
       }
     }
-
-    None
   }
 
-  fn new_relation_edge<'a>(
+  fn new_relation_edge(
     relation_args: &Vec<NamedArg>,
-    field: &'a FieldDecl,
-    model: &'a ModelDecl,
-    referenced_model: &'a ModelDecl,
-  ) -> Option<RelationEdge> {
+    field: &FieldDecl,
+    model: &ModelDecl,
+    referenced_model: &ModelDecl,
+  ) -> Result<RelationEdge, Error> {
     let RelationAttributeDetails {
       relation_name,
       relation_scalar_field,
@@ -131,12 +167,17 @@ impl UpdateUnknownFields {
 
     if relation_scalar_field.is_none() && referenced_model_field.is_none() {
       // Is this OneSideRelation ?
-      return Some(RelationEdge::OneSideRelation {
+      return Ok(RelationEdge::OneSideRelation {
         relation_name: relation_name.clone(),
         referenced_model_name: referenced_model.name.clone(),
       });
     } else if relation_scalar_field.is_none() {
-      return None;
+      return Err(Error::RelationScalarFieldNotFound {
+        span: relation_name.span(),
+        scalar_field_name: None,
+        field_name: field.name.ident_name().unwrap(),
+        model_name: model.name.ident_name().unwrap(),
+      });
     }
     let relation_scalar_field = relation_scalar_field.unwrap();
 
@@ -151,25 +192,46 @@ impl UpdateUnknownFields {
 
     match (scalar_fld_unique, rel_fld_exists, rel_fld_array) {
       (_scalar_fld_unique @ true, _rel_fld_exists @ true, _rel_fld_array @ true) => {
-        // Error::RelationScalarFieldIsUnique
-        None
+        Err(Error::RelationScalarFieldIsUnique {
+          span: relation_scalar_field.name.span(),
+          field_name: relation_scalar_field.name.ident_name().unwrap(),
+          model_name: model.name.ident_name().unwrap(),
+          referenced_model_name: referenced_model.name.ident_name().unwrap(),
+          referenced_model_relation_field_name: referenced_model_relation_field
+            .unwrap()
+            .name
+            .ident_name()
+            .unwrap(),
+        })
       }
       (_scalar_fld_unique @ false, _rel_fld_exists @ true, _rel_fld_array @ false) => {
-        // Error::RelationScalarFieldNotUnique
-        None
+        Err(Error::RelationScalarFieldNotUnique {
+          span: relation_scalar_field.name.span(),
+          field_name: relation_scalar_field.name.ident_name().unwrap(),
+          model_name: model.name.ident_name().unwrap(),
+          referenced_model_name: referenced_model.name.ident_name().unwrap(),
+          referenced_model_relation_field_name: referenced_model_relation_field
+            .map_or(None, |fld| fld.name.ident_name()),
+        })
       }
       (_scalar_fld_unique @ false, _rel_fld_exists @ false, _rel_fld_array @ _)
         if model.name == referenced_model.name =>
       {
         // Self relation should always be a 1-to-1 relation.
-        // Error::RelationScalarFieldNotUnique
-        None
+        Err(Error::RelationScalarFieldNotUnique {
+          span: relation_scalar_field.name.span(),
+          field_name: relation_scalar_field.name.ident_name().unwrap(),
+          model_name: model.name.ident_name().unwrap(),
+          referenced_model_name: referenced_model.name.ident_name().unwrap(),
+          referenced_model_relation_field_name: referenced_model_relation_field
+            .map_or(None, |fld| fld.name.ident_name()),
+        })
       }
       (_scalar_fld_unique @ true, _rel_fld_exists @ false, _)
         if model.name == referenced_model.name =>
       {
         // See if this is a self relation
-        Some(RelationEdge::SelfOneToOneRelation {
+        Ok(RelationEdge::SelfOneToOneRelation {
           relation_name: relation_name.clone(),
           scalar_field_name: relation_scalar_field.name.clone(),
           referenced_model_name: referenced_model.name.clone(),
@@ -177,7 +239,7 @@ impl UpdateUnknownFields {
         })
       }
       (_scalar_fld_unique @ true, _rel_fld_exists @ true, _rel_fld_array @ false) => {
-        Some(RelationEdge::OneSideRelationRight {
+        Ok(RelationEdge::OneSideRelationRight {
           relation_name: relation_name.clone(),
           scalar_field_name: relation_scalar_field.name.clone(),
           referenced_model_name: referenced_model.name.clone(),
@@ -185,31 +247,34 @@ impl UpdateUnknownFields {
         })
       }
       (_scalar_fld_unique @ false, _rel_fld_exists @ true, _rel_fld_array @ true) => {
-        Some(RelationEdge::ManySideRelation {
+        Ok(RelationEdge::ManySideRelation {
           relation_name: relation_name.clone(),
           scalar_field_name: relation_scalar_field.name.clone(),
           referenced_model_name: referenced_model.name.clone(),
           referenced_field_name: referenced_model_field.unwrap().name.clone(),
         })
       }
-      _ => {
-        // Error::RelationInvalid
-        None
-      }
+      _ => Err(Error::RelationInvalid {
+        span: relation_name.span(),
+        relation_name: relation_name.str().unwrap(),
+        field_name: field.name.ident_name(),
+        model_name: model.name.ident_name(),
+      }),
     }
   }
 
-  fn get_relation_attribute_args<'a>(
-    relation_args: &'a Vec<NamedArg>,
-    field: &'a FieldDecl,
-    model: &'a ModelDecl,
-    referenced_model: &'a ModelDecl,
-  ) -> Option<RelationAttributeDetails<'a>> {
-    let mut relation_name: Option<&'a Token> = None;
-    let mut relation_scalar_field: Option<&'a FieldDecl> = None;
-    let mut referenced_model_field: Option<&'a FieldDecl> = None;
-    let referenced_model_relation_field: Option<&'a FieldDecl>;
+  fn get_relation_attribute_args<'b>(
+    relation_args: &'b Vec<NamedArg>,
+    field: &'b FieldDecl,
+    model: &'b ModelDecl,
+    referenced_model: &'b ModelDecl,
+  ) -> Result<RelationAttributeDetails<'b>, Error> {
+    let mut relation_name: Option<&'b Token> = None;
+    let mut relation_scalar_field: Option<&'b FieldDecl> = None;
+    let mut referenced_model_field: Option<&'b FieldDecl> = None;
+    let referenced_model_relation_field: Option<&'b FieldDecl>;
 
+    // Step 1: Validate relation attribute has correct set of args.
     let mut valid_arg_sets: HashMap<usize, Vec<_>> = HashMap::new();
     valid_arg_sets.insert(1, vec![ATTRIB_NAMED_ARG_NAME]);
     valid_arg_sets.insert(
@@ -220,66 +285,116 @@ impl UpdateUnknownFields {
         ATTRIB_NAMED_ARG_REFERENCES,
       ],
     );
-    // Step 1: Make sure the `relation_args` in the allowed arg set. Otherwise, return `None`.
-    let allowed_arg_set = valid_arg_sets.get(&relation_args.len())?;
-    if relation_args.iter().fold(true, |acc, arg| {
-      acc && allowed_arg_set.contains(&arg.arg_name.ident_name().unwrap().as_str())
-    }) == false
-    {
-      return None;
+    // Check for invalid arg sets
+    let allowed_arg_set = valid_arg_sets.get(&relation_args.len());
+    if allowed_arg_set.is_none() {
+      return Err(Error::RelationInvalidAttributeArg {
+        span: field.name.span(),
+        relation_name: None,
+        arg_name: None,
+        field_name: field.name.ident_name(),
+        model_name: model.name.ident_name(),
+      });
+    } else {
+      relation_args.iter().try_for_each(|arg| {
+        if allowed_arg_set
+          .unwrap()
+          .contains(&arg.arg_name.ident_name().unwrap().as_str())
+        {
+          Ok(())
+        } else {
+          Err(Error::RelationInvalidAttributeArg {
+            span: field.name.span(),
+            relation_name: None,
+            arg_name: arg.arg_name.ident_name(),
+            field_name: field.name.ident_name(),
+            model_name: model.name.ident_name(),
+          })
+        }
+      })?;
     }
 
     // Step 2: Get those arg values, and make sure they are of expected type.
-    relation_args
-      .iter()
-      .try_for_each(|arg| match &arg.arg_name {
+    for arg in relation_args.iter() {
+      match &arg.arg_name {
         Token::Ident(ident_name, _) if ident_name == ATTRIB_NAMED_ARG_NAME => {
           if let Token::String(..) = arg.arg_value {
             relation_name = Some(&arg.arg_value);
-            Ok(())
           } else {
-            Err(())
+            return Err(Error::RelationInvalidAttributeArg {
+              span: arg.arg_value.span(),
+              relation_name: None,
+              arg_name: arg.arg_name.ident_name(),
+              field_name: field.name.ident_name(),
+              model_name: model.name.ident_name(),
+            });
           }
         }
         Token::Ident(ident_name, _) if ident_name == ATTRIB_NAMED_ARG_FIELD => {
           relation_scalar_field =
-            Some(Self::get_relation_scalar_field(arg, model).ok_or(())?);
-          Ok(())
+            Some(Self::get_relation_scalar_field(arg, field, model)?);
         }
         Token::Ident(ident_name, _) if ident_name == ATTRIB_NAMED_ARG_REFERENCES => {
-          referenced_model_field =
-            Some(Self::get_referenced_model_field(arg, referenced_model).ok_or(())?);
-          Ok(())
+          referenced_model_field = Some(Self::get_referenced_model_field(
+            arg,
+            field,
+            model,
+            referenced_model,
+          )?);
         }
-        _ => Err(()),
-      })
-      .ok()?;
+        _ => {
+          return Err(Error::RelationInvalidAttributeArg {
+            span: arg.arg_value.span(),
+            relation_name: None,
+            arg_name: arg.arg_name.ident_name(),
+            field_name: field.name.ident_name(),
+            model_name: model.name.ident_name(),
+          })
+        }
+      }
+    }
 
-    referenced_model_relation_field = Some(Self::get_referenced_model_relation_field(
-      relation_name.unwrap(),
+    referenced_model_relation_field = Self::get_referenced_model_relation_field(
+      relation_name.expect("relation_name can't be None at this point."),
       field,
       model,
       referenced_model,
-    )?);
+    );
 
-    Some(RelationAttributeDetails {
-      relation_name: relation_name.unwrap(),
-      referenced_model_field,
-      relation_scalar_field,
-      referenced_model_relation_field,
-    })
+    // Make sure relation scalar field and referenced field are of the `same primitive type`
+    if relation_scalar_field.is_some()
+      && referenced_model_field.is_some()
+      && *relation_scalar_field.unwrap().field_type.r#type()
+        != *referenced_model_field.unwrap().field_type.r#type()
+    {
+      Err(Error::RelationScalarAndReferencedFieldsTypeMismatch {
+        span: relation_scalar_field.unwrap().name.span(),
+        field_name: relation_scalar_field.unwrap().name.ident_name().unwrap(),
+        model_name: model.name.ident_name().unwrap(),
+        referenced_field_name: referenced_model_field.unwrap().name.ident_name().unwrap(),
+        referenced_model_name: referenced_model.name.ident_name().unwrap(),
+      })
+    } else {
+      Ok(RelationAttributeDetails {
+        relation_name: relation_name.expect("relation_name can't be None at this point."),
+        relation_scalar_field,
+        referenced_model_field,
+        referenced_model_relation_field,
+      })
+    }
   }
 
-  fn get_relation_scalar_field<'a>(
-    relation_arg_field: &'a NamedArg,
-    model: &'a ModelDecl,
-  ) -> Option<&'a FieldDecl> {
+  fn get_relation_scalar_field<'src, 'b>(
+    relation_arg_field: &'b NamedArg,
+    field: &'b FieldDecl,
+    model: &'b ModelDecl,
+  ) -> Result<&'b FieldDecl, Error> {
     debug_assert!(
       matches!(&relation_arg_field.arg_name, Token::Ident(ident_name, _) if ident_name == ATTRIB_NAMED_ARG_FIELD),
       "Invalid argument passed for relation_arg_field"
     );
 
-    let relation_scalar_field: Option<&'a FieldDecl>;
+    let relation_scalar_field: Option<&'b FieldDecl>;
     // Validate relation scalar field.
     // Make sure relation scalar field exists in the parent model.
     if let Token::Ident(..) = relation_arg_field.arg_value {
@@ -287,29 +402,50 @@ impl UpdateUnknownFields {
         .fields
         .iter()
         .find(|field| field.name == relation_arg_field.arg_value);
-
-      if relation_scalar_field.is_some_and(|relation_scalar_field| {
-        // If relation_scalar_field should be scalar!
+      if relation_scalar_field.is_none() {
+        Err(Error::RelationScalarFieldNotFound {
+          span: relation_arg_field.arg_value.span(),
+          scalar_field_name: relation_arg_field.arg_value.ident_name(),
+          field_name: field.name.ident_name().unwrap(),
+          model_name: model.name.ident_name().unwrap(),
+        })
+      } else if relation_scalar_field.is_some_and(|relation_scalar_field| {
+        // If relation_scalar_field is not a scalar, then throw error.
         match &*relation_scalar_field.field_type.r#type() {
-          Type::Primitive { .. } => true,
-          _ => false,
+          Type::Primitive { .. } => false,
+          _ => true,
         }
       }) {
-        return relation_scalar_field;
+        Err(Error::RelationScalarFieldIsNotPrimitive {
+          span: relation_scalar_field.unwrap().name.span(),
+          field_name: relation_scalar_field.unwrap().name.ident_name().unwrap(),
+          model_name: model.name.ident_name().unwrap(),
+        })
+      } else {
+        Ok(relation_scalar_field.unwrap())
       }
+    } else {
+      Err(Error::RelationInvalidAttributeArg {
+        span: relation_arg_field.arg_value.span(),
+        relation_name: None,
+        arg_name: relation_arg_field.arg_name.ident_name(),
+        field_name: Some(field.name.ident_name().unwrap()),
+        model_name: Some(model.name.ident_name().unwrap()),
+      })
     }
-    None
   }
 
-  fn get_referenced_model_field<'a>(
-    relation_arg_references: &'a NamedArg,
-    referenced_model: &'a ModelDecl,
-  ) -> Option<&'a FieldDecl> {
+  fn get_referenced_model_field<'src, 'b>(
+    relation_arg_references: &'b NamedArg,
+    field: &'b FieldDecl,
+    model: &'b ModelDecl,
+    referenced_model: &'b ModelDecl,
+  ) -> Result<&'b FieldDecl, Error> {
     debug_assert!(
       matches!(&relation_arg_references.arg_name, Token::Ident(ident_name, _) if ident_name == ATTRIB_NAMED_ARG_REFERENCES),
       "Invalid arg is passed for relation_arg_references"
     );
-    let referenced_model_field: Option<&'a FieldDecl>;
+    let referenced_model_field: Option<&'b FieldDecl>;
     // Validate referenced field.
     // Make sure referenced field, exists in the referenced model.
     if let Token::Ident(_, _) = relation_arg_references.arg_value {
@@ -317,15 +453,33 @@ impl UpdateUnknownFields {
         .fields
         .iter()
         .find(|field| relation_arg_references.arg_value == field.name);
-
-      // Make sure the referenced model field is of scalar type.
-      if referenced_model_field.is_some_and(|referenced_model_field| {
+      if referenced_model_field.is_none() {
+        Err(Error::RelationReferencedFieldNotFound {
+          span: relation_arg_references.arg_value.span(),
+          field_name: field.name.ident_name().unwrap(),
+          model_name: model.name.ident_name().unwrap(),
+          referenced_field_name: relation_arg_references.arg_value.ident_name().unwrap(),
+          referenced_model_name: referenced_model.name.ident_name().unwrap(),
+        })
+      } else if referenced_model_field.is_some_and(|referenced_model_field| {
         match &*referenced_model_field.field_type.r#type() {
-          Type::Primitive { .. } => true,
-          _ => false,
+          Type::Primitive { .. } => false,
+          _ => true,
         }
-      }) && referenced_model_field.is_some_and(|referenced_model_field| {
-        // Make sure referenced field is attributed with @id or @unique.
+      }) {
+        // If referenced field is not scalar throw an error
+        Err(Error::RelationReferencedFieldNotScalar {
+          span: relation_arg_references.arg_value.span(),
+          field_name: field.name.ident_name().unwrap(),
+          model_name: model.name.ident_name().unwrap(),
+          referenced_field_name: referenced_model_field
+            .unwrap()
+            .name
+            .ident_name()
+            .unwrap(),
+          referenced_model_name: referenced_model.name.ident_name().unwrap(),
+        })
+      } else if referenced_model_field.is_some_and(|referenced_model_field| {
         referenced_model_field
           .attributes
           .iter()
@@ -334,20 +488,40 @@ impl UpdateUnknownFields {
             Token::Ident(ident_name, _) if ident_name == ATTRIB_NAME_ID => true,
             _ => false,
           })
-          .is_some()
+          .is_none()
       }) {
-        return referenced_model_field;
+        // if the referenced field is not attributed with @id or @unique then throw error.
+        Err(Error::RelationReferencedFieldNotUnique {
+          span: relation_arg_references.arg_value.span(),
+          field_name: field.name.ident_name().unwrap(),
+          model_name: model.name.ident_name().unwrap(),
+          referenced_field_name: referenced_model_field
+            .unwrap()
+            .name
+            .ident_name()
+            .unwrap(),
+          referenced_model_name: referenced_model.name.ident_name().unwrap(),
+        })
+      } else {
+        Ok(referenced_model_field.unwrap())
       }
+    } else {
+      Err(Error::RelationInvalidAttributeArg {
+        span: relation_arg_references.arg_value.span(),
+        relation_name: None,
+        arg_name: relation_arg_references.arg_name.ident_name(),
+        field_name: field.name.ident_name(),
+        model_name: model.name.ident_name(),
+      })
     }
-    None
   }
 
-  fn get_referenced_model_relation_field<'a>(
-    relation_name: &'a Token,
-    field: &'a FieldDecl,
-    model: &'a ModelDecl,
-    referenced_model: &'a ModelDecl,
-  ) -> Option<&'a FieldDecl> {
+  fn get_referenced_model_relation_field<'src, 'b>(
+    relation_name: &'b Token,
+    field: &'b FieldDecl,
+    model: &'b ModelDecl,
+    referenced_model: &'b ModelDecl,
+  ) -> Option<&'b FieldDecl> {
     let is_self_relation = model.name == referenced_model.name;
     let mut referenced_model_relation_field =
       referenced_model.fields.iter().filter(|fld| {
