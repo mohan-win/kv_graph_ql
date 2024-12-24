@@ -3,7 +3,8 @@ use std::collections::{HashMap, HashSet};
 
 /// Error Module
 pub mod err;
-mod v2;
+mod visitor;
+mod visitors;
 
 pub(crate) use attribute::ATTRIB_ARG_FN_AUTO;
 pub(crate) use attribute::ATTRIB_NAME_DEFAULT;
@@ -13,8 +14,6 @@ pub(crate) use attribute::ATTRIB_NAME_UNIQUE;
 
 use err::Error;
 use relation::RelationMap;
-use v2::visitor;
-use v2::visitors;
 
 /// Module for attribute related semantic analysis and validation.
 mod attribute;
@@ -32,7 +31,10 @@ pub(crate) fn semantic_update(
   // Visistors for performing semantic analysis & update.!
   let mut visitors = visitor::VisitorNil
     .with(visitors::UpdateUnknownFields::default())
-    .with(visitors::ValidateModelHasIdField);
+    .with(visitors::ValidateModelHasIdField)
+    .with(visitors::ValidateFieldAttributes)
+    .with(visitors::ValidateFieldAttribute)
+    .with(visitors::ValidateAttributeArgs);
 
   // Perform visit to do semantic analysis & update.
   visitor::visit(&mut visitors, &declarations)

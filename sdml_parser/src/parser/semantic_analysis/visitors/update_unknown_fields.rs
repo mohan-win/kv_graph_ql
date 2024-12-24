@@ -8,7 +8,10 @@ use crate::{
     },
     RelationMap, ATTRIB_NAME_ID, ATTRIB_NAME_UNIQUE,
   },
-  types::{NamedArg, RelationEdge, Token, Type},
+  types::{
+    AttribArg, DeclarationsGrouped, FieldDecl, ModelDecl, NamedArg, RelationEdge, Token,
+    Type,
+  },
 };
 
 use super::*;

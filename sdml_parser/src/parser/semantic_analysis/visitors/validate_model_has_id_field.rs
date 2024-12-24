@@ -1,5 +1,5 @@
 use crate::{
-  parser::semantic_analysis::{err::Error, v2::visitor::Visitor},
+  parser::semantic_analysis::{err::Error, visitor::Visitor},
   types::{ModelDecl, ModelIndexedFieldsFilter},
 };
 

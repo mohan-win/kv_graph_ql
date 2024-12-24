@@ -325,259 +325,8 @@ fn get_referenced_model_relation_field<'src, 'b>(
   Ok(referenced_model_relation_field.next())
 }
 
-/// Validates the attributes of the given field in the model.
-pub(crate) fn validate_attributes(
-  field: &FieldDecl,
-  model: &ModelDecl,
-  enums: &HashMap<String, EnumDecl>,
-) -> Result<(), Error> {
-  #[allow(non_snake_case)]
-  let ATTRIBUTES_DETAIL_MAP = AttributeDetails::attributes_detail_map();
-  is_attributes_compatible(field, model, &ATTRIBUTES_DETAIL_MAP)?;
-  field.attributes.iter().try_for_each(|attribute| {
-    is_valid_field_type(attribute, field, model, &ATTRIBUTES_DETAIL_MAP).and_then(|()| {
-      validate_attribute_args(attribute, field, model, enums, &ATTRIBUTES_DETAIL_MAP)
-    })
-  })
-}
-
-/// Returns if the attributes present in the array are compatible with each other,
-/// so that they (all of them present in array) can be applied on a single field.
-fn is_attributes_compatible(
-  field: &FieldDecl,
-  model: &ModelDecl,
-  attribute_details_map: &HashMap<&'static str, AttributeDetails>,
-) -> Result<(), Error> {
-  if field.attributes.len() == 0 {
-    Ok(())
-  } else {
-    let first_attribute = &field.attributes[0];
-    match attribute_details_map.get(first_attribute.name.ident_name().unwrap().as_str()) {
-      Some(attribute_detail) => {
-        if field.attributes.len() > 1 {
-          field.attributes[1..].iter().try_for_each(|attribute| {
-            if !attribute_detail
-              .compatible_attribute_names
-              .contains(&attribute.name.ident_name().unwrap().as_str())
-            {
-              Err(Error::AttributeIncompatible {
-                span: attribute.name.span(),
-                attrib_name: attribute.name.ident_name().unwrap(),
-                first_attrib_name: first_attribute.name.ident_name().unwrap(),
-                field_name: field.name.ident_name().unwrap(),
-                model_name: model.name.ident_name().unwrap(),
-              })
-            } else {
-              Ok(())
-            }
-          })
-        } else {
-          Ok(())
-        }
-      }
-      None => Err(Error::AttributeUnknown {
-        span: first_attribute.name.span(),
-        attrib_name: first_attribute.name.ident_name().unwrap(),
-        field_name: field.name.ident_name().unwrap(),
-        model_name: model.name.ident_name().unwrap(),
-      }),
-    }
-  }
-}
-
-/// Is the field_type valid for the given attribute ?
-fn is_valid_field_type(
-  attrib: &Attribute,
-  field: &FieldDecl,
-  model: &ModelDecl,
-  attribute_details_map: &HashMap<&'static str, AttributeDetails>,
-) -> Result<(), Error> {
-  match attribute_details_map.get(attrib.name.ident_name().unwrap().as_str()) {
-    None => Err(Error::AttributeUnknown {
-      span: attrib.name.span(),
-      attrib_name: attrib.name.ident_name().unwrap(),
-      field_name: field.name.ident_name().unwrap(),
-      model_name: model.name.ident_name().unwrap(),
-    }),
-    Some(attrib_detail) => {
-      let is_scalar_short_str_field = field.field_type.is_scalar_short_str();
-      let is_scalar_field = field.field_type.is_scalar();
-      let is_optional_field = field.field_type.is_optional();
-
-      let invalid_attribute_err = Err(Error::AttributeInvalid {
-        span: attrib.name.span(),
-        reason: attrib_detail.allowed_field_type.to_string(),
-        attrib_name: attrib.name.ident_name().unwrap(),
-        field_name: field.name.ident_name().unwrap(),
-        model_name: model.name.ident_name().unwrap(),
-      });
-      match attrib_detail.allowed_field_type {
-        AllowedFieldType::ScalarShortStrField { can_be_optional }
-          if is_scalar_short_str_field =>
-        {
-          if !can_be_optional && is_optional_field {
-            invalid_attribute_err
-          } else {
-            Ok(())
-          }
-        }
-        AllowedFieldType::ScalarField { can_be_optional } if is_scalar_field => {
-          if !can_be_optional && is_optional_field {
-            invalid_attribute_err
-          } else {
-            Ok(())
-          }
-        }
-        AllowedFieldType::NonScalarField { can_be_optional } if !is_scalar_field => {
-          if !can_be_optional && is_optional_field {
-            invalid_attribute_err
-          } else {
-            Ok(())
-          }
-        }
-        AllowedFieldType::AnyField { can_be_optional } => {
-          if !can_be_optional && is_optional_field {
-            invalid_attribute_err
-          } else {
-            Ok(())
-          }
-        }
-        _ => invalid_attribute_err,
-      }
-    }
-  }
-}
-
-/// Validate the attribute arguments if any.
-fn validate_attribute_args(
-  attrib: &Attribute,
-  field: &FieldDecl,
-  model: &ModelDecl,
-  enums: &HashMap<String, EnumDecl>,
-  attribute_details_map: &HashMap<&'static str, AttributeDetails>,
-) -> Result<(), Error> {
-  match attribute_details_map.get(attrib.name.ident_name().unwrap().as_str()) {
-    None => Err(Error::AttributeUnknown {
-      span: attrib.name.span(),
-      attrib_name: attrib.name.ident_name().unwrap(),
-      field_name: field.name.ident_name().unwrap(),
-      model_name: model.name.ident_name().unwrap(),
-    }),
-    Some(attrib_detail) => {
-      if attrib
-        .arg
-        .as_ref()
-        .is_some_and(|_| attrib_detail.is_empty_arg_attribute())
-      {
-        // Is this an empty arg attribute incorrectly having some arguments ?
-        Err(Error::AttributeArgInvalid {
-          span: attrib.name.span(),
-          attrib_arg_name: None,
-          attrib_name: attrib.name.ident_name().unwrap(),
-          field_name: field.name.ident_name().unwrap(),
-          model_name: model.name.ident_name().unwrap(),
-        })
-      } else if let Some(attrib_arg) = attrib.arg.as_ref() {
-        match attrib_arg {
-          AttribArg::Function(fn_name) => {
-            if !attrib_detail
-              .allowed_arg_fns
-              .contains(&fn_name.ident_name().unwrap().as_str())
-            {
-              Err(Error::AttributeArgInvalid {
-                span: fn_name.span(),
-                attrib_arg_name: Some(fn_name.ident_name().unwrap()),
-                attrib_name: attrib.name.ident_name().unwrap(),
-                field_name: field.name.ident_name().unwrap(),
-                model_name: model.name.ident_name().unwrap(),
-              })
-            } else {
-              Ok(())
-            }
-          }
-          AttribArg::Ident(arg_value) => {
-            if let Type::Enum { enum_ty_name } = &*field.field_type.r#type() {
-              // Is enum values are allowed as arg values ?
-              if !attrib_detail
-                .allowed_arg_values
-                .contains(&ATTRIB_ARG_VALUE_ENUM)
-              {
-                Err(Error::AttributeArgInvalid {
-                  span: arg_value.span(),
-                  attrib_arg_name: Some(arg_value.ident_name().unwrap()),
-                  attrib_name: attrib.name.ident_name().unwrap(),
-                  field_name: field.name.ident_name().unwrap(),
-                  model_name: model.name.ident_name().unwrap(),
-                })
-              } else {
-                let enum_decl = enums
-                  .get(enum_ty_name.ident_name().unwrap().as_str())
-                  .ok_or_else(|| Error::TypeUndefined {
-                    span: enum_ty_name.span(),
-                    type_name: enum_ty_name.ident_name().unwrap(),
-                    field_name: field.name.ident_name().unwrap(),
-                    model_name: model.name.ident_name().unwrap(),
-                  })?;
-                if enum_decl.elements.contains(arg_value) {
-                  Ok(())
-                } else {
-                  Err(Error::EnumValueUndefined {
-                    span: arg_value.span(),
-                    enum_value: arg_value.ident_name().unwrap(),
-                    attrib_name: attrib.name.ident_name().unwrap(),
-                    field_name: field.name.ident_name().unwrap(),
-                    model_name: model.name.ident_name().unwrap(),
-                  })
-                }
-              }
-            } else if !attrib_detail
-              .allowed_arg_values
-              .contains(&arg_value.ident_name().unwrap().as_str())
-            {
-              Err(Error::AttributeArgInvalid {
-                span: arg_value.span(),
-                attrib_arg_name: Some(arg_value.ident_name().unwrap()),
-                attrib_name: attrib.name.ident_name().unwrap(),
-                field_name: field.name.ident_name().unwrap(),
-                model_name: model.name.ident_name().unwrap(),
-              })
-            } else {
-              Ok(())
-            }
-          }
-          AttribArg::Args(named_args) => {
-            let mut invalid_args = named_args.iter().filter_map(|named_arg| {
-              if !attrib_detail
-                .allowed_named_args
-                .contains(&named_arg.arg_name.ident_name().unwrap().as_str())
-              {
-                Some(&named_arg.arg_name)
-              } else {
-                None
-              }
-            });
-            if let Some(invalid_arg) = invalid_args.next() {
-              Err(Error::AttributeArgInvalid {
-                span: invalid_arg.span(),
-                attrib_arg_name: Some(invalid_arg.ident_name().unwrap()),
-                attrib_name: attrib.name.ident_name().unwrap(),
-                field_name: field.name.ident_name().unwrap(),
-                model_name: model.name.ident_name().unwrap(),
-              })
-            } else {
-              Ok(())
-            }
-          }
-        }
-      } else {
-        Ok(())
-      }
-    }
-  }
-}
-
 #[derive(Debug, PartialEq)]
-enum AllowedFieldType {
+pub(crate) enum AllowedFieldType {
   /// Attribute is allowed only on short (i.e. shouldn't be an array) string field.
   ScalarShortStrField { can_be_optional: bool },
   /// Attribute is allowed on only scalar field.
@@ -629,20 +378,20 @@ impl fmt::Display for AllowedFieldType {
 
 /// Type to capture details of an attribute.
 #[derive(Debug)]
-struct AttributeDetails {
+pub(crate) struct AttributeDetails {
   /// Name of the attribute
   #[allow(dead_code)]
-  name: &'static str,
+  pub name: &'static str,
   /// Compatible attributes which can be applied along with this attribute for the same field.
-  compatible_attribute_names: Vec<&'static str>,
+  pub compatible_attribute_names: Vec<&'static str>,
   /// allowed argument functions for this attribute.
-  allowed_arg_fns: Vec<&'static str>,
+  pub allowed_arg_fns: Vec<&'static str>,
   /// allowed argument values for this attribute.
-  allowed_arg_values: Vec<&'static str>,
+  pub allowed_arg_values: Vec<&'static str>,
   /// Allowed named args for this attribute.
-  allowed_named_args: Vec<&'static str>,
+  pub allowed_named_args: Vec<&'static str>,
   /// Can this attribute present on a non-scalar attribute.
-  allowed_field_type: AllowedFieldType,
+  pub allowed_field_type: AllowedFieldType,
 }
 
 impl AttributeDetails {

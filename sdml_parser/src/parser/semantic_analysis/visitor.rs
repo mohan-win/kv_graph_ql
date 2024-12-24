@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 
 use crate::{
-  parser::semantic_analysis::{err::Error, RelationMap},
+  parser::semantic_analysis::{attribute::AttributeDetails, err::Error, RelationMap},
   types::{
     Attribute, ConfigDecl, DataModel, DeclarationsGrouped, EnumDecl, FieldDecl,
     ModelDecl, Type,
@@ -14,6 +14,8 @@ use crate::{
 
 pub(crate) struct VisitorContext<'a> {
   input_declarations: &'a DeclarationsGrouped,
+  #[allow(non_snake_case)]
+  pub(crate) ATTRIBUTE_DETAILS_MAP: HashMap<&'static str, AttributeDetails>,
   pub errors: Vec<Error>,
   /// Updated data model at the end of `update` phase.
   pub updated_data_model: DataModel,
@@ -28,6 +30,7 @@ impl<'a> VisitorContext<'a> {
   pub fn new(declarations: &'a DeclarationsGrouped) -> VisitorContext<'a> {
     Self {
       input_declarations: declarations,
+      ATTRIBUTE_DETAILS_MAP: AttributeDetails::attributes_detail_map(),
       errors: Default::default(),
       updated_data_model: Default::default(),
       current_model: None,
