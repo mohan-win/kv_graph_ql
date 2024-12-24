@@ -311,7 +311,16 @@ fn visit_model<'a, V: Visitor<'a>>(
 
   model.fields.iter().for_each(|field| {
     ctx.with_field(field, |ctx| {
-      visit_field(v, ctx, field);
+      let type_name = field
+        .field_type
+        .r#type()
+        .token()
+        .ident_name()
+        .expect("Field type should be an identifier");
+      let field_relation = ctx.input_declarations.models.get(&type_name);
+      ctx.with_field_relation(field_relation, |ctx| {
+        visit_field(v, ctx, field);
+      });
     });
   });
 
@@ -325,19 +334,10 @@ fn visit_field<'a, V: Visitor<'a>>(
 ) {
   v.enter_field(ctx, field);
 
-  let type_name = field
-    .field_type
-    .r#type()
-    .token()
-    .ident_name()
-    .expect("Field type should be an identifier");
-  let field_relation = ctx.input_declarations.models.get(&type_name);
-  ctx.with_field_relation(field_relation, |ctx| {
-    field.attributes.iter().for_each(|attribute| {
-      ctx.with_current_attribute(attribute, |ctx| {
-        v.enter_attribute(ctx, attribute);
-        v.exit_attribute(ctx, attribute);
-      });
+  field.attributes.iter().for_each(|attribute| {
+    ctx.with_current_attribute(attribute, |ctx| {
+      v.enter_attribute(ctx, attribute);
+      v.exit_attribute(ctx, attribute);
     });
   });
 

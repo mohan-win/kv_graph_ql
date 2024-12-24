@@ -253,7 +253,7 @@ impl UpdateUnknownFields {
       .ok()?;
 
     referenced_model_relation_field = Some(Self::get_referenced_model_relation_field(
-      relation_name.unwrap().str().unwrap(),
+      relation_name.unwrap(),
       field,
       model,
       referenced_model,
@@ -340,7 +340,7 @@ impl UpdateUnknownFields {
   }
 
   fn get_referenced_model_relation_field<'a>(
-    relation_name: String,
+    relation_name: &'a Token,
     field: &'a FieldDecl,
     model: &'a ModelDecl,
     referenced_model: &'a ModelDecl,
@@ -363,17 +363,15 @@ impl UpdateUnknownFields {
           // if yes, then does field type & relation name matches ?
           match &relation_attrib.arg {
             Some(AttribArg::Args(named_args)) => {
-              named_args
-                .iter()
-                .fold(false, |acc, named_arg| match &named_arg.arg_value {
-                  Token::Ident(rel_name, _)
-                    if rel_name.eq(&relation_name)
-                      && fld.field_type.r#type().token() == &model.name =>
-                  {
-                    acc || true
-                  }
-                  _ => acc || false,
-                })
+              named_args.iter().fold(false, |acc, named_arg| {
+                if relation_name == &named_arg.arg_value
+                  && fld.field_type.r#type().token() == &model.name
+                {
+                  acc || true
+                } else {
+                  acc || false
+                }
+              })
             }
             _ => false,
           }
