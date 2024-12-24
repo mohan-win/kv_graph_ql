@@ -288,7 +288,9 @@ pub fn visit<'a, V: Visitor<'a>>(
 
   // Models
   declarations.models.values().for_each(|model| {
-    visit_model(v, &mut ctx, model);
+    ctx.with_model(model, |ctx| {
+      visit_model(v, ctx, model);
+    });
   });
 
   v.exit_declarations(&mut ctx, declarations);
@@ -308,7 +310,7 @@ fn visit_model<'a, V: Visitor<'a>>(
   v.enter_model(ctx, model);
 
   model.fields.iter().for_each(|field| {
-    ctx.with_model(model, |ctx| {
+    ctx.with_field(field, |ctx| {
       visit_field(v, ctx, field);
     });
   });
