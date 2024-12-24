@@ -1,8 +1,5 @@
 use crate::types::{DataModel, Declaration, DeclarationsGrouped};
-use std::{
-  collections::{HashMap, HashSet},
-  ops::ControlFlow,
-};
+use std::collections::{HashMap, HashSet};
 
 /// Error Module
 pub mod err;
@@ -33,7 +30,9 @@ pub(crate) fn semantic_update(
   let declarations = categorise_declarations(declarations)?;
 
   // Visistors for performing semantic analysis & update.!
-  let mut visitors = visitor::VisitorNil.with(visitors::UpdateUnknownFields::default());
+  let mut visitors = visitor::VisitorNil
+    .with(visitors::UpdateUnknownFields::default())
+    .with(visitors::ValidateModelHasIdField);
 
   // Perform visit to do semantic analysis & update.
   visitor::visit(&mut visitors, &declarations)
@@ -88,77 +87,6 @@ fn categorise_declarations(
     Err(errs)
   }
 }
-
-/*
-/// This function finds and returns the actual type for the field if it's type is Unknown
-/// If the field type is already known, it returns `None`.
-/// But if its unable to locate the Uknown type, then it returns SemanticError::UndefinedType.
-fn get_actual_type(
-  model: &ModelDecl,
-  field: &FieldDecl,
-  models: &HashMap<String, ModelDecl>,
-  enums: &HashMap<String, EnumDecl>,
-) -> Result<Option<Type>, Error> {
-  if let Type::Unknown(type_name_tok) = field.field_type.r#type() {
-    let type_name = type_name_tok.ident_name().unwrap();
-    match models.get(&type_name) {
-      Some(referenced_model) => Ok(Some(Type::Relation(relation::get_relation_edge(
-        model,
-        field,
-        referenced_model,
-      )?))),
-      None => match enums.get(&type_name) {
-        Some(_) => Ok(Some(Type::Enum {
-          enum_ty_name: type_name_tok.clone(), // Clone
-        })),
-        None => Err(Error::TypeUndefined {
-          span: type_name_tok.span(),
-          type_name: type_name_tok.ident_name().unwrap(),
-          field_name: field.name.ident_name().unwrap(),
-          model_name: model.name.ident_name().unwrap(),
-        }),
-      },
-    }
-  } else {
-    Ok(None)
-  }
-}
-
-/// Make sure model has ONLY one field marked with @id
-fn validate_model_id_field(model: &ModelDecl) -> Result<(), Error> {
-  let model_fields = model.get_fields_internal(true); // Note: allow_unknown_field_type is set to `true`. Because this function is called during the semantic_update phase.
-  let has_only_auto_gen_id = model_fields
-    .id
-    .iter()
-    .fold(true, |acc, (_id_fld, is_auto_gen)| acc && *is_auto_gen);
-  let is_empty_model = model_fields
-    .get_rest(ModelIndexedFieldsFilter::All)
-    .is_empty()
-    && model_fields.unique.is_empty()
-    && has_only_auto_gen_id;
-
-  if is_empty_model {
-    Err(Error::ModelEmpty {
-      span: model.name.span(),
-      model_name: model.name.ident_name().unwrap(),
-    })
-  } else if model_fields.id.is_empty() {
-    Err(Error::ModelIdFieldMissing {
-      span: model.name.span(),
-      model_name: model.name.ident_name().unwrap(),
-    })
-  } else if model_fields.id.len() > 1 {
-    let (second_id_field, _) = model_fields.id[1];
-    // Is there more than one Id field in a Model ?
-    Err(Error::ModelIdFieldDuplicate {
-      span: second_id_field.name.span(),
-      field_name: second_id_field.name.ident_name().unwrap(),
-      model_name: model.name.ident_name().unwrap(),
-    })
-  } else {
-    Ok(())
-  }
-} */
 
 #[cfg(test)]
 mod tests {
