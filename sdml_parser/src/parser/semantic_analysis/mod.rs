@@ -473,13 +473,6 @@ mod tests {
         field_name: Some("posts".to_string()),
         model_name: Some("User".to_string()),
       },
-      Error::AttributeArgInvalid {
-        span: Span::new(148, 153),
-        attrib_arg_name: Some("name1".to_string()),
-        attrib_name: "relation".to_string(),
-        field_name: "posts".to_string(),
-        model_name: "User".to_string(),
-      },
       Error::RelationInvalidAttributeArg {
         span: Span::new(495, 511),
         relation_name: None,
