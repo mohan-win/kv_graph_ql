@@ -212,8 +212,22 @@ mod tests {
         field_name: "published".to_string(),
         model_name: "Post".to_string(),
       },
+      Error::TypeUndefined {
+        span: Span::new(246, 251),
+        type_name: "Role1".to_string(),
+        field_name: "role1".to_string(),
+        model_name: "User".to_string(),
+      },
+    ];
+
+    let field_errs1_sdml = std::fs::read_to_string(concat!(
+      env!("CARGO_MANIFEST_DIR"),
+      "/test_data/semantic_analysis/field_errs1.sdml"
+    ))
+    .unwrap();
+    let expected_semantic_errs1: Vec<Error> = vec![
       Error::AttributeInvalid {
-        span: Span::new(637, 652),
+        span: Span::new(640, 655),
         reason: String::from("Only Non-Optional Scalar field is allowed"),
         attrib_name: "default".to_string(),
         field_name: "published".to_string(),
@@ -224,12 +238,6 @@ mod tests {
         enum_value: "GUEST".to_string(),
         attrib_name: "default".to_string(),
         field_name: "role".to_string(),
-        model_name: "User".to_string(),
-      },
-      Error::TypeUndefined {
-        span: Span::new(246, 251),
-        type_name: "Role1".to_string(),
-        field_name: "role1".to_string(),
         model_name: "User".to_string(),
       },
     ];
@@ -245,6 +253,20 @@ mod tests {
         errs
           .into_iter()
           .for_each(|e| assert!(expected_semantic_errs.contains(&e)));
+      }
+    }
+
+    let decls = crate::parser::delcarations()
+      .parse(&field_errs1_sdml)
+      .into_result()
+      .unwrap();
+    match semantic_update(decls) {
+      Ok(_) => assert!(false, "Expecting field errors to surface"),
+      Err(errs) => {
+        assert_eq!(expected_semantic_errs1.len(), errs.len());
+        errs
+          .into_iter()
+          .for_each(|e| assert!(expected_semantic_errs1.contains(&e)));
       }
     }
   }

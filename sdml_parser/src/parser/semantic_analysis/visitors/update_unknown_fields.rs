@@ -76,35 +76,33 @@ impl UpdateUnknownFields {
       let type_name = type_name_tok.ident_name().unwrap();
       if ctx.current_field_relation.is_some() {
         // Is this a relation field ?
-        return Self::get_relation_edge(
+        let relation_edge = Self::get_relation_edge(
           ctx.current_field.unwrap(),
           ctx.current_model.unwrap(),
           ctx.current_field_relation.unwrap(),
-        )
-        .map(|relation_edge| {
-          // Make sure to add the relation_edge to the relation map.
-          let _ = self
-            .relation_map
-            .as_mut()
-            .unwrap()
-            .add_relation_edge(
-              relation_edge.clone(),
-              &ctx.current_field.unwrap().name,
-              &ctx.current_model.unwrap().name,
-            )
-            .map_err(|err| {
-              ctx.report_error(err);
-            });
-          Some(Type::Relation(relation_edge))
-        });
+        )?;
+        // Make sure to add the relation_edge to the relation map.
+        self.relation_map.as_mut().unwrap().add_relation_edge(
+          relation_edge.clone(),
+          &ctx.current_field.unwrap().name,
+          &ctx.current_model.unwrap().name,
+        )?;
+        Ok(Some(Type::Relation(relation_edge)))
       } else if let Some(_) = ctx.input_enums().get(&type_name) {
-        return Ok(Some(Type::Enum {
+        Ok(Some(Type::Enum {
           enum_ty_name: type_name_tok.clone(),
-        }));
+        }))
+      } else {
+        Err(Error::TypeUndefined {
+          span: type_name_tok.span(),
+          type_name,
+          field_name: ctx.current_field.unwrap().name.ident_name().unwrap(),
+          model_name: ctx.current_model.unwrap().name.ident_name().unwrap(),
+        })
       }
+    } else {
+      Ok(None)
     }
-
-    Ok(None)
   }
 
   pub fn get_relation_edge(
