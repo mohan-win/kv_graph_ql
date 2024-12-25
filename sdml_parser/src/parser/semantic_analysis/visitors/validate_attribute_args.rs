@@ -4,7 +4,7 @@ use crate::{
   parser::semantic_analysis::{
     attribute::{AttributeDetails, ATTRIB_ARG_VALUE_ENUM},
     err::Error,
-    visitor::Visitor,
+    visitor::{Visitor, VisitorMode},
   },
   types::{AttribArg, Attribute, EnumDecl, FieldDecl, ModelDecl, Type},
 };
@@ -13,6 +13,16 @@ use crate::{
 pub struct ValidateAttributeArgs;
 
 impl<'a> Visitor<'a> for ValidateAttributeArgs {
+  fn enter_data_model(
+    &mut self,
+    ctx: &mut super::VisitorContext<'a>,
+    _data_model: &'a crate::types::DataModel,
+  ) {
+    assert!(
+      matches!(ctx.mode(), VisitorMode::Validate(_)),
+      "This visitor is valid only on `Validate` mode."
+    );
+  }
   fn enter_attribute(
     &mut self,
     ctx: &mut super::VisitorContext<'a>,

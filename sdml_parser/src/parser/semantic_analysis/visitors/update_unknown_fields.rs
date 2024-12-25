@@ -7,6 +7,7 @@ use crate::{
       ATTRIB_NAME_RELATION,
     },
     err::Error,
+    visitor::VisitorMode,
     RelationMap, ATTRIB_NAME_ID, ATTRIB_NAME_UNIQUE,
   },
   types::{
@@ -26,7 +27,7 @@ pub struct UpdateUnknownFields {
 
 impl<'a> Visitor<'a> for UpdateUnknownFields {
   fn exit_field(&mut self, ctx: &mut VisitorContext<'a>, _field: &'a FieldDecl) {
-    self
+    let _ = self
       .get_actual_type(ctx)
       .and_then(|field_type| {
         field_type.map(|field_type| {
@@ -42,9 +43,14 @@ impl<'a> Visitor<'a> for UpdateUnknownFields {
 
   fn enter_declarations(
     &mut self,
-    _ctx: &mut VisitorContext<'a>,
+    ctx: &mut VisitorContext<'a>,
     _declarations: &'a DeclarationsGrouped,
   ) {
+    assert!(
+      matches!(ctx.mode(), VisitorMode::Build(_)),
+      "This visitor is valid only on `Build` mode."
+    );
+
     self.relation_map = Some(RelationMap::default());
   }
 

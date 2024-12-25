@@ -1,8 +1,10 @@
 use crate::types::{DataModel, Declaration, DeclarationsGrouped};
 use std::collections::{HashMap, HashSet};
 
+mod attribute;
 /// Error Module
 pub mod err;
+mod relation;
 mod visitor;
 mod visitors;
 
@@ -15,12 +17,6 @@ pub(crate) use attribute::ATTRIB_NAME_UNIQUE;
 use err::Error;
 use relation::RelationMap;
 
-/// Module for attribute related semantic analysis and validation.
-mod attribute;
-
-/// Module for relation related semantic analysis and validation.
-mod relation;
-
 /// This function performs semantic analysis, converts parsed declarations into `DataModel`
 /// if no errors found. In case errors are found during semantic analyis, it returns the errors.
 pub(crate) fn semantic_update(
@@ -28,16 +24,22 @@ pub(crate) fn semantic_update(
 ) -> Result<DataModel, Vec<Error>> {
   let declarations = categorise_declarations(declarations)?;
 
-  // Visistors for performing semantic analysis & update.!
-  let mut visitors = visitor::VisitorNil
-    .with(visitors::UpdateUnknownFields::default())
+  let mut build_visitors =
+    visitor::VisitorNil.with(visitors::UpdateUnknownFields::default());
+
+  // Build the data_model.
+  let data_model = visitor::build_data_model(&mut build_visitors, &declarations)?;
+
+  let mut validate_visitors = visitor::VisitorNil
     .with(visitors::ValidateModelHasIdField)
     .with(visitors::ValidateFieldAttributes)
     .with(visitors::ValidateFieldAttribute)
     .with(visitors::ValidateAttributeArgs);
 
-  // Perform visit to do semantic analysis & update.
-  visitor::visit(&mut visitors, &declarations)
+  // Validate the data_model.
+  visitor::validate_data_model(&mut validate_visitors, &data_model)?;
+
+  Ok(data_model)
 }
 
 fn categorise_declarations(

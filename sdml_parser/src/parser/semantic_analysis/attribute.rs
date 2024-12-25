@@ -1,14 +1,6 @@
 use std::collections::HashMap;
 use std::fmt;
 
-use chumsky::container::Seq;
-
-use crate::types::{
-  AttribArg, Attribute, EnumDecl, FieldDecl, ModelDecl, NamedArg, Token, Type,
-};
-
-use super::err::Error;
-
 // Valid attribute names.
 pub const ATTRIB_NAME_DEFAULT: &str = "default";
 pub const ATTRIB_NAME_ID: &str = "id";
@@ -29,13 +21,6 @@ pub const ATTRIB_ARG_VALUE_ENUM: &str = "enum";
 pub const ATTRIB_NAMED_ARG_NAME: &str = "name";
 pub const ATTRIB_NAMED_ARG_FIELD: &str = "field";
 pub const ATTRIB_NAMED_ARG_REFERENCES: &str = "references";
-
-pub(crate) struct RelationAttributeDetails<'b> {
-  pub relation_name: &'b Token,
-  pub relation_scalar_field: Option<&'b FieldDecl>,
-  pub referenced_model_field: Option<&'b FieldDecl>,
-  pub referenced_model_relation_field: Option<&'b FieldDecl>,
-}
 
 #[derive(Debug, PartialEq)]
 pub(crate) enum AllowedFieldType {

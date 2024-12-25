@@ -4,7 +4,7 @@ use crate::{
   parser::semantic_analysis::{
     attribute::{AllowedFieldType, AttributeDetails},
     err::Error,
-    visitor::Visitor,
+    visitor::{Visitor, VisitorMode},
   },
   types::{Attribute, FieldDecl, ModelDecl},
 };
@@ -14,6 +14,16 @@ use crate::{
 pub struct ValidateFieldAttribute;
 
 impl<'a> Visitor<'a> for ValidateFieldAttribute {
+  fn enter_data_model(
+    &mut self,
+    ctx: &mut super::VisitorContext<'a>,
+    _data_model: &'a crate::types::DataModel,
+  ) {
+    assert!(
+      matches!(ctx.mode(), VisitorMode::Validate(_)),
+      "This visitor is valid only on `Validate` mode."
+    );
+  }
   fn enter_attribute(
     &mut self,
     ctx: &mut super::VisitorContext<'a>,
