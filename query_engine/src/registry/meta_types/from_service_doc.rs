@@ -2,7 +2,7 @@
 //! meta types.
 use crate::graphql_parser::types::{
   ConstDirective, DirectiveDefinition, DirectiveLocation, EnumValueDefinition,
-  FieldDefinition, InputValueDefinition, TypeDefinition, TypeKind, TypeSystemDefinition,
+  FieldDefinition, InputValueDefinition, TypeDefinition, TypeKind,
 };
 use indexmap::IndexMap;
 
