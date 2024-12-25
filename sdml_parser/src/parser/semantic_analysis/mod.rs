@@ -174,6 +174,13 @@ mod tests {
         field_name: "profileId".to_string(),
         model_name: "Profile".to_string(),
       },
+      Error::AttributeInvalid {
+        span: Span::new(341, 357),
+        reason: "Only Non-Optional Scalar field is allowed".to_string(),
+        attrib_name: "default".to_string(),
+        field_name: "profileId".to_string(),
+        model_name: "Profile".to_string(),
+      },
     ];
 
     let decls = crate::parser::delcarations()
