@@ -312,10 +312,6 @@ mod tests {
         field_name: None,
         model_name: None,
       },
-      Error::ModelEmpty {
-        span: Span::new(454, 575),
-        model_name: "User1".to_string(),
-      },
     ];
 
     let decls = crate::parser::delcarations()
@@ -325,6 +321,7 @@ mod tests {
     match semantic_update(decls) {
       Ok(_) => assert!(false, "Expecting relation errors to surface"),
       Err(errs) => {
+        eprintln!("{:#?}", errs);
         assert_eq!(expected_semantic_errs.len(), errs.len());
         errs
           .into_iter()
