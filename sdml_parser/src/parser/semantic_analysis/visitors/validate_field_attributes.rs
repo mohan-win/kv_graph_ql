@@ -20,7 +20,7 @@ impl<'a> Visitor<'a> for ValidateFieldAttributes {
     let _ = Self::is_attributes_compatible(
       field,
       &ctx.current_model.unwrap(),
-      &ctx.ATTRIBUTE_DETAILS_MAP,
+      ctx.attribute_details_map(),
     )
     .map_err(|err| {
       ctx.report_error(err);

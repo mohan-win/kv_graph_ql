@@ -20,8 +20,7 @@ pub(crate) enum VisitorMode<'a> {
 
 pub(crate) struct VisitorContext<'a> {
   mode: VisitorMode<'a>,
-  #[allow(non_snake_case)]
-  pub(crate) ATTRIBUTE_DETAILS_MAP: HashMap<&'static str, AttributeDetails>,
+  attribute_details_map: HashMap<&'static str, AttributeDetails>,
   pub errors: Vec<Error>,
   /// Newly built `data_model`.
   built_data_model: DataModel,
@@ -40,7 +39,7 @@ impl<'a> VisitorContext<'a> {
     };
     Self {
       mode,
-      ATTRIBUTE_DETAILS_MAP: AttributeDetails::attributes_detail_map(),
+      attribute_details_map: AttributeDetails::attributes_detail_map(),
       errors: Default::default(),
       built_data_model,
       current_model: None,
@@ -52,24 +51,6 @@ impl<'a> VisitorContext<'a> {
 
   pub fn mode(&self) -> &VisitorMode<'a> {
     &self.mode
-  }
-
-  pub fn input_declarations(&self) -> Option<&'a DeclarationsGrouped> {
-    match self.mode {
-      VisitorMode::Build(declarations) => Some(declarations),
-      VisitorMode::Validate(_) => {
-        panic!("There won't be any `input_declarations` given on the `Validate` mode.")
-      }
-    }
-  }
-
-  pub fn input_data_model(&self) -> Option<&'a DataModel> {
-    match self.mode {
-      VisitorMode::Validate(data_model) => Some(&data_model),
-      VisitorMode::Build(_) => {
-        panic!("`input_data_model` is unavailable in `Build` mode.")
-      }
-    }
   }
 
   pub fn input_models(&self) -> &'a HashMap<String, ModelDecl> {
@@ -85,11 +66,17 @@ impl<'a> VisitorContext<'a> {
       VisitorMode::Validate(data_model) => &data_model.enums,
     }
   }
+
+  #[allow(dead_code)]
   pub fn input_configs(&self) -> &'a HashMap<String, ConfigDecl> {
     match self.mode {
       VisitorMode::Build(declarations) => &declarations.configs,
       VisitorMode::Validate(data_model) => &data_model.configs,
     }
+  }
+
+  pub fn attribute_details_map(&self) -> &HashMap<&'static str, AttributeDetails> {
+    &self.attribute_details_map
   }
 
   /// Retrieve the newly built data model.

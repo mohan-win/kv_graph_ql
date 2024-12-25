@@ -33,7 +33,7 @@ impl<'a> Visitor<'a> for ValidateAttributeArgs {
       &ctx.current_field.unwrap(),
       &ctx.current_model.unwrap(),
       &ctx.input_enums(),
-      &ctx.ATTRIBUTE_DETAILS_MAP,
+      ctx.attribute_details_map(),
     )
     .map_err(|err| {
       ctx.report_error(err);
