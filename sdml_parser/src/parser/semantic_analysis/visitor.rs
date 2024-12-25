@@ -11,24 +11,24 @@ use crate::{
   },
 };
 
-pub(crate) enum VisitorMode<'a> {
+pub enum VisitorMode<'a> {
   /// Visitor mode for building the DataModel from the given declarations.
   Build(&'a DeclarationsGrouped),
   /// Visitor mode for validating the given data model.
   Validate(&'a DataModel),
 }
 
-pub(crate) struct VisitorContext<'a> {
+pub struct VisitorContext<'a> {
   mode: VisitorMode<'a>,
   attribute_details_map: HashMap<&'static str, AttributeDetails>,
   pub errors: Vec<Error>,
   /// Newly built `data_model`.
   built_data_model: DataModel,
   /// Result of VisitMode::Update.
-  pub(crate) current_model: Option<&'a ModelDecl>,
-  pub(crate) current_field: Option<&'a FieldDecl>,
-  pub(crate) current_field_relation: Option<&'a ModelDecl>,
-  pub(crate) current_attribute: Option<&'a Attribute>,
+  pub current_model: Option<&'a ModelDecl>,
+  pub current_field: Option<&'a FieldDecl>,
+  pub current_field_relation: Option<&'a ModelDecl>,
+  pub current_attribute: Option<&'a Attribute>,
 }
 
 impl<'a> VisitorContext<'a> {

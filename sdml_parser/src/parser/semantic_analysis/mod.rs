@@ -8,20 +8,18 @@ mod relation;
 mod visitor;
 mod visitors;
 
-pub(crate) use attribute::ATTRIB_ARG_FN_AUTO;
-pub(crate) use attribute::ATTRIB_NAME_DEFAULT;
-pub(crate) use attribute::ATTRIB_NAME_ID;
-pub(crate) use attribute::ATTRIB_NAME_INDEXED;
-pub(crate) use attribute::ATTRIB_NAME_UNIQUE;
+pub use attribute::ATTRIB_ARG_FN_AUTO;
+pub use attribute::ATTRIB_NAME_DEFAULT;
+pub use attribute::ATTRIB_NAME_ID;
+pub use attribute::ATTRIB_NAME_INDEXED;
+pub use attribute::ATTRIB_NAME_UNIQUE;
 
 use err::Error;
 use relation::RelationMap;
 
 /// This function performs semantic analysis, converts parsed declarations into `DataModel`
 /// if no errors found. In case errors are found during semantic analyis, it returns the errors.
-pub(crate) fn semantic_update(
-  declarations: Vec<Declaration>,
-) -> Result<DataModel, Vec<Error>> {
+pub fn semantic_update(declarations: Vec<Declaration>) -> Result<DataModel, Vec<Error>> {
   let declarations = categorise_declarations(declarations)?;
 
   let mut build_visitors =
