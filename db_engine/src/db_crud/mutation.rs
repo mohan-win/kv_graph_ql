@@ -1,4 +1,5 @@
 use crate::errors::Error;
+use async_trait::async_trait;
 
 use super::*;
 
