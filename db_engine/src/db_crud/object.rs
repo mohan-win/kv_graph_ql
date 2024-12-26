@@ -4,15 +4,16 @@ use super::*;
 use graphql_value::{ConstValue as Value, Name};
 
 /// An Object persisted in DB should expose these traits.
+#[async_trait]
 pub trait DBObject {
   /// Get object's ID.
-  fn id(&self) -> ID;
+  async fn id(&self) -> ID;
   /// Retrieve the value of the object's field.
-  fn field(&self, name: Name) -> Value;
+  async fn field(&self, name: Name) -> Value;
   /// Retrieve a single relation stored in the object's field of given name.
-  fn relation(&self, name: Name) -> Result<Box<dyn DBObject>, Error>;
+  async fn relation(&self, name: Name) -> Result<Box<dyn DBObject>, Error>;
   /// Retrieve array of relations stored in the object's field of the given name.
-  fn relations(
+  async fn relations(
     &self,
     name: Name,
     r#where: ObjectWhereInput,

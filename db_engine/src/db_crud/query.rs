@@ -3,9 +3,14 @@ use crate::errors::Error;
 use super::*;
 
 /// DB Query interface.
+#[async_trait]
 pub trait DBQuery {
-  fn get_object(r#where: ObjectWhereUniqueInput) -> Result<Box<dyn DBObject>, Error>;
-  fn get_objects(
+  async fn get_object(
+    &self,
+    r#where: ObjectWhereUniqueInput,
+  ) -> Result<Box<dyn DBObject>, Error>;
+  async fn get_objects(
+    &self,
     r#where: ObjectWhereInput,
     order_by: ObjectOrderByInput,
     skip: u32,
