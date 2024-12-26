@@ -22,13 +22,10 @@ schema_transpiler = {path = "schema_transpiler", version = "0.1.0"}
 graphql_parser = { path = "graphql_parser", version = "7.0.6" }
 graphql_value = { path = "graphql_value", version = "7.0.6" }
 
-chumsky = { version = "1.0.0-alpha.7" }
 serde = { version = "1.0.214", features = ["derive"] }
 serde_json = "1.0.132"
 indexmap = { version = "2", features = ["serde"] }
 bytes = { version = "1.6.0", features = ["serde"] }
-pluralizer = {version = "0.4.0"}
-convert_case = {version = "0.6.0"}
 thiserror = {version = "2"}
 once_cell = {version = "1.20"}
 chrono = {version = "0.4"}
@@ -40,13 +37,6 @@ futures-util = {version = "0.3", features = [
   "async-await-macro",
 ]}
 async-trait = {version = "0.1.83"}
-tokio = { version = "1.42.0", features = [
-  "macros",
-  "rt-multi-thread",
-  "sync",
-  "time",
-] }
-tokio-util = {version = "0.7.13", default-features = false}
 http = {version = "1.2.0"}
 fnv = {version = "1.0.3"}
 

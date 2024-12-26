@@ -8,5 +8,5 @@ edition = "2021"
 [dependencies]
 sdml_parser.workspace = true
 graphql_value.workspace = true
-pluralizer.workspace = true
-convert_case.workspace = true
+pluralizer = {version = "0.4.0"}
+convert_case = {version = "0.6.0"}
