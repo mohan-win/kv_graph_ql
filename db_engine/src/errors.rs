@@ -1,0 +1,2 @@
+/// Errors.
+pub enum Error {}
